@@ -3,7 +3,10 @@
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./.cache/tsconfig.test.tsbuildinfo",
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts"],
   "exclude": ["build", "coverage", "doc", "node_modules"]

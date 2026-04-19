@@ -1,6 +1,6 @@
 # Cockburn dos requisitos
 
-## Caso de uso de autenticação
+## Caso de uso de cadastro de usuário
 
 | Campo                         | Descrição                                                                                                                                                                                                                                                                                            |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -19,6 +19,8 @@
 | **Regras de negócio**         | RN-01: O sistema deve validar que o e-mail fornecido é único. <br> RN-02: O sistema deve garantir que a senha atenda aos critérios de segurança estabelecidos. <br> RN-03: O sistema deve armazenar as informações do usuário de forma segura, utilizando criptografia para dados sensíveis.         |
 | **Requisitos especiais**      | O sistema deve armazenar senha de forma segura. <br> O cadastro deve funcionar em dispositivos móveis e desktop.                                                                                                                                                                                     |
 
+# Caso de uso de autenticação
+
 | Campo                         | Descrição                                                                                                                                                                                                                                                              |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ID**                        | UC-02                                                                                                                                                                                                                                                                  |
@@ -35,6 +37,8 @@
 | **Extensões**                 | 4.1 Credenciais inválidas: o sistema informa erro e solicita nova tentativa. <br> 4.2 Usuário esqueceu a senha: o sistema direciona para recuperação de senha.                                                                                                         |
 | **Regras de negócio**         | RN-01: Apenas usuários cadastrados podem se autenticar. <br> RN-02: O acesso deve respeitar o perfil do usuário. <br> RN-03: O sistema deve registrar eventos de autenticação.                                                                                         |
 | **Requisitos especiais**      | O processo de login deve ser responsivo. <br> O tempo de resposta da autenticação deve respeitar os limites de desempenho definidos.                                                                                                                                   |
+
+## Caso de uso de recuperação de senha
 
 | Campo                         | Descrição                                                                                                                                                                                                                                                                                                         |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -53,7 +57,7 @@
 | **Regras de negócio**         | RN-01: A recuperação deve ocorrer por canal previamente associado à conta. <br> RN-02: O código de recuperação deve possuir validade limitada. <br> RN-03: A nova senha deve seguir os critérios de segurança do sistema.                                                                                         |
 | **Requisitos especiais**      | O sistema deve enviar a recuperação por meio seguro. <br> A redefinição de senha deve ser compatível com dispositivos móveis e desktop.                                                                                                                                                                           |
 
-## Casos de uso de manifestações
+## caso de uso de registro de manifestação
 
 | Campo                         | Descrição                                                                                                                                                                                                                                                                                                                                                                                  |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -72,6 +76,8 @@
 | **Regras de negócio**         | RN-01: Toda manifestação deve possuir protocolo único. <br> RN-02: Toda manifestação deve estar vinculada a um campus e a uma unidade administrativa. <br> RN-03: O usuário deve informar o tipo de manifestação. <br> RN-04: O sistema pode permitir sigilo ou anonimato conforme política institucional.                                                                                 |
 | **Requisitos especiais**      | O formulário deve ser acessível e responsivo. <br> O sistema deve registrar a manifestação em até tempo aceitável de uso.                                                                                                                                                                                                                                                                  |
 
+## Caso de uso de anexar arquivo à manifestação
+
 | Campo                         | Descrição                                                                                                                                                                                                                                                                                       |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ID**                        | UC-05                                                                                                                                                                                                                                                                                           |
@@ -88,6 +94,8 @@
 | **Extensões**                 | 4.1 Manifestação encerrada: o sistema informa que não é possível anexar novos arquivos. <br> 4.2 Limite excedido: o sistema rejeita o envio e informa o tamanho máximo permitido.                                                                                                               |
 | **Regras de negócio**         | RN-01: O sistema deve validar tamanho e formato dos anexos. <br> RN-02: Chamados encerrados não podem receber novos anexos pelo usuário. <br> RN-03: O sistema deve bloquear arquivos potencialmente maliciosos.                                                                                |
 | **Requisitos especiais**      | O envio deve ocorrer com segurança e validação antivírus, quando aplicável. <br> O sistema deve preservar integridade e disponibilidade dos anexos.                                                                                                                                             |
+
+## Caso de uso de acompanhamento de manifestação
 
 | Campo                         | Descrição                                                                                                                                                                                                                         |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -106,6 +114,8 @@
 | **Regras de negócio**         | RN-01: O usuário só pode acompanhar manifestações às quais tenha acesso. <br> RN-02: O sistema deve exibir histórico atualizado de movimentações. <br> RN-03: Chamados encerrados continuam disponíveis apenas para visualização. |
 | **Requisitos especiais**      | A consulta deve ter resposta rápida e interface compatível com desktop e mobile.                                                                                                                                                  |
 
+## Caso de uso de envio de mensagens no chamado
+
 | Campo                         | Descrição                                                                                                                                                                                                                           |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ID**                        | UC-07                                                                                                                                                                                                                               |
@@ -122,6 +132,8 @@
 | **Extensões**                 | 4.1 Manifestação fechada: o sistema informa que não é possível enviar novas mensagens.                                                                                                                                              |
 | **Regras de negócio**         | RN-01: Toda mensagem deve ficar registrada no histórico do chamado. <br> RN-02: Apenas participantes autorizados podem interagir no chamado. <br> RN-03: Chamados encerrados não podem ser editados pelo usuário.                   |
 | **Requisitos especiais**      | O sistema deve preservar histórico completo da comunicação. <br> O envio deve disparar notificações quando aplicável.                                                                                                               |
+
+## Caso de uso de encerramento de manifestação
 
 | Campo                         | Descrição                                                                                                                                                                                                                                            |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -140,6 +152,8 @@
 | **Regras de negócio**         | RN-01: Um chamado só pode ser encerrado após resposta da equipe ou por solicitação válida do usuário. <br> RN-02: Chamados encerrados não podem ser editados pelo usuário. <br> RN-03: O fechamento deve ser registrado em histórico.                |
 | **Requisitos especiais**      | O sistema deve exibir confirmação clara antes do encerramento.                                                                                                                                                                                       |
 
+## Caso de uso de avaliação do atendimento
+
 | Campo                         | Descrição                                                                                                                                                                                                                 |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ID**                        | UC-09                                                                                                                                                                                                                     |
@@ -157,7 +171,7 @@
 | **Regras de negócio**         | RN-01: Apenas chamados encerrados podem ser avaliados. <br> RN-02: A avaliação deve ficar vinculada ao atendimento correspondente. <br> RN-03: Os dados da avaliação podem ser usados em relatórios gerenciais.           |
 | **Requisitos especiais**      | O formulário deve ser simples, acessível e responsivo.                                                                                                                                                                    |
 
-## Casos de uso do chatbot e atendimento
+## Caso de uso de consulta ao chatbot
 
 | Campo                         | Descrição                                                                                                                                                                                                                                                                                                                                 |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -176,6 +190,8 @@
 | **Regras de negócio**         | RN-01: O chatbot deve responder apenas com base em conteúdo institucional aprovado. <br> RN-02: Quando não houver confiança suficiente, o chatbot deve orientar o usuário a buscar atendimento humano ou abrir chamado. <br> RN-03: O chatbot não substitui decisão administrativa nem manifestação formal.                               |
 | **Requisitos especiais**      | O chatbot deve responder em tempo aceitável. <br> O histórico deve respeitar regras de privacidade e LGPD.                                                                                                                                                                                                                                |
 
+## Caso de uso de encaminhamento para atendimento humano
+
 | Campo                         | Descrição                                                                                                                                                                                                                                                       |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ID**                        | UC-11                                                                                                                                                                                                                                                           |
@@ -193,7 +209,7 @@
 | **Regras de negócio**         | RN-01: O encaminhamento deve ocorrer em casos de baixa confiança, pergunta sensível ou assunto fora de escopo. <br> RN-02: O chatbot deve orientar o usuário sem tomar decisão administrativa.                                                                  |
 | **Requisitos especiais**      | A transição para atendimento humano deve ser clara e rastreável.                                                                                                                                                                                                |
 
-## Casos de uso administrativos
+## caso de uso de gerenciamento de manifestações
 
 | Campo                         | Descrição                                                                                                                                                                                                                                                                                                                          |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -212,6 +228,8 @@
 | **Regras de negócio**         | RN-01: Apenas atendentes e administradores autorizados podem alterar status e atribuição. <br> RN-02: O sistema deve manter histórico completo das ações administrativas. <br> RN-03: Chamados sigilosos devem ter acesso restrito a perfis autorizados.                                                                           |
 | **Requisitos especiais**      | A tela administrativa deve suportar filtros e atualização com desempenho adequado.                                                                                                                                                                                                                                                 |
 
+## Caso de uso de geração de relatórios gerenciais
+
 | Campo                         | Descrição                                                                                                                                                                                                                                                                                       |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ID**                        | UC-13                                                                                                                                                                                                                                                                                           |
@@ -228,6 +246,8 @@
 | **Extensões**                 | 3.1 Parâmetros inválidos: o sistema solicita ajuste dos filtros. <br> 4.1 Ausência de dados para o período: o sistema informa que não há registros suficientes para compor o relatório.                                                                                                         |
 | **Regras de negócio**         | RN-01: Os relatórios devem considerar indicadores como tempo médio de resposta, tempo de resolução, volume por categoria e índice de satisfação. <br> RN-02: Somente usuários autorizados podem gerar relatórios gerenciais.                                                                    |
 | **Requisitos especiais**      | O processamento deve ocorrer em tempo aceitável. <br> Os relatórios devem preservar privacidade de dados pessoais quando aplicável.                                                                                                                                                             |
+
+## Caso de uso de consulta de relatórios gerenciais
 
 | Campo                         | Descrição                                                                                                                                                                                                                                      |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
