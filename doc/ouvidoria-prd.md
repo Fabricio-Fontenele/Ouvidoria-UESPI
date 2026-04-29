@@ -43,7 +43,7 @@ O produto tem como finalidade principal oferecer uma plataforma centralizada par
 
 ### 2.3 Contexto de uso
 
-O sistema será utilizado por membros da comunidade acadêmica, incluindo estudantes, professores, funcionários, para registrar suas demandas e acompanhar o andamento das mesmas. Os gestores utilizarão o sistema para gerenciar as demandas recebidas, responder aos usuários.
+O sistema será utilizado por membros da comunidade acadêmica, incluindo estudantes, professores, funcionários, para registrar suas demandas e acompanhar o andamento das mesmas. Os gestores utilizarão o sistema para gerenciar as demandas recebidas, responder aos usuários.m|(**POVO DE FORA**)
 
 ### 2.4 Público-alvo ou beneficiários
 
@@ -61,7 +61,7 @@ Espera-se que o sistema promova maior transparência e eficiência na gestão de
 
 ### 3.1 Situação atual
 
-Atualmente, a universidade não possui ouvidoria propria, usando apenas um sistema terceirizado do governo federal, o que dificulta a gestão eficiente das demandas da comunidade acadêmica, além de limitar a transparência e a participação ativa dos usuários.
+Atualmente, a universidade não possui sistema de ouvidoria propria, usando um sistema terceirizado do governo federal. **não adaptado e sem agente de IA** o que dificulta a gestão eficiente das demandas da comunidade acadêmica, além de limitar a transparência e a participação ativa dos usuários.
 
 ### 3.2 Dificuldades existentes
 
@@ -70,7 +70,6 @@ Atualmente, a universidade não possui ouvidoria propria, usando apenas um siste
 - dificuldade para os gestores gerenciarem as demandas recebidas e responderem aos usuários de forma
 - complexidade para triagem e encaminhamento automático das demandas
 - dificuldade no acesso a informação por parte dos usuários
-- ineficiente
 
 ### 3.3 Resultado esperado com o produto
 
@@ -88,13 +87,13 @@ os seguintes resultados:
   o status de suas solicitações, promovendo maior engajamento e confiança no processo.
 
 - **Triagem inteligente com chatbot:** um assistente virtual realizará a triagem
-  inicial das demandas, direcionando-as automaticamente e reduzindo o tempo de resposta.
+  inicial das demandas, direcionando-as automaticamente e reduzindo o tempo de resposta. **AMPLIAR AS FUNCIONALIDADES**
 
 ## 4. Objetivos do produto
 
 ### 4.1 Objetivo geral
 
-Desenvolver um sistema de ouvidoria institucional que permita o registro, acompanhamento e gestão eficiente de demandas da comunidade acadêmica, promovendo transparência, participação ativa e triagem inteligente por meio de chatbot.
+Promover inovação por meio do desenvolvimento de um sistema de ouvidoria institucional que permita o registro, acompanhamento e gestão eficiente de demandas da comunidade acadêmica, promovendo transparência, participação ativa e triagem inteligente por meio de chatbot.
 
 ### 4.2 Objetivos prioritários
 
@@ -224,12 +223,7 @@ Os termos acima devem ser utilizados de forma consistente em toda a documentaç�
 3. Quando a dúvida exigir tratamento formal, o chatbot orienta abertura de manifestação.
 4. A demanda segue o fluxo principal de registro e tratamento pela ouvidoria.
 
-### 10.3 Macrofluxo excepcional - Encaminhamento para atendimento humano
 
-1. O chatbot identifica baixa confiança, tema sensível ou assunto fora de escopo.
-2. O sistema informa a limitação da resposta automatizada.
-3. O usuário é orientado para atendimento humano ou abertura de manifestação.
-4. O registro da interação permanece armazenado para rastreabilidade, conforme regras de privacidade.
 
 ## 11. Funcionalidades principais do sistema
 
