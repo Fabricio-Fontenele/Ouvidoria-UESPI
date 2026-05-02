@@ -35,7 +35,7 @@ Ele consolida a visão de produto, o escopo, o contexto, os atores, as regras de
 
 ### 2.1 Descrição curta
 
-O Sistema de ouvidoria institucional é uma sistema web para registrar e acompanhar denuncias, reclamações, sugestões e elogios relacionados à universidade, com foco em transparência, rastreabilidade e gestão eficiente das demandas da comunidade acadêmica auxiliado por um chatbot para triagem inicial e encaminhamento automático.
+O Sistema de Ouvidoria Institucional é um sistema web para registrar e acompanhar denúncias, reclamações, sugestões e elogios relacionados à universidade, com foco em transparência, rastreabilidade e gestão eficiente das demandas da comunidade acadêmica, com apoio de IA para triagem inicial, orientação e encaminhamento automático.
 
 ### 2.2 Finalidade principal
 
@@ -43,7 +43,7 @@ O produto tem como finalidade principal oferecer uma plataforma centralizada par
 
 ### 2.3 Contexto de uso
 
-O sistema será utilizado por membros da comunidade acadêmica, incluindo estudantes, professores, funcionários, para registrar suas demandas e acompanhar o andamento das mesmas. Os gestores utilizarão o sistema para gerenciar as demandas recebidas, responder aos usuários.m|(**POVO DE FORA**)
+O sistema será utilizado por membros da comunidade acadêmica, incluindo estudantes, professores e funcionários, para registrar suas demandas e acompanhar seu andamento. Também poderá ser utilizado por usuários externos, como visitantes e parceiros institucionais, quando houver necessidade de registrar manifestações relacionadas à universidade. Os gestores utilizarão o sistema para gerenciar as demandas recebidas e responder aos usuários.
 
 ### 2.4 Público-alvo ou beneficiários
 
@@ -61,7 +61,7 @@ Espera-se que o sistema promova maior transparência e eficiência na gestão de
 
 ### 3.1 Situação atual
 
-Atualmente, a universidade não possui sistema de ouvidoria propria, usando um sistema terceirizado do governo federal. **não adaptado e sem agente de IA** o que dificulta a gestão eficiente das demandas da comunidade acadêmica, além de limitar a transparência e a participação ativa dos usuários.
+Atualmente, a universidade não possui sistema de ouvidoria próprio, utilizando um sistema terceirizado do governo federal que não é adaptado à realidade institucional e não oferece recursos de IA. Isso dificulta a gestão eficiente das demandas da comunidade acadêmica, além de limitar a transparência e a participação ativa dos usuários.
 
 ### 3.2 Dificuldades existentes
 
@@ -86,20 +86,20 @@ os seguintes resultados:
 - **Transparência e participação ativa:** os usuários acompanharão em tempo real
   o status de suas solicitações, promovendo maior engajamento e confiança no processo.
 
-- **Triagem inteligente com chatbot:** um assistente virtual realizará a triagem
-  inicial das demandas, direcionando-as automaticamente e reduzindo o tempo de resposta. **AMPLIAR AS FUNCIONALIDADES**
+- **Triagem inteligente com IA:** a IA realizará a triagem inicial das demandas,
+  responderá dúvidas frequentes, orientará a abertura de manifestações e, quando necessário, apresentará o formulário da demanda com campos pré-preenchidos com base na conversa, reduzindo o tempo de resposta.
 
 ## 4. Objetivos do produto
 
 ### 4.1 Objetivo geral
 
-Promover inovação por meio do desenvolvimento de um sistema de ouvidoria institucional que permita o registro, acompanhamento e gestão eficiente de demandas da comunidade acadêmica, promovendo transparência, participação ativa e triagem inteligente por meio de chatbot.
+Promover inovação por meio do desenvolvimento de um sistema de ouvidoria institucional que permita o registro, acompanhamento e gestão eficiente de demandas da comunidade acadêmica, promovendo transparência, participação ativa e triagem inteligente por meio de IA.
 
 ### 4.2 Objetivos prioritários
 
 - oferecer canal centralizado para registro e acompanhamento de demandas
 - permitir que usuários acompanhem o andamento de suas demandas de forma transparente
-- Oferecer o chatbot para triagem inicial e encaminhamento automático das demandas.
+- oferecer IA para triagem inicial, orientação, pré-preenchimento de formulários e encaminhamento automático das demandas
 - fornecer ferramenta eficiente para gestores gerenciarem as demandas recebidas e responderem aos usuários de forma ágil e organizada
 
 ### 4.3 Objetivos secundários
@@ -116,8 +116,8 @@ Promover inovação por meio do desenvolvimento de um sistema de ouvidoria insti
 - Registro de demandas com campos estruturados e possibilidade de anexos
 - Acompanhamento do status das demandas pelos usuários
 - Gestão de demandas pelos gestores, incluindo resposta e encaminhamento
-- Triagem inicial por chatbot para direcionamento automático das demandas
-- Chatbot com capacidade de responder perguntas frequentes e fornecer orientações básicas
+- Triagem inicial por IA para direcionamento automático das demandas
+- IA com capacidade de responder perguntas frequentes, fornecer orientações básicas e lançar formulário de demanda com campos pré-preenchidos
 
 ### 5.2 Fora do escopo
 
@@ -126,7 +126,7 @@ Promover inovação por meio do desenvolvimento de um sistema de ouvidoria insti
 
 ### 5.3 Limites do produto
 
-- o chatbot terá capacidade limitada de compreensão e resposta, focando principalmente em triagem inicial e respostas a perguntas frequentes baseadas no regimento da universidade
+- a IA terá capacidade de compreensão e resposta, focando principalmente em triagem inicial, respostas a perguntas frequentes baseadas no regimento da universidade e apoio ao preenchimento inicial do formulário da demanda
 - o sistema não incluirá funcionalidades de atendimento ao usuário, como chat ao vivo ou suporte telefônico, concentrando-se exclusivamente no registro e gestão de demandas
 - o sistema não terá integração com outros sistemas institucionais, como sistemas de gestão acadêmica ou sistemas de atendimento ao usuário, limitando-se a ser uma plataforma independente para registro e acompanhamento de demandas.
 - O sistema não incluirá dashboard de indicadores ou relatórios avançados, focando principalmente na funcionalidade de registro, acompanhamento e gestão de demandas.
@@ -153,7 +153,7 @@ Promover inovação por meio do desenvolvimento de um sistema de ouvidoria insti
 - registrar manifestação com campos estruturados e possibilidade de anexos
 - acompanhar o andamento da manifestação
 - receber respostas e orientações dos gestores
-- interagir com o chatbot para triagem inicial e esclarecimento de dúvidas
+- interagir com a IA para triagem inicial e esclarecimento de dúvidas
 
 ### 7.2 Ouvidor
 
@@ -180,7 +180,7 @@ Promover inovação por meio do desenvolvimento de um sistema de ouvidoria insti
 - **Manifestação:** solicitação formal de um usuário, registrada na ouvidoria, que pode ser denúncia, reclamação, sugestão ou elogio.
 - **Manifestante:** usuário que faz a manifestação na ouvidoria.
 - **Ouvidor:** perfil responsável por gerenciar as demandas da unidade, incluindo análise e resposta.
-- **Chatbot:** assistente virtual que realiza a triagem inicial das manifestações, direcionando-as automaticamente e respondendo a perguntas frequentes.
+- **IA:** recurso de inteligência artificial que realiza a triagem inicial das manifestações, responde a perguntas frequentes e, quando necessário, apresenta o formulário da demanda com campos pré-preenchidos com base na conversa para revisão do usuário.
 - **Resposta:** comunicação formal do Ouvidor ao manifestante, contendo orientações ou esclarecimentos relacionados à manifestação registrada.
 - **Acompanhamento:** processo pelo qual o manifestante pode monitorar o andamento de sua manifestação, verificando status e respostas fornecidas pelos gestores.
 
@@ -193,12 +193,12 @@ Os termos acima devem ser utilizados de forma consistente em toda a documentaç�
 1. O sistema deve permitir o registro de manifestações com campos estruturados e possibilidade de anexos, garantindo que as informações sejam organizadas e facilmente acessíveis para análise pelos gestores.
 2. O sistema deve permitir que os manifestantes acompanhem o andamento de suas manifestações, verificando o status e recebendo notificações sobre atualizações ou respostas dos gestores.
 3. O sistema deve permitir que os gestores analisem as manifestações recebidas, respondam aos manifestantes e acompanhem o andamento das demandas sob sua responsabilidade, garantindo uma gestão eficiente e transparente das demandas da comunidade acadêmica.
-4. O chatbot deve apoiar a triagem inicial das manifestações, direcionando-as para os gestores responsáveis e respondendo a perguntas frequentes, promovendo agilidade e eficiência no atendimento das demandas.
+4. A IA deve apoiar a triagem inicial das manifestações, respondendo a perguntas frequentes e, quando necessário, preparando o formulário da demanda com dados extraídos da conversa, promovendo agilidade e eficiência no atendimento das demandas.
 5. O sistema deve permitir manifestações anônimas, garantindo a privacidade dos manifestantes que desejarem registrar suas demandas sem se identificar.
 6. Apenas gestores ou perfis administrativos autorizados podem analisar, responder, encaminhar, alterar status e encerrar manifestações.
 7. O tratamento das manifestações deve ocorrer com rastreabilidade, mantendo histórico de interações, respostas, alterações de status e responsáveis por cada ação.
-8. O chatbot deve realizar atendimento inicial para esclarecimento de dúvidas frequentes e apoio na triagem das manifestações, com base em regras e conteúdos institucionais previamente definidos.
-9. O chatbot não pode substituir decisão administrativa formal nem concluir, por conta própria, casos sensíveis, ambíguos ou fora de escopo, devendo encaminhá-los para atendimento humano.
+8. A IA deve realizar atendimento inicial para esclarecimento de dúvidas frequentes e apoio na triagem das manifestações, com base em regras e conteúdos institucionais previamente definidos, podendo apresentar ao usuário um formulário de demanda previamente preenchido para revisão e envio.
+9. A IA não pode substituir decisão administrativa formal nem concluir, por conta própria, casos sensíveis, ambíguos ou fora de escopo, devendo encaminhá-los para atendimento humano.
 10. Manifestações anônimas poderão ter restrições de retorno personalizado e notificação direta, devendo o acompanhamento ocorrer exclusivamente por protocolo, quando essa opção for adotada pela instituição.
 
 ## 10. Macrofluxos de negócio
@@ -216,14 +216,13 @@ Os termos acima devem ser utilizados de forma consistente em toda a documentaç�
 6. O manifestante acompanha o histórico e, quando considerar resolvido, encerra a manifestação.
 7. O sistema registra o encerramento e mantém o histórico para consulta e avaliação.
 
-### 10.2 Macrofluxo alternativo - Atendimento assistido por chatbot
+### 10.2 Macrofluxo alternativo - Atendimento assistido por IA
 
-1. O usuário consulta o chatbot para esclarecer dúvidas institucionais.
-2. O chatbot responde com base em conteúdo institucional aprovado.
-3. Quando a dúvida exigir tratamento formal, o chatbot orienta abertura de manifestação.
-4. A demanda segue o fluxo principal de registro e tratamento pela ouvidoria.
-
-
+1. O usuário consulta a IA para esclarecer dúvidas institucionais.
+2. A IA responde com base em conteúdo institucional aprovado.
+3. Quando a demanda exigir tratamento formal, a IA apresenta o formulário da manifestação com campos pré-preenchidos com base nas informações fornecidas pelo usuário.
+4. O usuário revisa os campos, podendo editar, complementar ou aceitar o preenchimento sugerido.
+5. Após a confirmação do usuário, a demanda segue o fluxo principal de registro e tratamento pela ouvidoria.
 
 ## 11. Funcionalidades principais do sistema
 
@@ -260,11 +259,11 @@ Os termos acima devem ser utilizados de forma consistente em toda a documentaç�
 **Atores envolvidos:** manifestante.  
 **Resultado esperado:** fechamento formal do ciclo e coleta de indicadores de qualidade.
 
-### 11.6 Suporte informacional por chatbot
+### 11.6 Suporte informacional por IA
 
-**Descrição:** Permite consulta de informações institucionais e encaminhamento para atendimento humano quando necessário.  
+**Descrição:** Permite consulta de informações institucionais, pré-preenchimento assistido do formulário da demanda.
 **Atores envolvidos:** usuário.  
-**Resultado esperado:** triagem inicial ágil sem substituir decisão administrativa formal.
+**Resultado esperado:** triagem inicial ágil, com apoio ao registro da manifestação, sem substituir decisão administrativa formal.
 
 ## 12. Informações centrais do domínio
 
@@ -350,13 +349,13 @@ O sistema deve permitir encerramento da manifestação pelo usuário quando aten
 
 O sistema deve permitir avaliação do atendimento em manifestações finalizadas.
 
-### RF10 - Consulta ao chatbot
+### RF10 - Consulta à IA
 
-O sistema deve permitir consulta ao chatbot com respostas baseadas em conteúdo institucional aprovado.
+O sistema deve permitir consulta à IA com respostas baseadas em conteúdo institucional aprovado.
 
-### RF11 - Encaminhamento para atendimento humano
+### RF11 - Pré-preenchimento assistido da manifestação
 
-O sistema deve permitir encaminhamento para atendimento humano quando o chatbot identificar baixa confiança, sensibilidade ou fora de escopo.
+O sistema deve permitir que a IA apresente o formulário da manifestação com campos previamente preenchidos a partir das informações fornecidas pelo usuário na conversa, permitindo revisão, edição e confirmação antes do envio.
 
 ### RF12 - Gestão administrativa de manifestações
 
@@ -393,7 +392,7 @@ O sistema deve tratar dados pessoais e sensíveis de acordo com princípios de p
 
 ### RNF06 - Desempenho
 
-O sistema deve responder em tempo aceitável para operações de consulta, registro de manifestações e interação com chatbot.
+O sistema deve responder em tempo aceitável para operações de consulta, registro de manifestações e interação com IA.
 
 ### RNF07 - Rastreabilidade e auditoria operacional
 
@@ -430,7 +429,7 @@ O sistema deve oferecer experiência compatível com dispositivos desktop e móv
 - tipo de manifestação
 - status da manifestação
 - histórico de movimentações
-- classificação de atendimento (humano ou assistido por chatbot)
+- classificação de atendimento (humano ou assistido por IA)
 - indicadores gerenciais por período
 
 ## 17. Restrições globais e decisões de contorno
@@ -443,7 +442,7 @@ O sistema deve oferecer experiência compatível com dispositivos desktop e móv
 - toda manifestação deve possuir protocolo único
 - manifestações sigilosas e anônimas devem respeitar política institucional de acesso e retorno
 - apenas perfis autorizados podem alterar status, responder, encaminhar e gerenciar manifestações
-- chatbot não pode tomar decisão administrativa formal
+- IA não pode tomar decisão administrativa formal
 - chamados finalizados ou cancelados não devem aceitar edição direta do conteúdo original
 
 ### 17.2 Diretrizes globais de engenharia
@@ -465,28 +464,26 @@ Detalhes técnicos específicos de implementação, como contratos locais, desen
 - o sistema será um sistema web acessível por desktop e dispositivos móveis
 - o armazenamento persistente será realizado em tecnologia relacional
 - haverá suporte a registro de manifestação com anexos e protocolo
-- haverá suporte a chatbot para triagem inicial e orientação institucional
--
+- haverá suporte a IA para triagem inicial, orientação institucional e pré-preenchimento assistido do formulário da manifestação
 
 ### 18.2 Dúvidas ainda em aberto
 
 - quais limites exatos de tamanho e formatos permitidos para anexos
 - se haverá prazo padrão de SLA por tipo de manifestação e unidade
-- como será definido o conjunto oficial de conteúdos da base de conhecimento do chatbot
+- como será definido o conjunto oficial de conteúdos da base de conhecimento da IA
 - se manifestações finalizadas poderão ser reabertas por perfil administrativo em situação excepcional
 - quais indicadores serão exibidos como padrão na primeira versão dos relatórios
-- o chatbot poderá realizar o crud dos formularios de demandas pelos usuarios? ou apenas responder perguntas frequentes e realizar triagem inicial?
 
 ### 18.3 Suposições proibidas
 
 - não assumir integração obrigatória com sistemas externos nesta versão
-- não assumir que o chatbot responde qualquer tema fora da base institucional validada
+- não assumir que a IA responde qualquer tema fora da base institucional validada
 - não assumir que todo chamado terá retorno personalizado em casos anônimos
 - não assumir workflow administrativo além de análise, resposta, encaminhamento e encerramento
 
 ### 18.4 Pontos sobre os quais derivação e implementação exigem cautela
 
-- preservar distinção entre resposta automatizada (chatbot) e resposta administrativa formal
+- preservar distinção entre resposta automatizada por IA e resposta administrativa formal
 - garantir consistência entre regras de sigilo, anonimato e rastreabilidade
 - manter coerência entre estado da manifestação e permissões de interação
 - explicitar em artefatos derivados qualquer hipótese adicional não definida neste documento
