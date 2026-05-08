@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "#src/*": ["src/*"]
+      "#src/*.js": ["src/*.ts"]
     },
     "target": "ES2024",
     "lib": ["ES2024"],
