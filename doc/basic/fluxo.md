@@ -1,33 +1,37 @@
 # Fluxo Ouvidoria
 
-## 1. Abertura de Chamado
+Documento de fluxo derivado de `doc/ouvidoria-prd.md`.
+Este documento deve herdar o escopo, as regras e os limites do PRD canonico.
 
-- O usuário acessa o sistema e se autentica.
-- O usuário seleciona o campus e a unidade administrativa relacionada à sua reclamação, denúncia ou solicitação.
-- O usuário seleciona a opção "Registrar Reclamação/Denúncia/Solicitação/Sugestão".
-- O usuário preenche o formulário com os detalhes da reclamação, denúncia ou solicitação, incluindo a possibilidade de anexar arquivos, pessoas envolvidas.
-- O usuário envia o formulário, e o sistema gera um número de protocolo para acompanhamento.
+## 1. Macrofluxo principal - Registro e tratamento de manifestacao
 
-## 2. Acompanhamento de Chamado
+1. O manifestante acessa o sistema e registra uma manifestacao.
+2. O sistema valida os dados obrigatorios, gera o protocolo unico e registra a manifestacao.
+3. A manifestacao entra em analise pela equipe da ouvidoria.
+4. O ouvidor analisa o conteudo e, quando necessario, interage com o manifestante por mensagens.
+5. O responsavel administrativo registra resposta formal e atualiza o status da manifestacao.
+6. O manifestante acompanha o historico da manifestacao e, quando considerar resolvido, realiza o encerramento.
+7. O sistema registra o encerramento e mantem o historico para consulta e avaliacao.
 
-- O usuário pode acessar a seção "Meus Chamados" para visualizar o status de suas reclamações, denúncias ou solicitações.
-- O sistema exibe o status atual do chamado, incluindo atualizações e respostas da equipe de atendimento.
-- O usuário pode receber notificações por e-mail sobre o status de suas reclamações, denúncias ou solicitações.
-- O usuário pode responder a mensagens da equipe de atendimento, fornecendo informações adicionais ou esclarecimentos, se necessário.
-- O usuário pode encerrar o chamado quando a questão for resolvida ou se sentir satisfeito com a resposta da equipe de atendimento.
-- O usuário pode avaliar o atendimento recebido, fornecendo feedback sobre a qualidade do serviço prestado.
+## 2. Macrofluxo alternativo - Atendimento assistido por IA
 
-## 3. Gerenciamento de Chamados pela Equipe de Atendimento
+1. O usuario consulta a IA para esclarecer duvidas institucionais.
+2. A IA responde com base em conteudo institucional aprovado.
+3. Quando a demanda exigir tratamento formal, a IA apresenta o formulario da manifestacao com campos previamente preenchidos com base nas informacoes fornecidas pelo usuario.
+4. O usuario revisa os campos e pode editar, complementar ou confirmar o preenchimento sugerido.
+5. Apos a confirmacao do usuario, a manifestacao segue o fluxo principal de registro e tratamento pela ouvidoria.
 
-- Os administradores acessam a seção "Gerenciar Chamados" para visualizar e gerenciar as reclamações, denúncias ou solicitações registrados pelos usuários.
-- Os administradores podem filtrar os chamados por status, data, campus ou unidade administrativa e por gravidade.
-- Os administradores podem atribuir chamados a membros da equipe de atendimento.
-- Os administradores podem adicionar comentários e atualizações ao chamado.
-- Os administradores podem encerrar chamados quando a questão for resolvida.
+## 3. Regras de conducao do fluxo
 
-## 4. ChatBot GuaraPI
+1. O fluxo deve respeitar os perfis autorizados para registro, acompanhamento, tratamento e encerramento da manifestacao.
+2. Manifestacoes anonimas ou sigilosas devem seguir a politica institucional de acesso, retorno e notificacao.
+3. A IA nao substitui decisao administrativa formal nem conclui, por conta propria, casos sensiveis, ambiguos ou fora de escopo.
+4. Manifestacoes finalizadas ou canceladas nao devem aceitar edicao direta do conteudo original.
+5. O tratamento da manifestacao deve preservar rastreabilidade de mensagens, respostas, alteracoes de status e responsaveis por cada acao.
 
-- O usuário pode acessar o ChatBot GuaraPI para tirar dúvidas e obter informações sobre a instituição, editais, cursos, etc.
-- O ChatBot GuaraPI responde às perguntas do usuário de forma rápida e eficiente, utilizando uma base de conhecimento atualizada.
-- O ChatBot GuaraPI pode encaminhar o usuário para um atendente humano se a questão for complexa ou se o usuário solicitar atendimento humano.
-- O ChatBot GuaraPI pode fornecer feedback ao usuário sobre a qualidade do atendimento recebido, permitindo que os usuários avaliem a experiência de atendimento.
+## 4. Estados principais da manifestacao
+
+- em analise
+- respondida
+- finalizada
+- cancelada
