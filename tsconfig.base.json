@@ -1,14 +1,20 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "baseUrl": ".",
+    "paths": {
+      "#src/*": ["src/*"]
+    },
+    "target": "ES2024",
+    "lib": ["ES2024"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "moduleDetection": "force",
+    "customConditions": ["development"],
     "sourceMap": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "erasableSyntaxOnly": true,
+    "erasableSyntaxOnly": false,
     "strict": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,

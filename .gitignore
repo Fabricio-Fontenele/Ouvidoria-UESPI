@@ -32,6 +32,7 @@ node_modules
 *.log
 yarn-error.log*
 .codex
+.agents
 
 # Yarn
 .yarn/install-state.gz
