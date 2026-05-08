@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "description": "TypeScript project template with ESLint, Prettier, Vitest and Husky",
   "type": "module",
+  "imports": {
+    "#src/*.js": {
+      "development": "./src/*.ts",
+      "default": "./build/*.js"
+    }
+  },
   "scripts": {
-    "dev": "tsx ./src/main.ts",
+    "dev": "NODE_OPTIONS='--conditions=development' tsx ./src/main.ts",
     "start": "node ./build/main.js",
     "clean": "rimraf ./build ./.cache",
     "build": "pnpm clean && tsc -p ./tsconfig.build.json",

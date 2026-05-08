@@ -3,9 +3,12 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '#src': fileURLToPath(new URL('./src', import.meta.url)),
-    },
+    alias: [
+      {
+        find: /^#src\/(.*)\.js$/,
+        replacement: fileURLToPath(new URL('./src/$1.ts', import.meta.url)),
+      },
+    ],
     conditions: ['development'],
   },
   test: {
