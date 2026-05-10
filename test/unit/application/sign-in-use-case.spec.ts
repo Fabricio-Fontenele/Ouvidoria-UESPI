@@ -2,7 +2,7 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { TokenGenerator } from '#src/application/auth/token-generator.js'
 import type { HashComparer } from '#src/application/cryptography/hash-comparer.js'
-import type { UserRepository } from '#src/application/repositories/users-repository.js'
+import type { UsersRepository } from '#src/application/repositories/users-repository.js'
 import { InvalidCredentialsError } from '#src/application/use-cases/signin/errors/invalid-credentials-error.js'
 import { SignInUseCase, type SignInInput } from '#src/application/use-cases/signin/sign-in-use-case.js'
 import { User, UserRole } from '#src/domain/entities/user.js'
@@ -12,7 +12,7 @@ import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 describe('SignInUseCase', () => {
   let input: SignInInput
-  let userRepository: DeepMockProxy<UserRepository>
+  let UsersRepository: DeepMockProxy<UsersRepository>
   let hashComparer: DeepMockProxy<HashComparer>
   let tokenGenerator: DeepMockProxy<TokenGenerator>
   let sut: SignInUseCase
@@ -35,21 +35,21 @@ describe('SignInUseCase', () => {
       password: 'Password123',
     }
 
-    userRepository = mockDeep<UserRepository>()
+    UsersRepository = mockDeep<UsersRepository>()
     hashComparer = mockDeep<HashComparer>()
     tokenGenerator = mockDeep<TokenGenerator>()
 
-    mockReset(userRepository)
+    mockReset(UsersRepository)
     mockReset(hashComparer)
     mockReset(tokenGenerator)
 
-    sut = new SignInUseCase(userRepository, hashComparer, tokenGenerator)
+    sut = new SignInUseCase(UsersRepository, hashComparer, tokenGenerator)
   })
 
   it('signs in with normalized email, preserves the typed password and returns a token', async () => {
     const user = buildUser()
 
-    userRepository.findByEmail.mockResolvedValue(user)
+    UsersRepository.findByEmail.mockResolvedValue(user)
     hashComparer.compare.mockResolvedValue(true)
     tokenGenerator.generate.mockResolvedValue('access-token')
 
@@ -59,7 +59,7 @@ describe('SignInUseCase', () => {
       password: '  Password123  ',
     })
 
-    expect(userRepository.findByEmail.mock.calls).toStrictEqual([['user@example.com']])
+    expect(UsersRepository.findByEmail.mock.calls).toStrictEqual([['user@example.com']])
     expect(hashComparer.compare.mock.calls).toStrictEqual([['  Password123  ', 'hashed-password']])
     expect(tokenGenerator.generate.mock.calls).toStrictEqual([
       [
@@ -73,7 +73,7 @@ describe('SignInUseCase', () => {
   })
 
   it('throws invalid credentials when no user is found', async () => {
-    userRepository.findByEmail.mockResolvedValue(null)
+    UsersRepository.findByEmail.mockResolvedValue(null)
 
     await expect(sut.execute(input)).rejects.toBeInstanceOf(InvalidCredentialsError)
 
@@ -82,7 +82,7 @@ describe('SignInUseCase', () => {
   })
 
   it('throws invalid credentials when the password does not match', async () => {
-    userRepository.findByEmail.mockResolvedValue(buildUser())
+    UsersRepository.findByEmail.mockResolvedValue(buildUser())
     hashComparer.compare.mockResolvedValue(false)
 
     await expect(sut.execute(input)).rejects.toBeInstanceOf(InvalidCredentialsError)
@@ -99,7 +99,7 @@ describe('SignInUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(InvalidEmailError)
 
-    expect(userRepository.findByEmail.mock.calls).toHaveLength(0)
+    expect(UsersRepository.findByEmail.mock.calls).toHaveLength(0)
     expect(hashComparer.compare.mock.calls).toHaveLength(0)
     expect(tokenGenerator.generate.mock.calls).toHaveLength(0)
   })
@@ -107,7 +107,7 @@ describe('SignInUseCase', () => {
   it('propagates hash comparer failures and does not generate a token', async () => {
     const comparerError = new Error('compare failed')
 
-    userRepository.findByEmail.mockResolvedValue(buildUser())
+    UsersRepository.findByEmail.mockResolvedValue(buildUser())
     hashComparer.compare.mockRejectedValue(comparerError)
 
     await expect(sut.execute(input)).rejects.toThrow(comparerError)
@@ -119,7 +119,7 @@ describe('SignInUseCase', () => {
     const generatorError = new Error('token failed')
     const user = buildUser()
 
-    userRepository.findByEmail.mockResolvedValue(user)
+    UsersRepository.findByEmail.mockResolvedValue(user)
     hashComparer.compare.mockResolvedValue(true)
     tokenGenerator.generate.mockRejectedValue(generatorError)
 
