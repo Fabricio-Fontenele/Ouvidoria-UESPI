@@ -1,9 +1,7 @@
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
-import type {
-  ManifestationDetails,
-  ManifestationsRepository,
-} from '#src/application/repositories/manifestations-repository.js'
+import type { ManifestationDetailsDTO } from '#src/application/dto/manifestation-query-dtos.js'
+import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/get-manifestation-details/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/get-manifestation-details/errors/not-allowed-to-access-manifestation-error.js'
 import { GetManifestationDetailsUseCase } from '#src/application/use-cases/get-manifestation-details/get-manifestation-details-use-case.js'
@@ -13,7 +11,7 @@ describe('GetManifestationDetailsUseCase', () => {
   let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
   let sut: GetManifestationDetailsUseCase
 
-  const buildManifestationDetails = (authorUserId: string | null): ManifestationDetails => ({
+  const buildManifestationDetails = (authorUserId: string | null): ManifestationDetailsDTO => ({
     id: 'manifestation-1',
     protocol: '2026-0001',
     type: ManifestationType.COMPLAINT,
