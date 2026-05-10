@@ -4,7 +4,7 @@ import type { UserRepository } from '#src/application/repositories/users-reposit
 import { Email } from '#src/domain/value-objects/email.js'
 
 import type { UseCase } from '../use-case.js'
-import { InvalidCredentialsError } from './errors/invalidCredentialsError.js'
+import { InvalidCredentialsError } from './errors/invalid-credentials-error.js'
 
 export interface SignInInput {
   email: string
