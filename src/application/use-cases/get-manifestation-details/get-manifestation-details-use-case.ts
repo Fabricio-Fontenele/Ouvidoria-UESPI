@@ -1,8 +1,8 @@
 import type {
-  ManifestationHistoryEntry,
-  ManifestationMessage,
-  ManifestationsRepository,
-} from '#src/application/repositories/manifestations-repository.js'
+  ManifestationHistoryEntryDTO,
+  ManifestationMessageDTO,
+} from '#src/application/dto/manifestation-query-dtos.js'
+import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
 import type { UseCase } from '../use-case.js'
@@ -24,8 +24,8 @@ interface GetManifestationDetailsOutput {
     administrativeUnitId: string
     description: string
     createdAt: Date
-    history: ManifestationHistoryEntry[]
-    messages: ManifestationMessage[]
+    history: ManifestationHistoryEntryDTO[]
+    messages: ManifestationMessageDTO[]
   }
 }
 
