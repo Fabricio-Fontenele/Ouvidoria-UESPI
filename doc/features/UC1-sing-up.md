@@ -21,13 +21,13 @@ Permitir que um novo usuário crie uma conta no sistema de Ouvidoria Institucion
 
 ## 3. Requisitos relacionados
 
-| Código | Descrição                                                                                                |
-| ------ | -------------------------------------------------------------------------------------------------------- |
-| RF01   | O sistema deve permitir o cadastro de novos usuários com validação de dados obrigatórios e e-mail único. |
-| RF05   | O sistema deve permitir diferentes perfis de acesso, no mínimo: manifestante, ouvidor e administrador.   |
-| RNF04  | O sistema deve ser responsivo e oferecer experiência compatível com dispositivos desktop e móveis.       |
-| RNF05  | O sistema deve seguir diretrizes de acessibilidade.                                                      |
-| RNF07  | O sistema deve exigir autenticação e aplicar autorização por perfil.                                     |
+| Código | Descrição                                                                                                                                                                                 |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF01   | O sistema deve permitir o cadastro de novos usuários com validação de dados obrigatórios e e-mail único.                                                                                  |
+| RF05   | O sistema deve permitir diferentes perfis de acesso, no mínimo: manifestante, ouvidor e administrador. No domínio, esses perfis são representados por `protester`, `ombudsman` e `admin`. |
+| RNF04  | O sistema deve ser responsivo e oferecer experiência compatível com dispositivos desktop e móveis.                                                                                        |
+| RNF05  | O sistema deve seguir diretrizes de acessibilidade.                                                                                                                                       |
+| RNF07  | O sistema deve exigir autenticação e aplicar autorização por perfil.                                                                                                                      |
 
 ---
 
@@ -88,7 +88,7 @@ Após um cadastro bem-sucedido:
 - o usuário é registrado no sistema;
 - o e-mail fica associado a uma única conta;
 - a senha é armazenada apenas em formato de hash;
-- o usuário recebe um perfil válido;
+- o usuário recebe o perfil padrão do cadastro público;
 - os dados públicos do usuário criado são retornados;
 - a senha e o hash da senha não são retornados.
 
@@ -98,11 +98,11 @@ Após um cadastro bem-sucedido:
 
 A feature deve receber os seguintes dados:
 
-| Campo    | Tipo   | Obrigatório | Descrição                                          |
-| -------- | ------ | ----------- | -------------------------------------------------- |
-| name     | string | Sim         | Nome completo ou nome de identificação do usuário. |
-| email    | string | Sim         | E-mail que será usado para identificar a conta.    |
-| password | string | Sim         | Senha de acesso do usuário.                        |
+| Campo    | Tipo   | Obrigatório | Descrição                                             |
+| -------- | ------ | ----------- | ----------------------------------------------------- |
+| name     | string | Sim         | Nome completo do usuário, com ao menos duas palavras. |
+| email    | string | Sim         | E-mail que será usado para identificar a conta.       |
+| password | string | Sim         | Senha de acesso do usuário.                           |
 
 ### Exemplo de entrada
 
@@ -110,25 +110,25 @@ A feature deve receber os seguintes dados:
 {
   "name": "Fabricio Fontenele",
   "email": "fabricio@email.com",
-  "password": "12345678"
+  "password": "Password1"
 }
 ```
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                          |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| RN-UC01-01 | O nome do usuário é obrigatório.                                                               |
-| RN-UC01-02 | O e-mail do usuário é obrigatório.                                                             |
-| RN-UC01-03 | A senha do usuário é obrigatória.                                                              |
-| RN-UC01-04 | O e-mail deve possuir formato válido.                                                          |
-| RN-UC01-05 | O e-mail deve ser único no sistema.                                                            |
-| RN-UC01-06 | A senha deve ser armazenada usando hash.                                                       |
-| RN-UC01-07 | A senha original não deve ser armazenada em texto puro.                                        |
-| RN-UC01-08 | A senha e o hash da senha não devem ser retornados na resposta.                                |
-| RN-UC01-09 | O perfil do usuário deve ser válido.                                                           |
-| RN-UC01-10 | Usuários comuns não podem criar contas com perfil de ouvidor ou administrador sem autorização. |
-| RN-UC01-11 | No cadastro público, o perfil padrão do usuário deve ser manifestante.                         |
+| Código     | Regra                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------- |
+| RN-UC01-01 | O nome do usuário é obrigatório.                                                             |
+| RN-UC01-02 | O e-mail do usuário é obrigatório.                                                           |
+| RN-UC01-03 | A senha do usuário é obrigatória.                                                            |
+| RN-UC01-04 | O e-mail deve possuir formato válido.                                                        |
+| RN-UC01-05 | O e-mail deve ser único no sistema.                                                          |
+| RN-UC01-06 | A senha deve ser armazenada usando hash.                                                     |
+| RN-UC01-07 | A senha original não deve ser armazenada em texto puro.                                      |
+| RN-UC01-08 | A senha e o hash da senha não devem ser retornados na resposta.                              |
+| RN-UC01-09 | O perfil do usuário deve ser válido.                                                         |
+| RN-UC01-10 | Usuários comuns não podem criar contas com perfil de `ombudsman` ou `admin` sem autorização. |
+| RN-UC01-11 | No cadastro público, o perfil padrão do usuário deve ser `protester`.                        |
 
 ---
 
@@ -141,8 +141,8 @@ O campo `name` deve:
 - ser obrigatório;
 - não estar vazio;
 - não conter apenas espaços em branco;
-- possuir tamanho mínimo aceitável;
-- possuir tamanho máximo aceitável.
+- possuir no mínimo 5 caracteres após normalização;
+- conter ao menos duas palavras separadas por espaço.
 
 ### 10.2 E-mail
 
@@ -169,7 +169,11 @@ O campo `password` deve:
 
 - ser obrigatório;
 - não estar vazio;
-- possuir tamanho mínimo aceitável;
+- não conter apenas espaços em branco;
+- possuir no mínimo 8 caracteres;
+- conter ao menos 1 letra minúscula;
+- conter ao menos 1 letra maiúscula;
+- conter ao menos 1 número;
 - ser transformado em hash antes da persistência;
 - nunca ser retornado na resposta.
 
@@ -181,15 +185,15 @@ O perfil deve:
 - respeitar os perfis previstos pelo sistema;
 - impedir criação pública de perfis privilegiados.
 
-Perfis previstos:
+Perfis previstos no domínio:
 
-- manifestante
-- ouvidor
-- administrador
+- `protester`
+- `ombudsman`
+- `admin`
 
 No cadastro público, o perfil permitido deve ser:
 
-- manifestante
+- `protester`
 
 ---
 
@@ -202,7 +206,7 @@ No cadastro público, o perfil permitido deve ser:
 5. O sistema valida o formato do e-mail.
 6. O sistema verifica se o e-mail já está cadastrado.
 7. O sistema gera o hash da senha.
-8. O sistema define o perfil do usuário como manifestante.
+8. O sistema define o perfil do usuário como `protester`.
 9. O sistema registra o novo usuário.
 10. O sistema retorna confirmação de cadastro com os dados públicos do usuário.
 
@@ -245,13 +249,13 @@ O sistema deve rejeitar o cadastro e informar que a senha é inválida.
 ### FA05 - Tentativa de criar perfil privilegiado
 
 Condição:
-O usuário tenta se cadastrar como ouvidor ou administrador sem autorização.
+O usuário tenta se cadastrar com um perfil privilegiado, como `ombudsman` ou `admin`, sem autorização.
 
 Comportamento esperado:
 O sistema deve rejeitar a operação ou ignorar o perfil informado, garantindo que o cadastro público não crie usuário com perfil privilegiado.
 
 Decisão recomendada:
-Rejeitar a requisição, pois o campo `role` não deve fazer parte do cadastro público.
+Rejeitar a requisição, pois o campo `role` não deve fazer parte do cadastro público. No núcleo da aplicação, o caso de uso também força o perfil `protester`.
 
 ---
 
@@ -269,11 +273,14 @@ Corpo da resposta:
     "id": "user_123",
     "name": "Fabricio Fontenele",
     "email": "fabricio@email.com",
-    "role": "manifestante",
+    "role": "protester",
     "createdAt": "2026-05-07T21:30:00.000Z"
   }
 }
 ```
+
+Observação:
+No caso de uso, `createdAt` é um objeto `Date`. Na camada HTTP, ele tende a ser serializado como string ISO em JSON.
 
 Observações:
 
@@ -281,7 +288,7 @@ A resposta não deve retornar:
 
 ```json
 {
-  "password": "12345678",
+  "password": "Password1",
   "passwordHash": "hash_da_senha"
 }
 ```
@@ -304,7 +311,7 @@ Exemplo de resposta:
   "message": "Dados inválidos.",
   "fields": {
     "email": ["E-mail inválido."],
-    "password": ["A senha deve possuir no mínimo 8 caracteres."]
+    "password": ["A senha deve possuir no mínimo 8 caracteres, 1 letra minúscula, 1 letra maiúscula e 1 número."]
   }
 }
 ```
@@ -355,7 +362,7 @@ Request body:
 {
   "name": "Fabricio Fontenele",
   "email": "fabricio@email.com",
-  "password": "12345678"
+  "password": "Password1"
 }
 ```
 
@@ -367,7 +374,7 @@ Response body:
     "id": "user_123",
     "name": "Fabricio Fontenele",
     "email": "fabricio@email.com",
-    "role": "manifestante",
+    "role": "protester",
     "createdAt": "2026-05-07T21:30:00.000Z"
   }
 }
@@ -397,11 +404,11 @@ A feature será considerada concluída quando:
 - a senha for armazenada com hash;
 - a senha original não for salva;
 - a resposta não retornar senha nem hash;
-- o perfil padrão do cadastro público for manifestante;
+- o perfil padrão do cadastro público for `protester`;
 - o sistema impedir cadastro com e-mail duplicado;
 - o sistema impedir cadastro com e-mail inválido;
 - o sistema impedir cadastro com dados obrigatórios ausentes;
-- o sistema impedir criação pública de ouvidor ou administrador;
+- o sistema impedir criação pública de perfis `ombudsman` ou `admin`;
 - os casos de teste definidos estiverem passando.
 
 ---
@@ -420,7 +427,7 @@ Resultado esperado:
 
 - usuário criado;
 - e-mail salvo corretamente;
-- perfil definido como manifestante;
+- perfil definido como `protester`;
 - senha armazenada como hash;
 - senha não retornada.
 
@@ -533,37 +540,37 @@ Resultado esperado:
 
 - resposta sem `passwordHash`.
 
-#### CT-UC01-012 - Deve criar usuário com perfil padrão manifestante
+#### CT-UC01-012 - Deve criar usuário com perfil padrão protester
 
 Dado que o cadastro público foi solicitado,
 Quando o usuário for criado,
-Então o perfil atribuído deve ser manifestante.
+Então o perfil atribuído deve ser `protester`.
 
 Resultado esperado:
 
-- usuário criado com perfil manifestante.
+- usuário criado com perfil `protester`.
 
-#### CT-UC01-013 - Não deve permitir cadastro público como ouvidor
+#### CT-UC01-013 - Não deve permitir cadastro público como ombudsman
 
-Dado que o usuário tenta informar o perfil `ouvidor`,
+Dado que o usuário tenta informar o perfil `ombudsman`,
 Quando executar o cadastro público,
 Então o sistema deve rejeitar a operação.
 
 Resultado esperado:
 
 - erro de perfil inválido ou não autorizado;
-- usuário não criado como ouvidor.
+- usuário não criado como `ombudsman`.
 
-#### CT-UC01-014 - Não deve permitir cadastro público como administrador
+#### CT-UC01-014 - Não deve permitir cadastro público como admin
 
-Dado que o usuário tenta informar o perfil `administrador`,
+Dado que o usuário tenta informar o perfil `admin`,
 Quando executar o cadastro público,
 Então o sistema deve rejeitar a operação.
 
 Resultado esperado:
 
 - erro de perfil inválido ou não autorizado;
-- usuário não criado como administrador.
+- usuário não criado como `admin`.
 
 ### 18.2 Testes de rota HTTP
 
@@ -627,7 +634,7 @@ Resultado esperado:
 
 - registro criado;
 - e-mail salvo;
-- role salva;
+- role `protester` salva no cadastro público;
 - hash da senha salvo.
 
 #### CT-UC01-020 - Deve garantir unicidade de e-mail no banco
@@ -663,7 +670,7 @@ interface RegisterUserUseCaseOutput {
     id: string
     name: string
     email: string
-    role: 'manifestante'
+    role: UserRole
     createdAt: Date
   }
 }
@@ -674,7 +681,7 @@ Repositório:
 ```ts
 interface UsersRepository {
   findByEmail(email: string): Promise<User | null>
-  create(data: CreateUserData): Promise<User>
+  save(user: User): Promise<void>
 }
 ```
 

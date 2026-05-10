@@ -34,7 +34,7 @@ describe('RegisterUserUseCase', () => {
     validInput = {
       name: 'Maria Silva',
       email: 'maria@email.com',
-      password: '12345678',
+      password: 'Password1',
     }
 
     mockReset(usersRepository)
@@ -54,7 +54,7 @@ describe('RegisterUserUseCase', () => {
     })
 
     expect(usersRepository.findByEmail.mock.calls).toStrictEqual([['maria@email.com']])
-    expect(passwordHasher.hash.mock.calls).toStrictEqual([['12345678']])
+    expect(passwordHasher.hash.mock.calls).toStrictEqual([['Password1']])
     expect(usersRepository.save.mock.calls).toHaveLength(1)
 
     const saveCall = usersRepository.save.mock.calls[0] as [User] | undefined
@@ -77,7 +77,7 @@ describe('RegisterUserUseCase', () => {
     expect(result.user.name).toBe('Maria Silva')
     expect(result.user.email).toBe('maria@email.com')
     expect(result.user.role).toBe(UserRole.PROTESTER)
-    expect(result.user.createdAt).toBe(savedUser.createdAt.toString())
+    expect(result.user.createdAt).toBe(savedUser.createdAt)
   })
 
   it('throws when a user with the same email already exists', async () => {
@@ -120,6 +120,32 @@ describe('RegisterUserUseCase', () => {
       sut.execute({
         ...validInput,
         password: '123',
+      }),
+    ).rejects.toBeInstanceOf(InvalidPasswordError)
+
+    expect(usersRepository.findByEmail.mock.calls).toHaveLength(0)
+    expect(passwordHasher.hash.mock.calls).toHaveLength(0)
+    expect(usersRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('rejects passwords without the required complexity before touching repository or hasher', async () => {
+    await expect(
+      sut.execute({
+        ...validInput,
+        password: 'password1',
+      }),
+    ).rejects.toBeInstanceOf(InvalidPasswordError)
+
+    expect(usersRepository.findByEmail.mock.calls).toHaveLength(0)
+    expect(passwordHasher.hash.mock.calls).toHaveLength(0)
+    expect(usersRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('rejects passwords composed only of whitespace before touching repository or hasher', async () => {
+    await expect(
+      sut.execute({
+        ...validInput,
+        password: '        ',
       }),
     ).rejects.toBeInstanceOf(InvalidPasswordError)
 
