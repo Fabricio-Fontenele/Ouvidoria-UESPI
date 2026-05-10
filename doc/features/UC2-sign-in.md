@@ -152,15 +152,11 @@ Ambos devem ser considerados o mesmo e-mail para autenticação.
 O campo `password` deve:
 
 - ser obrigatório;
-- não estar vazio;
-- não conter apenas espaços em branco;
-- possuir no mínimo 8 caracteres;
-- conter ao menos 1 letra minúscula;
-- conter ao menos 1 letra maiúscula;
-- conter ao menos 1 número.
+- ser recebido exatamente como informado pelo usuário;
+- não ser normalizado, truncado ou transformado antes da comparação com o hash armazenado.
 
 Observação:
-No estado atual do domínio, o login reutiliza a mesma validação estrutural aplicada no cadastro por meio de `PlainPassword`.
+No estado atual da implementação, o caso de uso de login não aplica validação estrutural de senha; ele apenas encaminha a senha digitada ao `HashComparer`.
 
 ---
 
@@ -200,10 +196,10 @@ O sistema deve rejeitar a autenticação e informar que o e-mail é inválido.
 ### FA03 - Senha inválida
 
 Condição:
-O usuário informa uma senha que não atende às regras mínimas de validação estrutural.
+O usuário informa uma senha em formato estruturalmente fraco, mas diferente da senha cadastrada.
 
 Comportamento esperado:
-O sistema deve rejeitar a autenticação e informar que a senha é inválida.
+O sistema deve rejeitar a autenticação com erro de credenciais inválidas.
 
 ### FA04 - Usuário não encontrado
 
@@ -268,8 +264,7 @@ Exemplo de resposta:
   "error": "INVALID_INPUT",
   "message": "Dados inválidos.",
   "fields": {
-    "email": ["E-mail inválido."],
-    "password": ["A senha deve possuir no mínimo 8 caracteres, 1 letra minúscula, 1 letra maiúscula e 1 número."]
+    "email": ["E-mail inválido."]
   }
 }
 ```
@@ -335,8 +330,8 @@ A feature será considerada concluída quando:
 
 - for possível autenticar um usuário com e-mail e senha válidos;
 - o e-mail for normalizado antes da busca;
+- a senha for comparada exatamente como digitada pelo usuário;
 - o sistema impedir autenticação com e-mail inválido;
-- o sistema impedir autenticação com senha inválida;
 - o sistema impedir autenticação de usuário inexistente;
 - o sistema impedir autenticação com senha incorreta;
 - o token for gerado apenas após autenticação bem-sucedida;
@@ -375,17 +370,16 @@ Resultado esperado:
 - repositório não consultado;
 - token não gerado.
 
-#### CT-UC02-003 - Não deve autenticar usuário com senha inválida
+#### CT-UC02-003 - Deve encaminhar a senha exatamente como digitada ao comparador de hash
 
-Dado que o usuário informa uma senha inválida,
+Dado que existe usuário com o e-mail informado,
 Quando executar a autenticação,
-Então o sistema deve rejeitar a operação.
+Então o sistema deve chamar o comparador de hash com a senha exatamente como foi digitada.
 
 Resultado esperado:
 
-- erro de dados inválidos;
-- repositório não consultado;
-- token não gerado.
+- `HashComparer.compare` chamado com a senha em texto puro, preservando espaços e caracteres digitados;
+- `HashComparer.compare` chamado com o `passwordHash` do usuário.
 
 #### CT-UC02-004 - Não deve autenticar usuário inexistente
 
@@ -411,7 +405,7 @@ Resultado esperado:
 - comparador de hash chamado;
 - token não gerado.
 
-#### CT-UC02-006 - Deve chamar HashComparer com senha normalizada e hash salvo
+#### CT-UC02-006 - Deve chamar HashComparer com a senha informada e o hash salvo
 
 Dado que existe usuário com o e-mail informado,
 Quando executar a autenticação com senha válida,
@@ -419,7 +413,7 @@ Então o sistema deve chamar o comparador de hash com a senha informada e o hash
 
 Resultado esperado:
 
-- `HashComparer.compare` chamado com `PlainPassword`;
+- `HashComparer.compare` chamado com `string`;
 - `HashComparer.compare` chamado com o `passwordHash` do usuário.
 
 #### CT-UC02-007 - Deve chamar TokenGenerator com a identidade e o perfil do usuário
@@ -526,7 +520,7 @@ Serviço de comparação de hash:
 
 ```ts
 interface HashComparer {
-  compare(password: PlainPassword, hashedPassword: string): Promise<boolean>
+  compare(password: string, hashedPassword: string): Promise<boolean>
 }
 ```
 
