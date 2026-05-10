@@ -5,7 +5,7 @@ import { PlainPassword } from '#src/domain/value-objects/password.js'
 
 import { UserAlreadyExistsError } from './errors/user-already-exists-error.js'
 import type { PasswordHasher } from '../../cryptography/password-hasher.js'
-import type { UserRepository } from '../../repositories/users-repository.js'
+import type { UsersRepository } from '../../repositories/users-repository.js'
 import type { UseCase } from '../use-case.js'
 
 interface RegisterUserInput {
@@ -26,7 +26,7 @@ interface RegisterUserOutput {
 
 export class RegisterUserUseCase implements UseCase<RegisterUserInput, RegisterUserOutput> {
   constructor(
-    private readonly usersRepository: UserRepository,
+    private readonly usersRepository: UsersRepository,
     private readonly passwordHasher: PasswordHasher,
   ) {}
 

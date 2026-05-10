@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { PasswordHasher } from '#src/application/cryptography/password-hasher.js'
-import type { UserRepository } from '#src/application/repositories/users-repository.js'
+import type { UsersRepository } from '#src/application/repositories/users-repository.js'
 import { UserAlreadyExistsError } from '#src/application/use-cases/register-user/errors/user-already-exists-error.js'
 import { RegisterUserUseCase } from '#src/application/use-cases/register-user/register-user.use-case.js'
 import { User, UserRole } from '#src/domain/entities/user.js'
@@ -11,7 +11,7 @@ import { InvalidNameError, Name } from '#src/domain/value-objects/name.js'
 import { InvalidPasswordError } from '#src/domain/value-objects/password.js'
 
 describe('RegisterUserUseCase', () => {
-  let usersRepository: DeepMockProxy<UserRepository>
+  let usersRepository: DeepMockProxy<UsersRepository>
   let passwordHasher: DeepMockProxy<PasswordHasher>
   let sut: RegisterUserUseCase
   let validInput: {
@@ -29,7 +29,7 @@ describe('RegisterUserUseCase', () => {
     })
 
   beforeEach(() => {
-    usersRepository = mockDeep<UserRepository>()
+    usersRepository = mockDeep<UsersRepository>()
     passwordHasher = mockDeep<PasswordHasher>()
     validInput = {
       name: 'Maria Silva',
