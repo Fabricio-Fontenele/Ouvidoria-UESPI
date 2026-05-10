@@ -19,8 +19,8 @@ interface RegisterUserOutput {
     id: string
     name: string
     email: string
-    role: string
-    createdAt: string
+    role: UserRole
+    createdAt: Date
   }
 }
 
@@ -57,8 +57,8 @@ export class RegisterUserUseCase implements UseCase<RegisterUserInput, RegisterU
         id: user.id.toString(),
         name: user.name.getValue(),
         email: user.email.getValue(),
-        role: user.role.toString(),
-        createdAt: user.createdAt.toString(),
+        role: user.role,
+        createdAt: user.createdAt,
       },
     }
   }
