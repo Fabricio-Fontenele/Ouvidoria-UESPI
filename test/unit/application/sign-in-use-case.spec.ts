@@ -8,7 +8,6 @@ import { SignInUseCase, type SignInInput } from '#src/application/use-cases/sign
 import { User, UserRole } from '#src/domain/entities/user.js'
 import { Email, InvalidEmailError } from '#src/domain/value-objects/email.js'
 import { Name } from '#src/domain/value-objects/name.js'
-import { InvalidPasswordError } from '#src/domain/value-objects/password.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 describe('SignInUseCase', () => {
@@ -47,7 +46,7 @@ describe('SignInUseCase', () => {
     sut = new SignInUseCase(userRepository, hashComparer, tokenGenerator)
   })
 
-  it('signs in with normalized email and returns a token', async () => {
+  it('signs in with normalized email, preserves the typed password and returns a token', async () => {
     const user = buildUser()
 
     userRepository.findByEmail.mockResolvedValue(user)
@@ -57,12 +56,11 @@ describe('SignInUseCase', () => {
     const result = await sut.execute({
       ...input,
       email: '  USER@example.com  ',
+      password: '  Password123  ',
     })
 
     expect(userRepository.findByEmail.mock.calls).toStrictEqual([['user@example.com']])
-    expect(hashComparer.compare.mock.calls).toHaveLength(1)
-    expect(hashComparer.compare.mock.calls[0]?.[0].getValue()).toBe('Password123')
-    expect(hashComparer.compare.mock.calls[0]?.[1]).toBe('hashed-password')
+    expect(hashComparer.compare.mock.calls).toStrictEqual([['  Password123  ', 'hashed-password']])
     expect(tokenGenerator.generate.mock.calls).toStrictEqual([
       [
         {
@@ -100,19 +98,6 @@ describe('SignInUseCase', () => {
         email: 'invalid-email',
       }),
     ).rejects.toBeInstanceOf(InvalidEmailError)
-
-    expect(userRepository.findByEmail.mock.calls).toHaveLength(0)
-    expect(hashComparer.compare.mock.calls).toHaveLength(0)
-    expect(tokenGenerator.generate.mock.calls).toHaveLength(0)
-  })
-
-  it('rejects invalid passwords before touching dependencies', async () => {
-    await expect(
-      sut.execute({
-        ...input,
-        password: '123',
-      }),
-    ).rejects.toBeInstanceOf(InvalidPasswordError)
 
     expect(userRepository.findByEmail.mock.calls).toHaveLength(0)
     expect(hashComparer.compare.mock.calls).toHaveLength(0)
