@@ -39,7 +39,7 @@ Permitir que o manifestante consulte suas manifestações, visualize os detalhes
 
 Esta feature deve permitir:
 
-- listar manifestações identificadas de um manifestante por `authorUserId`;
+- listar manifestações identificadas de um manifestante por `userId`;
 - paginar a listagem por página;
 - consultar os detalhes de uma manifestação específica;
 - validar se a manifestação pertence ao `userId` solicitante;
@@ -97,16 +97,16 @@ Após operações bem-sucedidas:
 
 ### 8.1 Listagem das manifestações do usuário
 
-| Campo        | Tipo   | Obrigatório | Descrição                                       |
-| ------------ | ------ | ----------- | ----------------------------------------------- |
-| authorUserId | string | Sim         | Identificador do autor das manifestações.       |
-| page         | number | Sim         | Número da página da listagem, iniciando em `1`. |
+| Campo  | Tipo   | Obrigatório | Descrição                                       |
+| ------ | ------ | ----------- | ----------------------------------------------- |
+| userId | string | Sim         | Identificador do usuário autenticado no fluxo.  |
+| page   | number | Sim         | Número da página da listagem, iniciando em `1`. |
 
 ### Exemplo de entrada
 
 ```json
 {
-  "authorUserId": "user-1",
+  "userId": "user-1",
   "page": 1
 }
 ```
@@ -147,19 +147,20 @@ Após operações bem-sucedidas:
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                         |
-| ---------- | --------------------------------------------------------------------------------------------- |
-| RN-UC05-01 | O sistema deve listar apenas manifestações pertencentes ao `authorUserId` informado.          |
-| RN-UC05-02 | A paginação da listagem deve aceitar somente páginas maiores ou iguais a `1`.                 |
-| RN-UC05-03 | A consulta detalhada deve falhar quando a manifestação não existir.                           |
-| RN-UC05-04 | A consulta detalhada deve falhar quando a manifestação não pertencer ao `userId` autenticado. |
-| RN-UC05-05 | Manifestações anônimas não devem ser consultadas por este fluxo identificado.                 |
-| RN-UC05-06 | O detalhamento deve retornar status atual, histórico e mensagens associadas à manifestação.   |
-| RN-UC05-07 | O envio de mensagem deve exigir conteúdo textual não vazio.                                   |
-| RN-UC05-08 | O envio de mensagem deve falhar quando a manifestação não pertencer ao `userId` autenticado.  |
-| RN-UC05-09 | Apenas manifestações abertas para interação podem receber novas mensagens.                    |
-| RN-UC05-10 | Manifestações `finalized` e `canceled` não podem receber novas mensagens.                     |
-| RN-UC05-11 | Cada mensagem registrada deve manter rastreabilidade de remetente e data de criação.          |
+| Código     | Regra                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| RN-UC05-01 | O sistema deve listar apenas manifestações pertencentes ao `userId` informado.                               |
+| RN-UC05-02 | A paginação da listagem deve aceitar somente páginas maiores ou iguais a `1`.                                |
+| RN-UC05-03 | A consulta detalhada deve falhar quando a manifestação não existir.                                          |
+| RN-UC05-04 | A consulta detalhada deve falhar quando a manifestação não pertencer ao `userId` autenticado.                |
+| RN-UC05-05 | Manifestações anônimas não devem ser consultadas por este fluxo identificado.                                |
+| RN-UC05-06 | O detalhamento deve retornar status atual, histórico e mensagens associadas à manifestação.                  |
+| RN-UC05-07 | O envio de mensagem deve exigir conteúdo textual não vazio.                                                  |
+| RN-UC05-08 | O envio de mensagem deve falhar quando a manifestação não pertencer ao `userId` autenticado.                 |
+| RN-UC05-09 | Apenas manifestações abertas para interação podem receber novas mensagens.                                   |
+| RN-UC05-10 | Manifestações `finalized` e `canceled` não podem receber novas mensagens.                                    |
+| RN-UC05-11 | Cada mensagem registrada deve manter rastreabilidade de remetente e data de criação.                         |
+| RN-UC05-12 | Regras de autoria, anonimato e abertura para interação devem ficar encapsuladas na entidade `Manifestation`. |
 
 ---
 
@@ -408,9 +409,9 @@ Erro esperado:
 
 #### CT-UC05-001 - Deve listar manifestações do usuário com a página solicitada
 
-- dado `authorUserId` válido e `page` igual a `2`;
+- dado `userId` válido e `page` igual a `2`;
 - quando o caso de uso de listagem for executado;
-- então o repositório deve ser chamado com `authorUserId` e `{ page: 2 }`;
+- então o repositório deve ser chamado com `userId` e `{ page: 2 }`;
 - e a lista retornada deve ser devolvida sem alteração.
 
 #### CT-UC05-002 - Não deve listar com página inválida
@@ -475,7 +476,7 @@ Erro esperado:
 
 ```ts
 export interface ListUserManifestationsInput {
-  authorUserId: string
+  userId: string
   page: number
 }
 
@@ -490,8 +491,22 @@ export interface AddManifestationMessageInput {
   content: string
 }
 
+export class Manifestation extends Entity<ManifestationProps> {
+  static open(props: OpenManifestationProps, id?: UniqueEntityId): Manifestation
+  static restore(props: ManifestationProps, id: UniqueEntityId): Manifestation
+  canReceiveMessages(): boolean
+  isAnonymous(): boolean
+  belongsTo(userId: UniqueEntityId): boolean
+}
+
 export class ManifestationMessage extends Entity<ManifestationMessageProps> {
   static create(props: CreateManifestationMessageProps, id?: UniqueEntityId): ManifestationMessage
+}
+
+export interface ManifestationsRepository {
+  findById(manifestationId: string): Promise<Manifestation | null>
+  findDetailsById(manifestationId: string): Promise<ManifestationDetailsDTO | null>
+  findManyByAuthorUserId(authorUserId: string, paginationParams: PaginationParams): Promise<ManifestationListItemDTO[]>
 }
 
 export interface ManifestationInteractionsRepository {
@@ -504,7 +519,12 @@ export interface ManifestationInteractionsRepository {
 ## 19. Observações de implementação
 
 - no núcleo atual, a listagem paginada utiliza apenas `page`; `pageSize` ainda não faz parte do contrato;
+- o caso de uso de listagem recebe `userId` como entrada de aplicação, enquanto o repositório continua expressando o critério de persistência por `authorUserId`;
 - o detalhamento continua modelado como DTO de leitura enriquecido; histórico permanece como projeção de leitura e mensagem já possui entidade própria no domínio;
+- a listagem retorna `ManifestationListItemDTO`, mantendo consistência com a separação entre comportamento de domínio e projeções de leitura;
+- o envio de mensagem carrega a entidade `Manifestation` por `findById()` para aplicar regras de domínio como autoria, anonimato e abertura para interação;
+- `findDetailsById()` permanece voltado ao caso de uso de visualização, enquanto `findById()` atende fluxos que dependem de comportamento do agregado;
+- erros compartilhados de acesso à manifestação devem permanecer em pasta comum para evitar dependência entre casos de uso;
 - o envio de mensagem utiliza a entidade `ManifestationMessage` e repositório próprio de interação para evitar acoplamento excessivo em `ManifestationsRepository`;
 - `ManifestationMessageDTO` permanece como contrato de saída e leitura, não como modelo principal de domínio;
 - a implementação concreta de persistência ainda precisa materializar os contratos desta feature;
