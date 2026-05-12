@@ -1,11 +1,6 @@
 import type { ManifestationMessageDTO } from '#src/application/dto/manifestation-query-dtos.js'
-
-export interface AddManifestationMessageParams {
-  manifestationId: string
-  senderUserId: string
-  content: string
-}
+import type { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
 
 export interface ManifestationInteractionsRepository {
-  addMessage(params: AddManifestationMessageParams): Promise<ManifestationMessageDTO>
+  addMessage(message: ManifestationMessage): Promise<ManifestationMessageDTO>
 }
