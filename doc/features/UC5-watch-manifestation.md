@@ -86,7 +86,7 @@ Para executar o acompanhamento:
 
 Após operações bem-sucedidas:
 
-- a listagem retorna apenas manifestações do autor solicitado;
+- a listagem retorna apenas manifestações do usuário solicitado;
 - a consulta de detalhes retorna o estado atual da manifestação com histórico e mensagens;
 - a mensagem enviada fica registrada com identidade própria, data e remetente;
 - o histórico de acompanhamento permanece rastreável.
@@ -237,7 +237,7 @@ O sistema deve falhar com erro de manifestação não encontrada.
 ### FA03 - Manifestação sem autorização de acesso
 
 Condição:
-A manifestação existe, mas `authorUserId` é diferente do `userId` informado.
+A manifestação existe, mas a autoria identificada não corresponde ao `userId` informado.
 
 Comportamento esperado:
 O sistema deve bloquear o acesso aos detalhes e o envio de mensagem.
@@ -245,7 +245,7 @@ O sistema deve bloquear o acesso aos detalhes e o envio de mensagem.
 ### FA04 - Manifestação anônima neste fluxo
 
 Condição:
-A manifestação existe, mas seu `authorUserId` é `null`.
+A manifestação existe, mas sua autoria identificada está ausente (`authorUserId` igual a `null`).
 
 Comportamento esperado:
 O sistema deve bloquear o acesso por este fluxo identificado.
@@ -423,7 +423,7 @@ Erro esperado:
 
 #### CT-UC05-003 - Deve retornar detalhes da manifestação do próprio usuário
 
-- dado `manifestationId` existente e `authorUserId` igual ao `userId`;
+- dado `manifestationId` existente e autoria identificada igual ao `userId`;
 - quando o caso de uso de detalhamento for executado;
 - então deve retornar os detalhes, o histórico e as mensagens da manifestação.
 
@@ -435,7 +435,7 @@ Erro esperado:
 
 #### CT-UC05-005 - Não deve retornar detalhes de manifestação de outro usuário
 
-- dado `manifestationId` existente com `authorUserId` diferente do `userId`;
+- dado `manifestationId` existente com autoria identificada diferente do `userId`;
 - quando o caso de uso de detalhamento for executado;
 - então deve lançar `NotAllowedToAccessManifestationError`.
 
@@ -447,13 +447,13 @@ Erro esperado:
 
 #### CT-UC05-007 - Não deve retornar detalhes de manifestação anônima
 
-- dado `manifestationId` existente com `authorUserId` igual a `null`;
+- dado `manifestationId` existente com autoria identificada ausente (`authorUserId` igual a `null`);
 - quando o caso de uso de detalhamento for executado;
 - então deve lançar `NotAllowedToAccessManifestationError`.
 
 #### CT-UC05-008 - Não deve registrar mensagem em manifestação anônima
 
-- dado `manifestationId` existente com `authorUserId` igual a `null`;
+- dado `manifestationId` existente com autoria identificada ausente (`authorUserId` igual a `null`);
 - quando o caso de uso de envio de mensagem for executado;
 - então deve lançar `NotAllowedToAccessManifestationError`.
 
