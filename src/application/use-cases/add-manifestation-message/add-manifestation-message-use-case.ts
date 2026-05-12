@@ -1,15 +1,14 @@
 import type { ManifestationMessageDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationInteractionsRepository } from '#src/application/repositories/manifestation-interactions-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
+import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
 import { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
-import { ManifestationStatus } from '#src/domain/entities/manifestation.js'
 import { ManifestationMessageContent } from '#src/domain/value-objects/manifestation-message-content.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
-import { ManifestationInteractionNotAllowedError } from './errors/manifestation-interaction-not-allowed-error.js'
-import { ManifestationNotFoundError } from '../get-manifestation-details/errors/manifestation-not-found-error.js'
-import { NotAllowedToAccessManifestationError } from '../get-manifestation-details/errors/not-allowed-to-access-manifestation-error.js'
 import type { UseCase } from '../use-case.js'
+import { ManifestationInteractionNotAllowedError } from './errors/manifestation-interaction-not-allowed-error.js'
 
 interface AddManifestationMessageInput {
   manifestationId: string
@@ -36,32 +35,30 @@ export class AddManifestationMessageUseCase implements UseCase<
     content,
   }: AddManifestationMessageInput): Promise<AddManifestationMessageOutput> {
     const normalizedContent = ManifestationMessageContent.create(content)
-    const manifestation = await this.manifestationsRepository.findDetailsById(manifestationId)
+    const senderUserId = new UniqueEntityId(userId)
+    const targetManifestationId = new UniqueEntityId(manifestationId)
+    const manifestation = await this.manifestationsRepository.findById(manifestationId)
 
     if (!manifestation) {
       throw new ManifestationNotFoundError()
     }
 
-    if (manifestation.authorUserId !== userId) {
+    if (!manifestation.belongsTo(senderUserId)) {
       throw new NotAllowedToAccessManifestationError()
     }
 
-    if (!this.isOpenForInteraction(manifestation.status)) {
+    if (!manifestation.canReceiveMessages()) {
       throw new ManifestationInteractionNotAllowedError()
     }
 
     const message = await this.manifestationInteractionsRepository.addMessage(
       ManifestationMessage.create({
-        manifestationId: new UniqueEntityId(manifestationId),
-        senderUserId: new UniqueEntityId(userId),
+        manifestationId: targetManifestationId,
+        senderUserId,
         content: normalizedContent,
       }),
     )
 
     return { message }
-  }
-
-  private isOpenForInteraction(status: ManifestationStatus): boolean {
-    return status !== ManifestationStatus.CANCELED && status !== ManifestationStatus.FINALIZED
   }
 }
