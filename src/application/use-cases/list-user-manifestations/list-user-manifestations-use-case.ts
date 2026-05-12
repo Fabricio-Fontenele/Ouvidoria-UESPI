@@ -1,16 +1,16 @@
+import type { ManifestationListItemDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
-import type { Manifestation } from '#src/domain/entities/manifestation.js'
 
 import type { UseCase } from '../use-case.js'
 import { InvalidPageNumberError } from './errors/invalid-page-number-error.js'
 
 interface ListUserManifestationsInput {
-  authorUserId: string
+  userId: string
   page: number
 }
 
 interface ListUserManifestationsOutput {
-  manifestations: Manifestation[]
+  manifestations: ManifestationListItemDTO[]
 }
 
 export class ListUserManifestationsUseCase implements UseCase<
@@ -19,13 +19,13 @@ export class ListUserManifestationsUseCase implements UseCase<
 > {
   constructor(private readonly manifestationsRepository: ManifestationsRepository) {}
 
-  async execute({ authorUserId, page }: ListUserManifestationsInput): Promise<ListUserManifestationsOutput> {
+  async execute({ userId, page }: ListUserManifestationsInput): Promise<ListUserManifestationsOutput> {
     if (page < 1) {
       throw new InvalidPageNumberError()
     }
 
     const paginationParams = { page }
-    const manifestations = await this.manifestationsRepository.findManyByAuthorUserId(authorUserId, paginationParams)
+    const manifestations = await this.manifestationsRepository.findManyByAuthorUserId(userId, paginationParams)
 
     return { manifestations }
   }
