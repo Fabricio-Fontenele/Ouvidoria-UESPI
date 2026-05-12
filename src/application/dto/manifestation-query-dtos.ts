@@ -1,5 +1,17 @@
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
+export interface ManifestationListItemDTO {
+  id: string
+  protocol: string
+  type: ManifestationType
+  status: ManifestationStatus
+  campusId: string
+  administrativeUnitId: string
+  description: string
+  authorUserId: string | null
+  createdAt: Date
+}
+
 export interface ManifestationHistoryEntryDTO {
   description: string
   createdAt: Date
