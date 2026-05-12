@@ -44,7 +44,7 @@ Esta feature deve permitir:
 - consultar os detalhes de uma manifestação específica;
 - validar se a manifestação pertence ao `userId` solicitante;
 - exibir status atual, histórico e mensagens já registradas;
-- registrar nova mensagem do manifestante em manifestação autorizada;
+- registrar nova mensagem do manifestante como entidade de domínio em manifestação autorizada;
 - bloquear o envio de mensagem para manifestação finalizada ou cancelada.
 
 ### 4.2 Não incluído
@@ -88,7 +88,7 @@ Após operações bem-sucedidas:
 
 - a listagem retorna apenas manifestações do autor solicitado;
 - a consulta de detalhes retorna o estado atual da manifestação com histórico e mensagens;
-- a mensagem enviada fica registrada com data e remetente;
+- a mensagem enviada fica registrada com identidade própria, data e remetente;
 - o histórico de acompanhamento permanece rastreável.
 
 ---
@@ -442,7 +442,7 @@ Erro esperado:
 
 - dado `manifestationId` existente, pertencente ao usuário e com status aberto;
 - quando o caso de uso de envio de mensagem for executado com conteúdo válido;
-- então deve persistir a mensagem normalizada e retorná-la.
+- então deve criar e persistir a entidade de mensagem com conteúdo normalizado e retorná-la.
 
 #### CT-UC05-007 - Não deve retornar detalhes de manifestação anônima
 
@@ -489,6 +489,14 @@ export interface AddManifestationMessageInput {
   userId: string
   content: string
 }
+
+export class ManifestationMessage extends Entity<ManifestationMessageProps> {
+  static create(props: CreateManifestationMessageProps, id?: UniqueEntityId): ManifestationMessage
+}
+
+export interface ManifestationInteractionsRepository {
+  addMessage(message: ManifestationMessage): Promise<ManifestationMessageDTO>
+}
 ```
 
 ---
@@ -496,8 +504,9 @@ export interface AddManifestationMessageInput {
 ## 19. Observações de implementação
 
 - no núcleo atual, a listagem paginada utiliza apenas `page`; `pageSize` ainda não faz parte do contrato;
-- o detalhamento foi modelado como DTO de leitura enriquecido, pois o domínio ainda não possui entidades próprias para histórico e mensagem;
-- o envio de mensagem utiliza repositório próprio de interação para evitar acoplamento excessivo em `ManifestationsRepository`;
+- o detalhamento continua modelado como DTO de leitura enriquecido; histórico permanece como projeção de leitura e mensagem já possui entidade própria no domínio;
+- o envio de mensagem utiliza a entidade `ManifestationMessage` e repositório próprio de interação para evitar acoplamento excessivo em `ManifestationsRepository`;
+- `ManifestationMessageDTO` permanece como contrato de saída e leitura, não como modelo principal de domínio;
 - a implementação concreta de persistência ainda precisa materializar os contratos desta feature;
 - a consulta de manifestações anônimas por protocolo deve ser tratada por caso de uso separado.
 

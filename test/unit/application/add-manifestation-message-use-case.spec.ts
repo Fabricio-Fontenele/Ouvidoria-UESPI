@@ -7,6 +7,7 @@ import { AddManifestationMessageUseCase } from '#src/application/use-cases/add-m
 import { ManifestationInteractionNotAllowedError } from '#src/application/use-cases/add-manifestation-message/errors/manifestation-interaction-not-allowed-error.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/get-manifestation-details/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/get-manifestation-details/errors/not-allowed-to-access-manifestation-error.js'
+import { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { InvalidManifestationMessageContentError } from '#src/domain/value-objects/manifestation-message-content.js'
 
@@ -63,16 +64,17 @@ describe('AddManifestationMessageUseCase', () => {
       content: '  Can you share an update?  ',
     })
 
+    const addMessageCall = manifestationInteractionsRepository.addMessage.mock.calls[0] as
+      | [ManifestationMessage]
+      | undefined
+    const savedMessage = addMessageCall?.[0]
+
     expect(manifestationsRepository.findDetailsById.mock.calls).toStrictEqual([['manifestation-1']])
-    expect(manifestationInteractionsRepository.addMessage.mock.calls).toStrictEqual([
-      [
-        {
-          manifestationId: 'manifestation-1',
-          senderUserId: 'user-1',
-          content: 'Can you share an update?',
-        },
-      ],
-    ])
+    expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(1)
+    expect(savedMessage).toBeInstanceOf(ManifestationMessage)
+    expect(savedMessage?.manifestationId.toValue()).toBe('manifestation-1')
+    expect(savedMessage?.senderUserId.toValue()).toBe('user-1')
+    expect(savedMessage?.content.getValue()).toBe('Can you share an update?')
     expect(result).toStrictEqual({ message })
   })
 
@@ -183,14 +185,15 @@ describe('AddManifestationMessageUseCase', () => {
       }),
     ).rejects.toThrow(repositoryError)
 
-    expect(manifestationInteractionsRepository.addMessage.mock.calls).toStrictEqual([
-      [
-        {
-          manifestationId: 'manifestation-1',
-          senderUserId: 'user-1',
-          content: 'Can you share an update?',
-        },
-      ],
-    ])
+    const addMessageCall = manifestationInteractionsRepository.addMessage.mock.calls[0] as
+      | [ManifestationMessage]
+      | undefined
+    const savedMessage = addMessageCall?.[0]
+
+    expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(1)
+    expect(savedMessage).toBeInstanceOf(ManifestationMessage)
+    expect(savedMessage?.manifestationId.toValue()).toBe('manifestation-1')
+    expect(savedMessage?.senderUserId.toValue()).toBe('user-1')
+    expect(savedMessage?.content.getValue()).toBe('Can you share an update?')
   })
 })
