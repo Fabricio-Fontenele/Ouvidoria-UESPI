@@ -54,6 +54,26 @@ export class Manifestation extends Entity<ManifestationProps> {
     )
   }
 
+  static restore(props: ManifestationProps, id: UniqueEntityId): Manifestation {
+    return new Manifestation(props, id)
+  }
+
+  canReceiveMessages(): boolean {
+    return this.props.status !== ManifestationStatus.CANCELED && this.props.status !== ManifestationStatus.FINALIZED
+  }
+
+  isAnonymous(): boolean {
+    return this.props.authorUserId === null
+  }
+
+  belongsTo(userId: UniqueEntityId): boolean {
+    if (this.props.authorUserId === null) {
+      return false
+    }
+
+    return this.props.authorUserId.equals(userId)
+  }
+
   get protocol(): Protocol {
     return this.props.protocol
   }

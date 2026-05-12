@@ -3,11 +3,11 @@ import type {
   ManifestationMessageDTO,
 } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
+import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
 import type { UseCase } from '../use-case.js'
-import { ManifestationNotFoundError } from './errors/manifestation-not-found-error.js'
-import { NotAllowedToAccessManifestationError } from './errors/not-allowed-to-access-manifestation-error.js'
 
 interface GetManifestationDetailsInput {
   manifestationId: string

@@ -2,9 +2,9 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { ManifestationDetailsDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
-import { ManifestationNotFoundError } from '#src/application/use-cases/get-manifestation-details/errors/manifestation-not-found-error.js'
-import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/get-manifestation-details/errors/not-allowed-to-access-manifestation-error.js'
 import { GetManifestationDetailsUseCase } from '#src/application/use-cases/get-manifestation-details/get-manifestation-details-use-case.js'
+import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
+import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
 describe('GetManifestationDetailsUseCase', () => {

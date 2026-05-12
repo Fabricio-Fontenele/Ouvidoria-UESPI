@@ -1,6 +1,6 @@
 export class NotAllowedToAccessManifestationError extends Error {
   constructor() {
-    super('You are not allowed to access this manifestation.')
+    super('Not allowed to access manifestation.')
     this.name = 'NotAllowedToAccessManifestationError'
   }
 }
