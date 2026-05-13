@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { Manifestation, ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
+import {
+  Manifestation,
+  ManifestationStatus,
+  ManifestationStatusTransitionNotAllowedError,
+  ManifestationType,
+} from '#src/domain/entities/manifestation.js'
 import { AdministrativeUnitId } from '#src/domain/value-objects/administrative-unit-id.js'
 import { CampusId } from '#src/domain/value-objects/campus-id.js'
 import { ManifestationDescription } from '#src/domain/value-objects/manifestation-description.js'
@@ -50,5 +55,74 @@ describe('Manifestation', () => {
     expect(manifestation.belongsTo(new UniqueEntityId('user-1'))).toBe(true)
     expect(manifestation.belongsTo(new UniqueEntityId('user-2'))).toBe(false)
     expect(buildManifestation({ authorUserId: null }).belongsTo(new UniqueEntityId('user-1'))).toBe(false)
+  })
+
+  it('records an administrative answer by transitioning open manifestations to answered', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    manifestation.recordAdministrativeAnswer()
+
+    expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
+  })
+
+  it('keeps answered manifestations as answered when receiving a new administrative answer', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.ANSWERED })
+
+    manifestation.recordAdministrativeAnswer()
+
+    expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
+  })
+
+  it('refuses administrative answers on terminal manifestations', () => {
+    const finalized = buildManifestation({ status: ManifestationStatus.FINALIZED })
+    const canceled = buildManifestation({ status: ManifestationStatus.CANCELED })
+
+    expect(() => {
+      finalized.recordAdministrativeAnswer()
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(() => {
+      canceled.recordAdministrativeAnswer()
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(finalized.status).toBe(ManifestationStatus.FINALIZED)
+    expect(canceled.status).toBe(ManifestationStatus.CANCELED)
+  })
+
+  it('transitions status administratively between open states', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    manifestation.transitionStatusAdministratively(ManifestationStatus.ANSWERED)
+    expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
+
+    manifestation.transitionStatusAdministratively(ManifestationStatus.IN_ANALYSIS)
+    expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
+  })
+
+  it('finalizes and cancels manifestations administratively', () => {
+    const finalizing = buildManifestation({ status: ManifestationStatus.ANSWERED })
+    const canceling = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    finalizing.transitionStatusAdministratively(ManifestationStatus.FINALIZED)
+    canceling.transitionStatusAdministratively(ManifestationStatus.CANCELED)
+
+    expect(finalizing.status).toBe(ManifestationStatus.FINALIZED)
+    expect(canceling.status).toBe(ManifestationStatus.CANCELED)
+  })
+
+  it('refuses transitions out of terminal states', () => {
+    const finalized = buildManifestation({ status: ManifestationStatus.FINALIZED })
+
+    expect(() => {
+      finalized.transitionStatusAdministratively(ManifestationStatus.IN_ANALYSIS)
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(finalized.status).toBe(ManifestationStatus.FINALIZED)
+  })
+
+  it('refuses transitions to the same status', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    expect(() => {
+      manifestation.transitionStatusAdministratively(ManifestationStatus.IN_ANALYSIS)
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
   })
 })
