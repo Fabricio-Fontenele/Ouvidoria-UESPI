@@ -19,6 +19,13 @@ export enum ManifestationStatus {
   FINALIZED = 'finalized',
 }
 
+export class ManifestationStatusTransitionNotAllowedError extends Error {
+  constructor(current: ManifestationStatus, attempted: ManifestationStatus) {
+    super(`Cannot transition manifestation status from ${current} to ${attempted}.`)
+    this.name = 'ManifestationStatusTransitionNotAllowedError'
+  }
+}
+
 interface ManifestationProps {
   protocol: Protocol
   type: ManifestationType
@@ -72,6 +79,26 @@ export class Manifestation extends Entity<ManifestationProps> {
     }
 
     return this.props.authorUserId.equals(userId)
+  }
+
+  recordAdministrativeAnswer(): void {
+    if (!this.canReceiveMessages()) {
+      throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.ANSWERED)
+    }
+
+    this.props.status = ManifestationStatus.ANSWERED
+  }
+
+  transitionStatusAdministratively(target: ManifestationStatus): void {
+    if (!this.canReceiveMessages()) {
+      throw new ManifestationStatusTransitionNotAllowedError(this.props.status, target)
+    }
+
+    if (this.props.status === target) {
+      throw new ManifestationStatusTransitionNotAllowedError(this.props.status, target)
+    }
+
+    this.props.status = target
   }
 
   get protocol(): Protocol {
