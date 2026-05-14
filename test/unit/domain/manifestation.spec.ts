@@ -125,4 +125,35 @@ describe('Manifestation', () => {
     }).toThrow(ManifestationStatusTransitionNotAllowedError)
     expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
   })
+
+  it('finalizes by author only from answered manifestations', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.ANSWERED })
+
+    manifestation.finalizeByAuthor()
+
+    expect(manifestation.status).toBe(ManifestationStatus.FINALIZED)
+  })
+
+  it('refuses author finalization from in-analysis manifestations', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    expect(() => {
+      manifestation.finalizeByAuthor()
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
+  })
+
+  it('refuses author finalization from terminal manifestations', () => {
+    const finalized = buildManifestation({ status: ManifestationStatus.FINALIZED })
+    const canceled = buildManifestation({ status: ManifestationStatus.CANCELED })
+
+    expect(() => {
+      finalized.finalizeByAuthor()
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(() => {
+      canceled.finalizeByAuthor()
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(finalized.status).toBe(ManifestationStatus.FINALIZED)
+    expect(canceled.status).toBe(ManifestationStatus.CANCELED)
+  })
 })
