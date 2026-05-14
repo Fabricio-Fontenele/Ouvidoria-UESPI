@@ -101,6 +101,14 @@ export class Manifestation extends Entity<ManifestationProps> {
     this.props.status = target
   }
 
+  finalizeByAuthor(): void {
+    if (this.props.status !== ManifestationStatus.ANSWERED) {
+      throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.FINALIZED)
+    }
+
+    this.props.status = ManifestationStatus.FINALIZED
+  }
+
   get protocol(): Protocol {
     return this.props.protocol
   }
