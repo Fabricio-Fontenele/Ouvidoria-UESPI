@@ -243,8 +243,8 @@ A guarda fica encapsulada na entidade `Manifestation` por meio dos métodos `rec
 
 No recorte atual do núcleo:
 
-- o status é persistido antes da gravação da mensagem;
-- a implementação ainda não materializa transação de infraestrutura.
+- a resposta administrativa delega a persistência do novo status e da mensagem a um contrato atômico de aplicação;
+- a implementação concreta de infraestrutura continua responsável por materializar a fronteira transacional única.
 
 Diretriz para a integração futura:
 
@@ -304,7 +304,7 @@ O sistema deve rejeitar a listagem antes de consultar o repositório.
 ### FA02 - Ator sem autorização administrativa
 
 Condição:
-O `requesterUserId` não localiza nenhum usuário ou localiza usuário com perfil `protester`.
+O `requesterUserId` não localiza nenhum usuário ou localiza usuário com perfil `manifestant`.
 
 Comportamento esperado:
 O sistema deve bloquear a operação antes de tocar a manifestação.
@@ -521,7 +521,7 @@ Erro esperado:
 
 #### CT-UC07-004 - Não deve operar sem autorização administrativa
 
-- dado um `requesterUserId` que localiza usuário `protester` ou que não localiza usuário algum;
+- dado um `requesterUserId` que localiza usuário `manifestant` ou que não localiza usuário algum;
 - quando qualquer caso de uso administrativo for executado;
 - então deve lançar `NotAllowedToManageManifestationError`;
 - e os repositórios de manifestação não devem ser consultados.
@@ -651,9 +651,9 @@ export interface UsersRepository {
 - a autorização administrativa é centralizada por leitura do `User` em `UsersRepository.findById()` e verificação do `role` contra `OMBUDSMAN` e `ADMIN`;
 - o erro `NotAllowedToManageManifestationError` permanece em `manifestation-administration/errors/` por ser compartilhado entre os quatro casos de uso administrativos;
 - o erro `ManifestationStatusTransitionNotAllowedError` é exportado pelo módulo do agregado em `src/domain/entities/manifestation.ts`, mantendo o invariante de transição dentro do domínio;
-- a resposta administrativa reaproveita `ManifestationMessage` e o `ManifestationInteractionsRepository.addMessage()`, sem introduzir entidade nova nesta fatia;
-- a transição para `answered` ocorre via `manifestation.recordAdministrativeAnswer()` antes do `save`, e a mensagem só é gravada depois que o novo status é persistido;
-- quando a persistência concreta for introduzida, a atualização de status e o registro da mensagem da resposta administrativa devem ocorrer na mesma transação;
+- a resposta administrativa reaproveita `ManifestationMessage` e delega a persistência atômica ao contrato `ManifestationAdministrationRepository.recordAnswer(manifestation, message)`;
+- a transição para `answered` continua ocorrendo via `manifestation.recordAdministrativeAnswer()`, e o caso de uso não executa mais gravações separadas de status e mensagem;
+- a implementação concreta de persistência deve materializar `recordAnswer(...)` dentro de uma única transação;
 - a atualização administrativa de status usa `manifestation.transitionStatusAdministratively(target)`, que bloqueia transições a partir de estados terminais e transições para o status atual;
 - a listagem administrativa utiliza um novo contrato `findManyForAdmin(filters, pagination)` no repositório, mantendo `findManyByAuthorUserId` voltado ao fluxo identificado do manifestante;
 - o erro `InvalidPageNumberError` permanece em `list-user-manifestations/errors/` e é reaproveitado pela listagem administrativa enquanto não houver pasta de utilitários compartilhados de paginação;

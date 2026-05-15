@@ -18,13 +18,16 @@ describe('Manifestation', () => {
   const buildManifestation = ({
     status = ManifestationStatus.IN_ANALYSIS,
     authorUserId = new UniqueEntityId('user-1'),
-    accessCodeHash = null,
+    accessCodeHash,
   }: {
     status?: ManifestationStatus
     authorUserId?: UniqueEntityId | null
     accessCodeHash?: string | null
-  } = {}) =>
-    Manifestation.restore(
+  } = {}) => {
+    const normalizedAccessCodeHash =
+      accessCodeHash === undefined ? (authorUserId === null ? 'hashed-access-code' : null) : accessCodeHash
+
+    return Manifestation.restore(
       {
         protocol: Protocol.create('2026-0001'),
         type: ManifestationType.COMPLAINT,
@@ -34,11 +37,12 @@ describe('Manifestation', () => {
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         involvedPeople: null,
         authorUserId,
-        accessCodeHash,
+        accessCodeHash: normalizedAccessCodeHash,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
       new UniqueEntityId('manifestation-1'),
     )
+  }
 
   it('allows messages while the manifestation is open for interaction', () => {
     expect(buildManifestation({ status: ManifestationStatus.IN_ANALYSIS }).canReceiveMessages()).toBe(true)
@@ -237,6 +241,21 @@ describe('Manifestation', () => {
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         involvedPeople: null,
+        authorUserId: new UniqueEntityId('user-1'),
+        accessCodeHash: 'hashed-access-code',
+      })
+    }).toThrow(IdentifiedManifestationCannotHaveAccessCodeError)
+  })
+
+  it('refuses to restore an anonymous manifestation without an access code hash', () => {
+    expect(() => {
+      buildManifestation({ authorUserId: null, accessCodeHash: null })
+    }).toThrow(AnonymousManifestationRequiresAccessCodeError)
+  })
+
+  it('refuses to restore an identified manifestation carrying an access code hash', () => {
+    expect(() => {
+      buildManifestation({
         authorUserId: new UniqueEntityId('user-1'),
         accessCodeHash: 'hashed-access-code',
       })

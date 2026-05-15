@@ -7,7 +7,7 @@ import { AddManifestationMessageUseCase } from '#src/application/use-cases/add-m
 import { ManifestationInteractionNotAllowedError } from '#src/application/use-cases/add-manifestation-message/errors/manifestation-interaction-not-allowed-error.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
-import { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
+import { ManifestationMessage, ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { Manifestation, ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { AdministrativeUnitId } from '#src/domain/value-objects/administrative-unit-id.js'
 import { CampusId } from '#src/domain/value-objects/campus-id.js'
@@ -41,6 +41,7 @@ describe('AddManifestationMessageUseCase', () => {
   const buildMessage = (): ManifestationMessageDTO => ({
     id: 'message-1',
     senderUserId: 'user-1',
+    senderType: ManifestationMessageSenderType.MANIFESTANT,
     content: 'Can you share an update?',
     createdAt: new Date('2026-05-10T15:00:00.000Z'),
   })
@@ -76,7 +77,8 @@ describe('AddManifestationMessageUseCase', () => {
     expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(1)
     expect(savedMessage).toBeInstanceOf(ManifestationMessage)
     expect(savedMessage?.manifestationId.toValue()).toBe('manifestation-1')
-    expect(savedMessage?.senderUserId.toValue()).toBe('user-1')
+    expect(savedMessage?.senderUserId?.toValue()).toBe('user-1')
+    expect(savedMessage?.senderType).toBe(ManifestationMessageSenderType.MANIFESTANT)
     expect(savedMessage?.content.getValue()).toBe('Can you share an update?')
     expect(result).toStrictEqual({ message })
   })
@@ -188,7 +190,8 @@ describe('AddManifestationMessageUseCase', () => {
     expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(1)
     expect(savedMessage).toBeInstanceOf(ManifestationMessage)
     expect(savedMessage?.manifestationId.toValue()).toBe('manifestation-1')
-    expect(savedMessage?.senderUserId.toValue()).toBe('user-1')
+    expect(savedMessage?.senderUserId?.toValue()).toBe('user-1')
+    expect(savedMessage?.senderType).toBe(ManifestationMessageSenderType.MANIFESTANT)
     expect(savedMessage?.content.getValue()).toBe('Can you share an update?')
   })
 })
