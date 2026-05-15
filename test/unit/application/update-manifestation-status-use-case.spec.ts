@@ -46,6 +46,7 @@ describe('UpdateManifestationStatusUseCase', () => {
         campusId: CampusId.create('campus-1'),
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+        involvedPeople: null,
         authorUserId: new UniqueEntityId('user-1'),
         accessCodeHash: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
@@ -79,6 +80,22 @@ describe('UpdateManifestationStatusUseCase', () => {
     expect(manifestationsRepository.save.mock.calls).toStrictEqual([[manifestation]])
     expect(result.manifestation.status).toBe(ManifestationStatus.FINALIZED)
     expect(result.manifestation.id).toBe('manifestation-1')
+    expect(result.manifestation.involvedPeople).toBeNull()
+  })
+
+  it('rejects unsupported in-analysis to finalized transitions', async () => {
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
+    manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.IN_ANALYSIS))
+
+    await expect(
+      sut.execute({
+        requesterUserId: 'ombudsman-1',
+        manifestationId: 'manifestation-1',
+        status: ManifestationStatus.FINALIZED,
+      }),
+    ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
+
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
   })
 
   it('rejects requesters without administrative role', async () => {

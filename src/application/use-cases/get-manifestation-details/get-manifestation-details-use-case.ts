@@ -23,6 +23,7 @@ interface GetManifestationDetailsOutput {
     campusId: string
     administrativeUnitId: string
     description: string
+    involvedPeople: string | null
     createdAt: Date
     history: ManifestationHistoryEntryDTO[]
     messages: ManifestationMessageDTO[]
@@ -55,6 +56,7 @@ export class GetManifestationDetailsUseCase implements UseCase<
         campusId: manifestation.campusId,
         administrativeUnitId: manifestation.administrativeUnitId,
         description: manifestation.description,
+        involvedPeople: manifestation.involvedPeople,
         createdAt: manifestation.createdAt,
         history: manifestation.history,
         messages: manifestation.messages,
