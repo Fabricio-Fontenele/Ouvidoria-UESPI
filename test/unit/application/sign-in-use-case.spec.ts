@@ -23,7 +23,7 @@ describe('SignInUseCase', () => {
         name: Name.create('User Name'),
         email: Email.create('user@example.com'),
         passwordHash: 'hashed-password',
-        role: UserRole.PROTESTER,
+        role: UserRole.MANIFESTANT,
         createdAt: new Date(),
       },
       new UniqueEntityId('any_user_id'),
@@ -65,7 +65,7 @@ describe('SignInUseCase', () => {
       [
         {
           sub: user.id.toString(),
-          role: UserRole.PROTESTER,
+          role: UserRole.MANIFESTANT,
         },
       ],
     ])
@@ -130,7 +130,7 @@ describe('SignInUseCase', () => {
       [
         {
           sub: user.id.toString(),
-          role: UserRole.PROTESTER,
+          role: UserRole.MANIFESTANT,
         },
       ],
     ])

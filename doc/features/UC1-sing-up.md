@@ -21,13 +21,13 @@ Permitir que um novo usuário crie uma conta no sistema de Ouvidoria Institucion
 
 ## 3. Requisitos relacionados
 
-| Código | Descrição                                                                                                                                                                                 |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RF01   | O sistema deve permitir o cadastro de novos usuários com validação de dados obrigatórios e e-mail único.                                                                                  |
-| RF05   | O sistema deve permitir diferentes perfis de acesso, no mínimo: manifestante, ouvidor e administrador. No domínio, esses perfis são representados por `protester`, `ombudsman` e `admin`. |
-| RNF04  | O sistema deve ser responsivo e oferecer experiência compatível com dispositivos desktop e móveis.                                                                                        |
-| RNF05  | O sistema deve seguir diretrizes de acessibilidade.                                                                                                                                       |
-| RNF07  | O sistema deve exigir autenticação e aplicar autorização por perfil.                                                                                                                      |
+| Código | Descrição                                                                                                                                                                                   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF01   | O sistema deve permitir o cadastro de novos usuários com validação de dados obrigatórios e e-mail único.                                                                                    |
+| RF05   | O sistema deve permitir diferentes perfis de acesso, no mínimo: manifestante, ouvidor e administrador. No domínio, esses perfis são representados por `manifestant`, `ombudsman` e `admin`. |
+| RNF04  | O sistema deve ser responsivo e oferecer experiência compatível com dispositivos desktop e móveis.                                                                                          |
+| RNF05  | O sistema deve seguir diretrizes de acessibilidade.                                                                                                                                         |
+| RNF07  | O sistema deve exigir autenticação e aplicar autorização por perfil.                                                                                                                        |
 
 ---
 
@@ -128,7 +128,7 @@ A feature deve receber os seguintes dados:
 | RN-UC01-08 | A senha e o hash da senha não devem ser retornados na resposta.                              |
 | RN-UC01-09 | O perfil do usuário deve ser válido.                                                         |
 | RN-UC01-10 | Usuários comuns não podem criar contas com perfil de `ombudsman` ou `admin` sem autorização. |
-| RN-UC01-11 | No cadastro público, o perfil padrão do usuário deve ser `protester`.                        |
+| RN-UC01-11 | No cadastro público, o perfil padrão do usuário deve ser `manifestant`.                      |
 
 ---
 
@@ -187,13 +187,13 @@ O perfil deve:
 
 Perfis previstos no domínio:
 
-- `protester`
+- `manifestant`
 - `ombudsman`
 - `admin`
 
 No cadastro público, o perfil permitido deve ser:
 
-- `protester`
+- `manifestant`
 
 ---
 
@@ -206,7 +206,7 @@ No cadastro público, o perfil permitido deve ser:
 5. O sistema valida o formato do e-mail.
 6. O sistema verifica se o e-mail já está cadastrado.
 7. O sistema gera o hash da senha.
-8. O sistema define o perfil do usuário como `protester`.
+8. O sistema define o perfil do usuário como `manifestant`.
 9. O sistema registra o novo usuário.
 10. O sistema retorna confirmação de cadastro com os dados públicos do usuário.
 
@@ -255,7 +255,7 @@ Comportamento esperado:
 O sistema deve rejeitar a operação ou ignorar o perfil informado, garantindo que o cadastro público não crie usuário com perfil privilegiado.
 
 Decisão recomendada:
-Rejeitar a requisição, pois o campo `role` não deve fazer parte do cadastro público. No núcleo da aplicação, o caso de uso também força o perfil `protester`.
+Rejeitar a requisição, pois o campo `role` não deve fazer parte do cadastro público. No núcleo da aplicação, o caso de uso também força o perfil `manifestant`.
 
 ---
 
@@ -273,7 +273,7 @@ Corpo da resposta:
     "id": "user_123",
     "name": "Fabricio Fontenele",
     "email": "fabricio@email.com",
-    "role": "protester",
+    "role": "manifestant",
     "createdAt": "2026-05-07T21:30:00.000Z"
   }
 }
@@ -374,7 +374,7 @@ Response body:
     "id": "user_123",
     "name": "Fabricio Fontenele",
     "email": "fabricio@email.com",
-    "role": "protester",
+    "role": "manifestant",
     "createdAt": "2026-05-07T21:30:00.000Z"
   }
 }
@@ -404,7 +404,7 @@ A feature será considerada concluída quando:
 - a senha for armazenada com hash;
 - a senha original não for salva;
 - a resposta não retornar senha nem hash;
-- o perfil padrão do cadastro público for `protester`;
+- o perfil padrão do cadastro público for `manifestant`;
 - o sistema impedir cadastro com e-mail duplicado;
 - o sistema impedir cadastro com e-mail inválido;
 - o sistema impedir cadastro com dados obrigatórios ausentes;
@@ -427,7 +427,7 @@ Resultado esperado:
 
 - usuário criado;
 - e-mail salvo corretamente;
-- perfil definido como `protester`;
+- perfil definido como `manifestant`;
 - senha armazenada como hash;
 - senha não retornada.
 
@@ -540,15 +540,15 @@ Resultado esperado:
 
 - resposta sem `passwordHash`.
 
-#### CT-UC01-012 - Deve criar usuário com perfil padrão protester
+#### CT-UC01-012 - Deve criar usuário com perfil padrão manifestant
 
 Dado que o cadastro público foi solicitado,
 Quando o usuário for criado,
-Então o perfil atribuído deve ser `protester`.
+Então o perfil atribuído deve ser `manifestant`.
 
 Resultado esperado:
 
-- usuário criado com perfil `protester`.
+- usuário criado com perfil `manifestant`.
 
 #### CT-UC01-013 - Não deve permitir cadastro público como ombudsman
 
@@ -634,7 +634,7 @@ Resultado esperado:
 
 - registro criado;
 - e-mail salvo;
-- role `protester` salva no cadastro público;
+- role `manifestant` salva no cadastro público;
 - hash da senha salvo.
 
 #### CT-UC01-020 - Deve garantir unicidade de e-mail no banco
