@@ -99,7 +99,7 @@ describe('UpdateManifestationStatusUseCase', () => {
   })
 
   it('rejects requesters without administrative role', async () => {
-    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.PROTESTER, 'user-1'))
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.MANIFESTANT, 'user-1'))
 
     await expect(
       sut.execute({

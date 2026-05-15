@@ -1,13 +1,13 @@
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { ManifestationMessageDTO } from '#src/application/dto/manifestation-query-dtos.js'
-import type { ManifestationInteractionsRepository } from '#src/application/repositories/manifestation-interactions-repository.js'
+import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
 import { AnswerManifestationUseCase } from '#src/application/use-cases/answer-manifestation/answer-manifestation-use-case.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToManageManifestationError } from '#src/application/use-cases/manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
-import { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
+import { ManifestationMessage, ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import {
   Manifestation,
   ManifestationStatus,
@@ -26,7 +26,7 @@ import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 describe('AnswerManifestationUseCase', () => {
   let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
-  let manifestationInteractionsRepository: DeepMockProxy<ManifestationInteractionsRepository>
+  let manifestationAdministrationRepository: DeepMockProxy<ManifestationAdministrationRepository>
   let usersRepository: DeepMockProxy<UsersRepository>
   let sut: AnswerManifestationUseCase
 
@@ -62,20 +62,25 @@ describe('AnswerManifestationUseCase', () => {
   const buildMessage = (): ManifestationMessageDTO => ({
     id: 'message-1',
     senderUserId: 'ombudsman-1',
+    senderType: ManifestationMessageSenderType.OMBUDSMAN,
     content: 'We finished analyzing your report.',
     createdAt: new Date('2026-05-10T16:00:00.000Z'),
   })
 
   beforeEach(() => {
     manifestationsRepository = mockDeep<ManifestationsRepository>()
-    manifestationInteractionsRepository = mockDeep<ManifestationInteractionsRepository>()
+    manifestationAdministrationRepository = mockDeep<ManifestationAdministrationRepository>()
     usersRepository = mockDeep<UsersRepository>()
 
     mockReset(manifestationsRepository)
-    mockReset(manifestationInteractionsRepository)
+    mockReset(manifestationAdministrationRepository)
     mockReset(usersRepository)
 
-    sut = new AnswerManifestationUseCase(manifestationsRepository, manifestationInteractionsRepository, usersRepository)
+    sut = new AnswerManifestationUseCase(
+      manifestationsRepository,
+      manifestationAdministrationRepository,
+      usersRepository,
+    )
   })
 
   it('records the administrative answer, persists the new status and stores the message', async () => {
@@ -84,7 +89,7 @@ describe('AnswerManifestationUseCase', () => {
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
     manifestationsRepository.findById.mockResolvedValue(manifestation)
-    manifestationInteractionsRepository.addMessage.mockResolvedValue(message)
+    manifestationAdministrationRepository.recordAnswer.mockResolvedValue(message)
 
     const result = await sut.execute({
       requesterUserId: 'ombudsman-1',
@@ -93,35 +98,51 @@ describe('AnswerManifestationUseCase', () => {
     })
 
     expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
-    expect(manifestationsRepository.save.mock.calls).toStrictEqual([[manifestation]])
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
 
-    const addMessageCall = manifestationInteractionsRepository.addMessage.mock.calls[0] as
-      | [ManifestationMessage]
+    const recordAnswerCall = manifestationAdministrationRepository.recordAnswer.mock.calls[0] as
+      | [Manifestation, ManifestationMessage]
       | undefined
-    const savedMessage = addMessageCall?.[0]
+    const answeredManifestation = recordAnswerCall?.[0]
+    const savedMessage = recordAnswerCall?.[1]
 
+    expect(answeredManifestation).toBe(manifestation)
     expect(savedMessage).toBeInstanceOf(ManifestationMessage)
     expect(savedMessage?.manifestationId.toValue()).toBe('manifestation-1')
-    expect(savedMessage?.senderUserId.toValue()).toBe('ombudsman-1')
+    expect(savedMessage?.senderUserId?.toValue()).toBe('ombudsman-1')
+    expect(savedMessage?.senderType).toBe(ManifestationMessageSenderType.OMBUDSMAN)
     expect(savedMessage?.content.getValue()).toBe('We finished analyzing your report.')
     expect(result).toStrictEqual({ message })
   })
 
   it('answers anonymous manifestations as well', async () => {
     const manifestation = buildManifestation(ManifestationStatus.IN_ANALYSIS, null)
+    const message = {
+      ...buildMessage(),
+      senderUserId: 'admin-1',
+      senderType: ManifestationMessageSenderType.ADMIN,
+    }
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.ADMIN, 'admin-1'))
     manifestationsRepository.findById.mockResolvedValue(manifestation)
-    manifestationInteractionsRepository.addMessage.mockResolvedValue(buildMessage())
+    manifestationAdministrationRepository.recordAnswer.mockResolvedValue(message)
 
-    await sut.execute({
+    const result = await sut.execute({
       requesterUserId: 'admin-1',
       manifestationId: 'manifestation-1',
       content: 'We finished analyzing your report.',
     })
 
+    const recordAnswerCall = manifestationAdministrationRepository.recordAnswer.mock.calls[0] as
+      | [Manifestation, ManifestationMessage]
+      | undefined
+    const savedMessage = recordAnswerCall?.[1]
+
     expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(1)
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(savedMessage?.senderUserId?.toValue()).toBe('admin-1')
+    expect(savedMessage?.senderType).toBe(ManifestationMessageSenderType.ADMIN)
+    expect(result).toStrictEqual({ message })
   })
 
   it('rejects invalid content before touching dependencies', async () => {
@@ -135,11 +156,11 @@ describe('AnswerManifestationUseCase', () => {
 
     expect(usersRepository.findById.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.findById.mock.calls).toHaveLength(0)
-    expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.recordAnswer.mock.calls).toHaveLength(0)
   })
 
   it('rejects requesters without administrative role', async () => {
-    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.PROTESTER, 'user-1'))
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.MANIFESTANT, 'user-1'))
 
     await expect(
       sut.execute({
@@ -165,7 +186,7 @@ describe('AnswerManifestationUseCase', () => {
     ).rejects.toBeInstanceOf(ManifestationNotFoundError)
 
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
-    expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.recordAnswer.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation is closed for interaction and does not persist', async () => {
@@ -181,15 +202,15 @@ describe('AnswerManifestationUseCase', () => {
     ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
 
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
-    expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.recordAnswer.mock.calls).toHaveLength(0)
   })
 
-  it('propagates save failures and skips the message persistence', async () => {
+  it('propagates atomic persistence failures without falling back to split saves', async () => {
     const saveError = new Error('save failed')
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
     manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.IN_ANALYSIS))
-    manifestationsRepository.save.mockRejectedValue(saveError)
+    manifestationAdministrationRepository.recordAnswer.mockRejectedValue(saveError)
 
     await expect(
       sut.execute({
@@ -199,6 +220,7 @@ describe('AnswerManifestationUseCase', () => {
       }),
     ).rejects.toThrow(saveError)
 
-    expect(manifestationInteractionsRepository.addMessage.mock.calls).toHaveLength(0)
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.recordAnswer.mock.calls).toHaveLength(1)
   })
 })

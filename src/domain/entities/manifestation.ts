@@ -75,15 +75,7 @@ export class Manifestation extends Entity<ManifestationProps> {
   }
 
   static open(props: OpenManifestationProps, id?: UniqueEntityId): Manifestation {
-    const isAnonymous = props.authorUserId === null
-
-    if (isAnonymous && props.accessCodeHash === null) {
-      throw new AnonymousManifestationRequiresAccessCodeError()
-    }
-
-    if (!isAnonymous && props.accessCodeHash !== null) {
-      throw new IdentifiedManifestationCannotHaveAccessCodeError()
-    }
+    Manifestation.validateAccessMode(props.authorUserId, props.accessCodeHash)
 
     const createdAt = props.createdAt ?? new Date()
 
@@ -98,7 +90,21 @@ export class Manifestation extends Entity<ManifestationProps> {
   }
 
   static restore(props: ManifestationProps, id: UniqueEntityId): Manifestation {
+    Manifestation.validateAccessMode(props.authorUserId, props.accessCodeHash)
+
     return new Manifestation(props, id)
+  }
+
+  private static validateAccessMode(authorUserId: UniqueEntityId | null, accessCodeHash: string | null): void {
+    const isAnonymous = authorUserId === null
+
+    if (isAnonymous && accessCodeHash === null) {
+      throw new AnonymousManifestationRequiresAccessCodeError()
+    }
+
+    if (!isAnonymous && accessCodeHash !== null) {
+      throw new IdentifiedManifestationCannotHaveAccessCodeError()
+    }
   }
 
   canReceiveMessages(): boolean {

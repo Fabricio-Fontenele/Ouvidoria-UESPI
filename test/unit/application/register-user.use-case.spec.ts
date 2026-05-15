@@ -25,7 +25,7 @@ describe('RegisterUserUseCase', () => {
       name: Name.create('Maria Silva'),
       email: Email.create('maria@email.com'),
       passwordHash: 'hashed-password',
-      role: UserRole.PROTESTER,
+      role: UserRole.MANIFESTANT,
     })
 
   beforeEach(() => {
@@ -70,13 +70,13 @@ describe('RegisterUserUseCase', () => {
     expect(savedUser.name.getValue()).toBe('Maria Silva')
     expect(savedUser.email.getValue()).toBe('maria@email.com')
     expect(savedUser.passwordHash).toBe('hashed-password')
-    expect(savedUser.role).toBe(UserRole.PROTESTER)
+    expect(savedUser.role).toBe(UserRole.MANIFESTANT)
     expect(savedUser.createdAt).toBeInstanceOf(Date)
 
     expect(result.user.id).toBe(savedUser.id.toString())
     expect(result.user.name).toBe('Maria Silva')
     expect(result.user.email).toBe('maria@email.com')
-    expect(result.user.role).toBe(UserRole.PROTESTER)
+    expect(result.user.role).toBe(UserRole.MANIFESTANT)
     expect(result.user.createdAt).toBe(savedUser.createdAt)
   })
 

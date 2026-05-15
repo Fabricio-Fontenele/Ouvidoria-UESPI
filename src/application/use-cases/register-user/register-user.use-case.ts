@@ -47,7 +47,7 @@ export class RegisterUserUseCase implements UseCase<RegisterUserInput, RegisterU
       name: normalizedName,
       email: normalizedEmail,
       passwordHash: hashedPassword,
-      role: UserRole.PROTESTER,
+      role: UserRole.MANIFESTANT,
     })
 
     await this.usersRepository.save(user)

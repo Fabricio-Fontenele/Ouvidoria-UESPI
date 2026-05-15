@@ -4,7 +4,7 @@ import type { Name } from '../value-objects/name.js'
 import type { UniqueEntityId } from '../value-objects/unique-entity-id.js'
 
 export enum UserRole {
-  PROTESTER = 'protester',
+  MANIFESTANT = 'manifestant',
   OMBUDSMAN = 'ombudsman',
   ADMIN = 'admin',
 }
