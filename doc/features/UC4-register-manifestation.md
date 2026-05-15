@@ -46,6 +46,7 @@ Esta feature deve permitir:
 - vincular a manifestação a um campus por identificador;
 - vincular a manifestação a uma unidade administrativa por identificador;
 - informar a descrição da manifestação;
+- informar pessoas envolvidas em texto livre, quando necessário;
 - permitir autoria identificada ou anônima;
 - persistir a manifestação com status inicial `in_analysis`;
 - retornar os dados públicos da manifestação criada.
@@ -57,7 +58,6 @@ Esta feature não contempla:
 - CRUD de campus;
 - CRUD de unidade administrativa;
 - anexos;
-- pessoas envolvidas;
 - marcação de sigilo além da autoria anônima;
 - mensagens no chamado;
 - atualização de status após o registro inicial;
@@ -110,6 +110,7 @@ A feature deve receber os seguintes dados:
 | campusId             | string  | Sim         | Identificador do campus relacionado à manifestação.                 |
 | administrativeUnitId | string  | Sim         | Identificador da unidade administrativa relacionada à manifestação. |
 | description          | string  | Sim         | Descrição textual da manifestação.                                  |
+| involvedPeople       | string  | Não         | Pessoas envolvidas, em texto livre, quando houver.                  |
 | requesterId          | string  | Não         | Identificador do usuário autenticado no contexto da requisição.     |
 | isAnonymous          | boolean | Sim         | Indica se o usuário deseja registrar a manifestação anonimamente.   |
 
@@ -122,7 +123,8 @@ A feature deve receber os seguintes dados:
   "type": "complaint",
   "campusId": "campus-1",
   "administrativeUnitId": "unit-1",
-  "description": "O serviço ficou indisponível durante toda a manhã."
+  "description": "O serviço ficou indisponível durante toda a manhã.",
+  "involvedPeople": "Equipe da coordenação"
 }
 ```
 
@@ -135,26 +137,28 @@ A feature deve receber os seguintes dados:
   "type": "report",
   "campusId": "campus-2",
   "administrativeUnitId": "unit-7",
-  "description": "Há indícios de irregularidade no processo informado."
+  "description": "Há indícios de irregularidade no processo informado.",
+  "involvedPeople": null
 }
 ```
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                               |
-| ---------- | --------------------------------------------------------------------------------------------------- |
-| RN-UC04-01 | O tipo da manifestação é obrigatório.                                                               |
-| RN-UC04-02 | O campus da manifestação é obrigatório.                                                             |
-| RN-UC04-03 | A unidade administrativa da manifestação é obrigatória.                                             |
-| RN-UC04-04 | A descrição da manifestação é obrigatória.                                                          |
-| RN-UC04-05 | Toda manifestação deve possuir protocolo único.                                                     |
-| RN-UC04-06 | Toda manifestação deve estar vinculada a um campus e a uma unidade administrativa.                  |
-| RN-UC04-07 | Os tipos permitidos são `report`, `complaint`, `suggestion` e `compliment`.                         |
-| RN-UC04-08 | O registro pode ser identificado ou anônimo.                                                        |
-| RN-UC04-09 | Em registros identificados, o autor da manifestação deve ser derivado do `requesterId` autenticado. |
-| RN-UC04-10 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                     |
-| RN-UC04-11 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                            |
-| RN-UC04-12 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.            |
+| Código     | Regra                                                                                                                |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| RN-UC04-01 | O tipo da manifestação é obrigatório.                                                                                |
+| RN-UC04-02 | O campus da manifestação é obrigatório.                                                                              |
+| RN-UC04-03 | A unidade administrativa da manifestação é obrigatória.                                                              |
+| RN-UC04-04 | A descrição da manifestação é obrigatória.                                                                           |
+| RN-UC04-05 | `involvedPeople` é opcional, deve ser normalizado quando informado e pode ser tratado como `null` quando vier vazio. |
+| RN-UC04-06 | Toda manifestação deve possuir protocolo único.                                                                      |
+| RN-UC04-07 | Toda manifestação deve estar vinculada a um campus e a uma unidade administrativa.                                   |
+| RN-UC04-08 | Os tipos permitidos são `report`, `complaint`, `suggestion` e `compliment`.                                          |
+| RN-UC04-09 | O registro pode ser identificado ou anônimo.                                                                         |
+| RN-UC04-10 | Em registros identificados, o autor da manifestação deve ser derivado do `requesterId` autenticado.                  |
+| RN-UC04-11 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                                      |
+| RN-UC04-12 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                                             |
+| RN-UC04-13 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.                             |
 
 ---
 
@@ -205,7 +209,15 @@ O campo `description` deve:
 - não conter apenas espaços em branco;
 - ser persistido em formato normalizado nas extremidades.
 
-### 10.5 Contexto do solicitante
+### 10.5 Pessoas envolvidas
+
+O campo `involvedPeople`:
+
+- é opcional;
+- quando vier vazio ou com apenas espaços em branco, deve ser tratado como ausência do campo;
+- deve ser persistido em formato normalizado nas extremidades.
+
+### 10.6 Contexto do solicitante
 
 O campo `requesterId`:
 

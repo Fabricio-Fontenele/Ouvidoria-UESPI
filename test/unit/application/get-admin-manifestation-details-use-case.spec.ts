@@ -37,6 +37,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
     campusId: 'campus-1',
     administrativeUnitId: 'unit-1',
     description: 'The service was unavailable during the whole morning.',
+    involvedPeople: 'Coordination Team',
     authorUserId,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [
@@ -86,6 +87,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         campusId: details.campusId,
         administrativeUnitId: details.administrativeUnitId,
         description: details.description,
+        involvedPeople: details.involvedPeople,
         authorUserId: 'user-1',
         createdAt: details.createdAt,
         history: details.history,

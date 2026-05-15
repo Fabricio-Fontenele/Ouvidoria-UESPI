@@ -32,6 +32,7 @@ describe('Manifestation', () => {
         campusId: CampusId.create('campus-1'),
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+        involvedPeople: null,
         authorUserId,
         accessCodeHash,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
@@ -131,6 +132,24 @@ describe('Manifestation', () => {
     expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
   })
 
+  it('refuses in-analysis to finalized transitions', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    expect(() => {
+      manifestation.transitionStatusAdministratively(ManifestationStatus.FINALIZED)
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
+  })
+
+  it('refuses answered to canceled transitions', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.ANSWERED })
+
+    expect(() => {
+      manifestation.transitionStatusAdministratively(ManifestationStatus.CANCELED)
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
+  })
+
   it('finalizes by author only from answered manifestations', () => {
     const manifestation = buildManifestation({ status: ManifestationStatus.ANSWERED })
 
@@ -169,6 +188,7 @@ describe('Manifestation', () => {
       campusId: CampusId.create('campus-1'),
       administrativeUnitId: AdministrativeUnitId.create('unit-1'),
       description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+      involvedPeople: null,
       authorUserId: null,
       accessCodeHash: 'hashed-access-code',
     })
@@ -185,6 +205,7 @@ describe('Manifestation', () => {
         campusId: CampusId.create('campus-1'),
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+        involvedPeople: null,
         authorUserId: null,
         accessCodeHash: null,
       })
@@ -198,6 +219,7 @@ describe('Manifestation', () => {
       campusId: CampusId.create('campus-1'),
       administrativeUnitId: AdministrativeUnitId.create('unit-1'),
       description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+      involvedPeople: null,
       authorUserId: new UniqueEntityId('user-1'),
       accessCodeHash: null,
     })
@@ -214,6 +236,7 @@ describe('Manifestation', () => {
         campusId: CampusId.create('campus-1'),
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+        involvedPeople: null,
         authorUserId: new UniqueEntityId('user-1'),
         accessCodeHash: 'hashed-access-code',
       })
