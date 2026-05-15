@@ -10,11 +10,9 @@ Backend core for the Institutional Ombudsman System (UESPI). Scope is intentiona
 
 ## Commands
 
-Package manager is **pnpm 10** (Node 22). The README still mentions yarn — ignore that; use pnpm.
+Package manager is **pnpm 10** (Node 22).
 
-- `pnpm dev` — run `src/main.ts` with `tsx` under the `development` condition
 - `pnpm build` — clean and emit JS into `build/` via `tsconfig.build.json`
-- `pnpm start` — run the compiled `build/main.js`
 - `pnpm type:check` — typecheck `src/` + `test/` against `tsconfig.test.json`
 - `pnpm type:check:ts7` — adds `--stableTypeOrdering` for the TS 7 migration check
 - `pnpm lint` / `pnpm lint:ci` — ESLint (CI variant fails on warnings)
@@ -46,7 +44,7 @@ Tests in `test/unit/` mirror the production tree. Mocking uses `vitest-mock-exte
 
 Use these names consistently — do not introduce parallel terms like `ticket`, `issue`, or `request`:
 
-- `User` (roles: `protester`, `ombudsman`, `admin`)
+- `User` (roles: `manifestant`, `ombudsman`, `admin`)
 - `Manifestation`, `Protocol`, `Attachment`
 - `ManifestationType`: `report` | `complaint` | `suggestion` | `compliment`
 - `ManifestationStatus`: `in_analysis` | `answered` | `canceled` | `finalized`
@@ -61,7 +59,7 @@ Status transitions live on the aggregate, not in the use case. Each transition i
 
 When an error is thrown by more than one use case, place it under `src/application/use-cases/manifestation-<area>/errors/` rather than inside any single use case folder, so use cases don't cross-import each other:
 
-- `manifestation-access/errors/` — protester-side access (`ManifestationNotFoundError`, `NotAllowedToAccessManifestationError`)
+- `manifestation-access/errors/` — manifestant-side access (`ManifestationNotFoundError`, `NotAllowedToAccessManifestationError`)
 - `manifestation-administration/errors/` — admin-side authorization (`NotAllowedToManageManifestationError`)
 
 Errors that are specific to one use case stay in `<use-case>/errors/`. Domain-invariant errors (e.g. status transitions, value-object validation) live in `src/domain/...` next to the type that enforces them.
@@ -84,7 +82,7 @@ import type { ManifestationsRepository } from '#src/application/repositories/man
 import { Manifestation } from '#src/domain/entities/manifestation.js'
 ```
 
-`pnpm dev` and the `development` condition swap to TS sources; the compiled build serves the `default` (JS) condition. `vitest.config.mjs` and `tsconfig.base.json` (`paths`) mirror this alias — don’t replace it with `tsc-alias` or relative-path hacks.
+The compiled build serves the `default` (JS) condition, and `vitest.config.mjs` plus `tsconfig.base.json` (`paths`) mirror this alias for local development tooling — don’t replace it with `tsc-alias` or relative-path hacks.
 
 ## TypeScript / Lint Strictness
 
