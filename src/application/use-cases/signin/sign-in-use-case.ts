@@ -17,7 +17,7 @@ export interface SignInOutput {
 
 export class SignInUseCase implements UseCase<SignInInput, SignInOutput> {
   constructor(
-    private UsersRepository: UsersRepository,
+    private usersRepository: UsersRepository,
     private hashComparer: HashComparer,
     private tokenGenerator: TokenGenerator,
   ) {}
@@ -25,7 +25,7 @@ export class SignInUseCase implements UseCase<SignInInput, SignInOutput> {
   async execute({ email, password }: SignInInput): Promise<SignInOutput> {
     const normalizedEmail = Email.create(email)
 
-    const user = await this.UsersRepository.findByEmail(normalizedEmail.getValue())
+    const user = await this.usersRepository.findByEmail(normalizedEmail.getValue())
 
     if (!user) {
       throw new InvalidCredentialsError()
@@ -38,7 +38,7 @@ export class SignInUseCase implements UseCase<SignInInput, SignInOutput> {
     }
 
     const token = await this.tokenGenerator.generate({
-      sub: user.id,
+      sub: user.id.toString(),
       role: user.role,
     })
 
