@@ -30,6 +30,7 @@ describe('FinalizeManifestationUseCase', () => {
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         authorUserId: authorUserId === null ? null : new UniqueEntityId(authorUserId),
+        accessCodeHash: authorUserId === null ? 'hashed-access-code' : null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
       new UniqueEntityId('manifestation-1'),

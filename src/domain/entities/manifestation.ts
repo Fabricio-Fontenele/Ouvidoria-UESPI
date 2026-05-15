@@ -26,6 +26,20 @@ export class ManifestationStatusTransitionNotAllowedError extends Error {
   }
 }
 
+export class AnonymousManifestationRequiresAccessCodeError extends Error {
+  constructor() {
+    super('Anonymous manifestations must be opened with an access code hash.')
+    this.name = 'AnonymousManifestationRequiresAccessCodeError'
+  }
+}
+
+export class IdentifiedManifestationCannotHaveAccessCodeError extends Error {
+  constructor() {
+    super('Identified manifestations must not carry an access code hash.')
+    this.name = 'IdentifiedManifestationCannotHaveAccessCodeError'
+  }
+}
+
 interface ManifestationProps {
   protocol: Protocol
   type: ManifestationType
@@ -34,6 +48,7 @@ interface ManifestationProps {
   administrativeUnitId: AdministrativeUnitId
   description: ManifestationDescription
   authorUserId: UniqueEntityId | null
+  accessCodeHash: string | null
   createdAt: Date
 }
 
@@ -44,11 +59,22 @@ interface OpenManifestationProps {
   administrativeUnitId: AdministrativeUnitId
   description: ManifestationDescription
   authorUserId: UniqueEntityId | null
+  accessCodeHash: string | null
   createdAt?: Date
 }
 
 export class Manifestation extends Entity<ManifestationProps> {
   static open(props: OpenManifestationProps, id?: UniqueEntityId): Manifestation {
+    const isAnonymous = props.authorUserId === null
+
+    if (isAnonymous && props.accessCodeHash === null) {
+      throw new AnonymousManifestationRequiresAccessCodeError()
+    }
+
+    if (!isAnonymous && props.accessCodeHash !== null) {
+      throw new IdentifiedManifestationCannotHaveAccessCodeError()
+    }
+
     const createdAt = props.createdAt ?? new Date()
 
     return new Manifestation(
@@ -135,6 +161,10 @@ export class Manifestation extends Entity<ManifestationProps> {
 
   get authorUserId(): UniqueEntityId | null {
     return this.props.authorUserId
+  }
+
+  get accessCodeHash(): string | null {
+    return this.props.accessCodeHash
   }
 
   get createdAt(): Date {
