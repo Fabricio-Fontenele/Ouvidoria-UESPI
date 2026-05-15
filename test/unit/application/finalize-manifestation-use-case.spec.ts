@@ -29,6 +29,7 @@ describe('FinalizeManifestationUseCase', () => {
         campusId: CampusId.create('campus-1'),
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+        involvedPeople: null,
         authorUserId: authorUserId === null ? null : new UniqueEntityId(authorUserId),
         accessCodeHash: authorUserId === null ? 'hashed-access-code' : null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
@@ -60,6 +61,7 @@ describe('FinalizeManifestationUseCase', () => {
     expect(result.manifestation.status).toBe(ManifestationStatus.FINALIZED)
     expect(result.manifestation.id).toBe('manifestation-1')
     expect(result.manifestation.authorUserId).toBe('user-1')
+    expect(result.manifestation.involvedPeople).toBeNull()
   })
 
   it('throws when the manifestation does not exist', async () => {

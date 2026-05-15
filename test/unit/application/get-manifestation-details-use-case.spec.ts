@@ -19,6 +19,7 @@ describe('GetManifestationDetailsUseCase', () => {
     campusId: 'campus-1',
     administrativeUnitId: 'unit-1',
     description: 'The service was unavailable during the whole morning.',
+    involvedPeople: 'Coordination Team',
     authorUserId,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [
@@ -69,6 +70,7 @@ describe('GetManifestationDetailsUseCase', () => {
         campusId: 'campus-1',
         administrativeUnitId: 'unit-1',
         description: 'The service was unavailable during the whole morning.',
+        involvedPeople: 'Coordination Team',
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
         history: manifestationDetails.history,
         messages: manifestationDetails.messages,

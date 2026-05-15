@@ -20,6 +20,7 @@ interface FinalizeManifestationOutput {
     campusId: string
     administrativeUnitId: string
     description: string
+    involvedPeople: string | null
     authorUserId: string | null
     createdAt: Date
   }
@@ -53,6 +54,7 @@ export class FinalizeManifestationUseCase implements UseCase<FinalizeManifestati
         campusId: manifestation.campusId.getValue(),
         administrativeUnitId: manifestation.administrativeUnitId.getValue(),
         description: manifestation.description.getValue(),
+        involvedPeople: manifestation.involvedPeople?.getValue() ?? null,
         authorUserId: manifestation.authorUserId?.toString() ?? null,
         createdAt: manifestation.createdAt,
       },

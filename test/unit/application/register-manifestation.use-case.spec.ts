@@ -26,6 +26,7 @@ describe('RegisterManifestationUseCase', () => {
     campusId: string
     administrativeUnitId: string
     description: string
+    involvedPeople: string | null
   }
 
   beforeEach(() => {
@@ -40,6 +41,7 @@ describe('RegisterManifestationUseCase', () => {
       campusId: 'campus-1',
       administrativeUnitId: 'unit-1',
       description: '  The service was unavailable during the whole morning.  ',
+      involvedPeople: '  Coordination Team  ',
     }
 
     mockReset(manifestationsRepository)
@@ -81,6 +83,7 @@ describe('RegisterManifestationUseCase', () => {
     expect(savedManifestation.campusId.getValue()).toBe('campus-1')
     expect(savedManifestation.administrativeUnitId.getValue()).toBe('unit-1')
     expect(savedManifestation.description.getValue()).toBe('The service was unavailable during the whole morning.')
+    expect(savedManifestation.involvedPeople?.getValue()).toBe('Coordination Team')
     expect(savedManifestation.authorUserId?.toString()).toBe('user-1')
     expect(savedManifestation.accessCodeHash).toBeNull()
     expect(savedManifestation.createdAt).toBeInstanceOf(Date)
@@ -93,6 +96,7 @@ describe('RegisterManifestationUseCase', () => {
       campusId: 'campus-1',
       administrativeUnitId: 'unit-1',
       description: 'The service was unavailable during the whole morning.',
+      involvedPeople: 'Coordination Team',
       isAnonymous: false,
       authorUserId: 'user-1',
       createdAt: savedManifestation.createdAt,
@@ -117,9 +121,25 @@ describe('RegisterManifestationUseCase', () => {
     expect(passwordHasher.hash.mock.calls).toStrictEqual([['OUV-2026-K7F9Q2']])
     expect(saveCall?.[0].authorUserId).toBeNull()
     expect(saveCall?.[0].accessCodeHash).toBe('hashed-access-code')
+    expect(saveCall?.[0].involvedPeople?.getValue()).toBe('Coordination Team')
     expect(result.manifestation.authorUserId).toBeNull()
     expect(result.manifestation.isAnonymous).toBe(true)
+    expect(result.manifestation.involvedPeople).toBe('Coordination Team')
     expect(result.accessCode).toBe('OUV-2026-K7F9Q2')
+  })
+
+  it('stores null involved people when the field is omitted', async () => {
+    protocolGenerator.generate.mockResolvedValue('2026-0004')
+
+    const result = await sut.execute({
+      ...validInput,
+      involvedPeople: null,
+    })
+
+    const saveCall = manifestationsRepository.save.mock.calls[0] as [Manifestation] | undefined
+
+    expect(saveCall?.[0].involvedPeople).toBeNull()
+    expect(result.manifestation.involvedPeople).toBeNull()
   })
 
   it('rejects identified manifestations without requester id before generating a protocol or saving', async () => {
@@ -146,6 +166,21 @@ describe('RegisterManifestationUseCase', () => {
 
     expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('treats blank involved people as null', async () => {
+    protocolGenerator.generate.mockResolvedValue('2026-0005')
+
+    await expect(
+      sut.execute({
+        ...validInput,
+        involvedPeople: '   ',
+      }),
+    ).resolves.toMatchObject({
+      manifestation: {
+        involvedPeople: null,
+      },
+    })
   })
 
   it('rejects invalid administrative unit ids before generating a protocol or saving', async () => {
