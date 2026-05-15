@@ -9,6 +9,7 @@ import type { PaginationParams } from './pagination-params.js'
 
 export interface ManifestationsRepository {
   findById(manifestationId: string): Promise<Manifestation | null>
+  findByProtocol(protocol: string): Promise<Manifestation | null>
   findDetailsById(manifestationId: string): Promise<ManifestationDetailsDTO | null>
   findManyByAuthorUserId(authorUserId: string, paginationParams: PaginationParams): Promise<ManifestationListItemDTO[]>
   findManyForAdmin(
