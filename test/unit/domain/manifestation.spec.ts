@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  AnonymousManifestationRequiresAccessCodeError,
+  IdentifiedManifestationCannotHaveAccessCodeError,
   Manifestation,
   ManifestationStatus,
   ManifestationStatusTransitionNotAllowedError,
@@ -16,9 +18,11 @@ describe('Manifestation', () => {
   const buildManifestation = ({
     status = ManifestationStatus.IN_ANALYSIS,
     authorUserId = new UniqueEntityId('user-1'),
+    accessCodeHash = null,
   }: {
     status?: ManifestationStatus
     authorUserId?: UniqueEntityId | null
+    accessCodeHash?: string | null
   } = {}) =>
     Manifestation.restore(
       {
@@ -29,6 +33,7 @@ describe('Manifestation', () => {
         administrativeUnitId: AdministrativeUnitId.create('unit-1'),
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         authorUserId,
+        accessCodeHash,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
       new UniqueEntityId('manifestation-1'),
@@ -155,5 +160,63 @@ describe('Manifestation', () => {
     }).toThrow(ManifestationStatusTransitionNotAllowedError)
     expect(finalized.status).toBe(ManifestationStatus.FINALIZED)
     expect(canceled.status).toBe(ManifestationStatus.CANCELED)
+  })
+
+  it('opens an anonymous manifestation only when an access code hash is provided', () => {
+    const manifestation = Manifestation.open({
+      protocol: Protocol.create('2026-0001'),
+      type: ManifestationType.COMPLAINT,
+      campusId: CampusId.create('campus-1'),
+      administrativeUnitId: AdministrativeUnitId.create('unit-1'),
+      description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+      authorUserId: null,
+      accessCodeHash: 'hashed-access-code',
+    })
+
+    expect(manifestation.isAnonymous()).toBe(true)
+    expect(manifestation.accessCodeHash).toBe('hashed-access-code')
+  })
+
+  it('refuses to open an anonymous manifestation without an access code hash', () => {
+    expect(() => {
+      Manifestation.open({
+        protocol: Protocol.create('2026-0001'),
+        type: ManifestationType.COMPLAINT,
+        campusId: CampusId.create('campus-1'),
+        administrativeUnitId: AdministrativeUnitId.create('unit-1'),
+        description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+        authorUserId: null,
+        accessCodeHash: null,
+      })
+    }).toThrow(AnonymousManifestationRequiresAccessCodeError)
+  })
+
+  it('opens an identified manifestation without an access code hash', () => {
+    const manifestation = Manifestation.open({
+      protocol: Protocol.create('2026-0001'),
+      type: ManifestationType.COMPLAINT,
+      campusId: CampusId.create('campus-1'),
+      administrativeUnitId: AdministrativeUnitId.create('unit-1'),
+      description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+      authorUserId: new UniqueEntityId('user-1'),
+      accessCodeHash: null,
+    })
+
+    expect(manifestation.isAnonymous()).toBe(false)
+    expect(manifestation.accessCodeHash).toBeNull()
+  })
+
+  it('refuses to open an identified manifestation carrying an access code hash', () => {
+    expect(() => {
+      Manifestation.open({
+        protocol: Protocol.create('2026-0001'),
+        type: ManifestationType.COMPLAINT,
+        campusId: CampusId.create('campus-1'),
+        administrativeUnitId: AdministrativeUnitId.create('unit-1'),
+        description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
+        authorUserId: new UniqueEntityId('user-1'),
+        accessCodeHash: 'hashed-access-code',
+      })
+    }).toThrow(IdentifiedManifestationCannotHaveAccessCodeError)
   })
 })

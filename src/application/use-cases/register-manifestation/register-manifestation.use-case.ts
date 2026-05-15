@@ -1,3 +1,5 @@
+import type { PasswordHasher } from '#src/application/cryptography/password-hasher.js'
+import type { AccessCodeGenerator } from '#src/application/protocol/access-code-generator.js'
 import type { ProtocolGenerator } from '#src/application/protocol/protocol-generator.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
@@ -33,12 +35,15 @@ interface RegisterManifestationOutput {
     authorUserId: string | null
     createdAt: Date
   }
+  accessCode: string | null
 }
 
 export class RegisterManifestationUseCase implements UseCase<RegisterManifestationInput, RegisterManifestationOutput> {
   constructor(
     private readonly manifestationsRepository: ManifestationsRepository,
     private readonly protocolGenerator: ProtocolGenerator,
+    private readonly accessCodeGenerator: AccessCodeGenerator,
+    private readonly passwordHasher: PasswordHasher,
   ) {}
 
   async execute({
@@ -64,6 +69,14 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
       authorId = new UniqueEntityId(requesterId)
     }
 
+    let plainAccessCode: string | null = null
+    let accessCodeHash: string | null = null
+
+    if (isAnonymous) {
+      plainAccessCode = await this.accessCodeGenerator.generate()
+      accessCodeHash = await this.passwordHasher.hash(plainAccessCode)
+    }
+
     const manifestation = Manifestation.open({
       protocol,
       type,
@@ -71,6 +84,7 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
       administrativeUnitId: normalizedAdministrativeUnitId,
       description: normalizedDescription,
       authorUserId: authorId,
+      accessCodeHash,
     })
 
     await this.manifestationsRepository.save(manifestation)
@@ -88,6 +102,7 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
         authorUserId: manifestation.authorUserId?.toString() ?? null,
         createdAt: manifestation.createdAt,
       },
+      accessCode: plainAccessCode,
     }
   }
 }

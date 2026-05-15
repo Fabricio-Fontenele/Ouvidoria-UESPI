@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import type { PasswordHasher } from '#src/application/cryptography/password-hasher.js'
+import type { AccessCodeGenerator } from '#src/application/protocol/access-code-generator.js'
 import type { ProtocolGenerator } from '#src/application/protocol/protocol-generator.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import { IdentifiedManifestationRequiresRequesterError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-requester-error.js'
@@ -14,6 +16,8 @@ import { InvalidManifestationDescriptionError } from '#src/domain/value-objects/
 describe('RegisterManifestationUseCase', () => {
   let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
   let protocolGenerator: DeepMockProxy<ProtocolGenerator>
+  let accessCodeGenerator: DeepMockProxy<AccessCodeGenerator>
+  let passwordHasher: DeepMockProxy<PasswordHasher>
   let sut: RegisterManifestationUseCase
   let validInput: {
     requesterId: string | null
@@ -27,6 +31,8 @@ describe('RegisterManifestationUseCase', () => {
   beforeEach(() => {
     manifestationsRepository = mockDeep<ManifestationsRepository>()
     protocolGenerator = mockDeep<ProtocolGenerator>()
+    accessCodeGenerator = mockDeep<AccessCodeGenerator>()
+    passwordHasher = mockDeep<PasswordHasher>()
     validInput = {
       requesterId: 'user-1',
       isAnonymous: false,
@@ -38,8 +44,15 @@ describe('RegisterManifestationUseCase', () => {
 
     mockReset(manifestationsRepository)
     mockReset(protocolGenerator)
+    mockReset(accessCodeGenerator)
+    mockReset(passwordHasher)
 
-    sut = new RegisterManifestationUseCase(manifestationsRepository, protocolGenerator)
+    sut = new RegisterManifestationUseCase(
+      manifestationsRepository,
+      protocolGenerator,
+      accessCodeGenerator,
+      passwordHasher,
+    )
   })
 
   it('registers a manifestation with normalized data and generated protocol', async () => {
@@ -49,6 +62,8 @@ describe('RegisterManifestationUseCase', () => {
 
     expect(protocolGenerator.generate.mock.calls).toHaveLength(1)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(1)
+    expect(accessCodeGenerator.generate.mock.calls).toHaveLength(0)
+    expect(passwordHasher.hash.mock.calls).toHaveLength(0)
 
     const saveCall = manifestationsRepository.save.mock.calls[0] as [Manifestation] | undefined
 
@@ -67,6 +82,7 @@ describe('RegisterManifestationUseCase', () => {
     expect(savedManifestation.administrativeUnitId.getValue()).toBe('unit-1')
     expect(savedManifestation.description.getValue()).toBe('The service was unavailable during the whole morning.')
     expect(savedManifestation.authorUserId?.toString()).toBe('user-1')
+    expect(savedManifestation.accessCodeHash).toBeNull()
     expect(savedManifestation.createdAt).toBeInstanceOf(Date)
 
     expect(result.manifestation).toStrictEqual({
@@ -81,10 +97,13 @@ describe('RegisterManifestationUseCase', () => {
       authorUserId: 'user-1',
       createdAt: savedManifestation.createdAt,
     })
+    expect(result.accessCode).toBeNull()
   })
 
-  it('registers an anonymous manifestation when the user chooses anonymity', async () => {
+  it('generates and hashes an access code only for anonymous manifestations', async () => {
     protocolGenerator.generate.mockResolvedValue('2026-0002')
+    accessCodeGenerator.generate.mockResolvedValue('OUV-2026-K7F9Q2')
+    passwordHasher.hash.mockResolvedValue('hashed-access-code')
 
     const result = await sut.execute({
       ...validInput,
@@ -94,9 +113,13 @@ describe('RegisterManifestationUseCase', () => {
 
     const saveCall = manifestationsRepository.save.mock.calls[0] as [Manifestation] | undefined
 
+    expect(accessCodeGenerator.generate.mock.calls).toHaveLength(1)
+    expect(passwordHasher.hash.mock.calls).toStrictEqual([['OUV-2026-K7F9Q2']])
     expect(saveCall?.[0].authorUserId).toBeNull()
+    expect(saveCall?.[0].accessCodeHash).toBe('hashed-access-code')
     expect(result.manifestation.authorUserId).toBeNull()
     expect(result.manifestation.isAnonymous).toBe(true)
+    expect(result.accessCode).toBe('OUV-2026-K7F9Q2')
   })
 
   it('rejects identified manifestations without requester id before generating a protocol or saving', async () => {
@@ -108,6 +131,8 @@ describe('RegisterManifestationUseCase', () => {
     ).rejects.toBeInstanceOf(IdentifiedManifestationRequiresRequesterError)
 
     expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
+    expect(accessCodeGenerator.generate.mock.calls).toHaveLength(0)
+    expect(passwordHasher.hash.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
   })
 
@@ -154,6 +179,24 @@ describe('RegisterManifestationUseCase', () => {
 
     await expect(sut.execute(validInput)).rejects.toThrow(generatorError)
 
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('propagates access code generator failures and does not save the manifestation', async () => {
+    const generatorError = new Error('access code generation failed')
+
+    protocolGenerator.generate.mockResolvedValue('2026-0003')
+    accessCodeGenerator.generate.mockRejectedValue(generatorError)
+
+    await expect(
+      sut.execute({
+        ...validInput,
+        isAnonymous: true,
+        requesterId: null,
+      }),
+    ).rejects.toThrow(generatorError)
+
+    expect(passwordHasher.hash.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
   })
 })
