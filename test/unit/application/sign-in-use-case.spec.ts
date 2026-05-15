@@ -64,7 +64,7 @@ describe('SignInUseCase', () => {
     expect(tokenGenerator.generate.mock.calls).toStrictEqual([
       [
         {
-          sub: user.id,
+          sub: user.id.toString(),
           role: UserRole.PROTESTER,
         },
       ],
@@ -129,7 +129,7 @@ describe('SignInUseCase', () => {
     expect(tokenGenerator.generate.mock.calls).toStrictEqual([
       [
         {
-          sub: user.id,
+          sub: user.id.toString(),
           role: UserRole.PROTESTER,
         },
       ],
