@@ -6,6 +6,7 @@ import type { UsersRepository } from '#src/application/repositories/users-reposi
 import { GetAdminManifestationDetailsUseCase } from '#src/application/use-cases/get-admin-manifestation-details/get-admin-manifestation-details-use-case.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToManageManifestationError } from '#src/application/use-cases/manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
+import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { User, UserRole } from '#src/domain/entities/user.js'
 import { Email } from '#src/domain/value-objects/email.js'
@@ -42,14 +43,32 @@ describe('GetAdminManifestationDetailsUseCase', () => {
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [
       {
+        type: 'registered',
         description: 'Manifestation registered.',
+        actorUserId: authorUserId,
+        actorType:
+          authorUserId === null
+            ? ManifestationMessageSenderType.ANONYMOUS_MANIFESTANT
+            : ManifestationMessageSenderType.MANIFESTANT,
+        fromStatus: null,
+        toStatus: ManifestationStatus.IN_ANALYSIS,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
+      },
+      {
+        type: 'status_changed',
+        description: 'Manifestation finalized by administrative staff.',
+        actorUserId: 'ombudsman-1',
+        actorType: ManifestationMessageSenderType.OMBUDSMAN,
+        fromStatus: ManifestationStatus.ANSWERED,
+        toStatus: ManifestationStatus.FINALIZED,
+        createdAt: new Date('2026-05-10T16:00:00.000Z'),
       },
     ],
     messages: [
       {
         id: 'message-1',
         senderUserId: 'ombudsman-1',
+        senderType: ManifestationMessageSenderType.OMBUDSMAN,
         content: 'We are analyzing your report.',
         createdAt: new Date('2026-05-10T15:00:00.000Z'),
       },
@@ -111,7 +130,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
   })
 
   it('rejects requesters without administrative role', async () => {
-    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.PROTESTER, 'user-1'))
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.MANIFESTANT, 'user-1'))
 
     await expect(
       sut.execute({

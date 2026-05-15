@@ -5,6 +5,7 @@ import type { ManifestationsRepository } from '#src/application/repositories/man
 import { GetManifestationDetailsUseCase } from '#src/application/use-cases/get-manifestation-details/get-manifestation-details-use-case.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
+import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
 describe('GetManifestationDetailsUseCase', () => {
@@ -24,11 +25,21 @@ describe('GetManifestationDetailsUseCase', () => {
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [
       {
+        type: 'registered',
         description: 'Manifestation registered.',
+        actorUserId: 'user-1',
+        actorType: ManifestationMessageSenderType.MANIFESTANT,
+        fromStatus: null,
+        toStatus: ManifestationStatus.IN_ANALYSIS,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
       {
-        description: 'Manifestation forwarded to the responsible unit.',
+        type: 'administrative_answered',
+        description: 'Administrative answer recorded.',
+        actorUserId: 'ombudsman-1',
+        actorType: ManifestationMessageSenderType.OMBUDSMAN,
+        fromStatus: ManifestationStatus.IN_ANALYSIS,
+        toStatus: ManifestationStatus.ANSWERED,
         createdAt: new Date('2026-05-10T14:00:00.000Z'),
       },
     ],
@@ -36,6 +47,7 @@ describe('GetManifestationDetailsUseCase', () => {
       {
         id: 'message-1',
         senderUserId: 'ombudsman-1',
+        senderType: ManifestationMessageSenderType.OMBUDSMAN,
         content: 'We are analyzing your report.',
         createdAt: new Date('2026-05-10T15:00:00.000Z'),
       },

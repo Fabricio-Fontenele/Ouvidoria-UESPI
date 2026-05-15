@@ -21,12 +21,12 @@ Permitir que um usuário já cadastrado autentique sua conta no sistema de Ouvid
 
 ## 3. Requisitos relacionados
 
-| Código | Descrição                                                                                                                                                                                 |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RF02   | O sistema deve permitir autenticação de usuários previamente cadastrados.                                                                                                                 |
-| RF05   | O sistema deve permitir diferentes perfis de acesso, no mínimo: manifestante, ouvidor e administrador. No domínio, esses perfis são representados por `protester`, `ombudsman` e `admin`. |
-| RNF07  | O sistema deve exigir autenticação e aplicar autorização por perfil.                                                                                                                      |
-| RNF08  | O sistema deve proteger credenciais e tokens de acesso contra exposição indevida.                                                                                                         |
+| Código | Descrição                                                                                                                                                                                   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF02   | O sistema deve permitir autenticação de usuários previamente cadastrados.                                                                                                                   |
+| RF05   | O sistema deve permitir diferentes perfis de acesso, no mínimo: manifestante, ouvidor e administrador. No domínio, esses perfis são representados por `manifestant`, `ombudsman` e `admin`. |
+| RNF07  | O sistema deve exigir autenticação e aplicar autorização por perfil.                                                                                                                        |
+| RNF08  | O sistema deve proteger credenciais e tokens de acesso contra exposição indevida.                                                                                                           |
 
 ---
 
