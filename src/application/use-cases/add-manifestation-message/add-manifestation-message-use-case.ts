@@ -3,7 +3,7 @@ import type { ManifestationInteractionsRepository } from '#src/application/repos
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
-import { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
+import { ManifestationMessage, ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { ManifestationMessageContent } from '#src/domain/value-objects/manifestation-message-content.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
@@ -55,6 +55,7 @@ export class AddManifestationMessageUseCase implements UseCase<
       ManifestationMessage.create({
         manifestationId: targetManifestationId,
         senderUserId,
+        senderType: ManifestationMessageSenderType.MANIFESTANT,
         content: normalizedContent,
       }),
     )

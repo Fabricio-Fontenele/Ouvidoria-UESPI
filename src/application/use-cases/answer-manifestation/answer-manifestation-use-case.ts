@@ -1,8 +1,8 @@
 import type { ManifestationMessageDTO } from '#src/application/dto/manifestation-query-dtos.js'
-import type { ManifestationInteractionsRepository } from '#src/application/repositories/manifestation-interactions-repository.js'
+import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
-import { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
+import { ManifestationMessage, ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { UserRole } from '#src/domain/entities/user.js'
 import { ManifestationMessageContent } from '#src/domain/value-objects/manifestation-message-content.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
@@ -24,7 +24,7 @@ interface AnswerManifestationOutput {
 export class AnswerManifestationUseCase implements UseCase<AnswerManifestationInput, AnswerManifestationOutput> {
   constructor(
     private readonly manifestationsRepository: ManifestationsRepository,
-    private readonly manifestationInteractionsRepository: ManifestationInteractionsRepository,
+    private readonly manifestationAdministrationRepository: ManifestationAdministrationRepository,
     private readonly usersRepository: UsersRepository,
   ) {}
 
@@ -43,6 +43,11 @@ export class AnswerManifestationUseCase implements UseCase<AnswerManifestationIn
       throw new NotAllowedToManageManifestationError()
     }
 
+    const senderType =
+      requester.role === UserRole.ADMIN
+        ? ManifestationMessageSenderType.ADMIN
+        : ManifestationMessageSenderType.OMBUDSMAN
+
     const manifestation = await this.manifestationsRepository.findById(manifestationId)
 
     if (!manifestation) {
@@ -51,12 +56,12 @@ export class AnswerManifestationUseCase implements UseCase<AnswerManifestationIn
 
     manifestation.recordAdministrativeAnswer()
 
-    await this.manifestationsRepository.save(manifestation)
-
-    const message = await this.manifestationInteractionsRepository.addMessage(
+    const message = await this.manifestationAdministrationRepository.recordAnswer(
+      manifestation,
       ManifestationMessage.create({
         manifestationId: targetManifestationId,
         senderUserId,
+        senderType,
         content: normalizedContent,
       }),
     )
