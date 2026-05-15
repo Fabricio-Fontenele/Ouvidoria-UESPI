@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  manifestant
+  ombudsman
+  admin
+
+  @@map("user_role")
+}
+
+enum ManifestationType {
+  report
+  complaint
+  suggestion
+  compliment
+
+  @@map("manifestation_type")
+}
+
+enum ManifestationStatus {
+  in_analysis
+  answered
+  canceled
+  finalized
+
+  @@map("manifestation_status")
+}
+
+enum ManifestationMessageSenderType {
+  manifestant
+  anonymous_manifestant
+  ombudsman
+  admin
+  system
+
+  @@map("manifestation_message_sender_type")
+}
+
+model User {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  name                   String
+  email                  String                 @unique
+  passwordHash           String                 @map("password_hash")
+  role                   UserRole
+  createdAt              DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  authoredManifestations Manifestation[]
+  sentMessages           ManifestationMessage[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model Manifestation {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  protocol             String                 @unique
+  type                 ManifestationType
+  status               ManifestationStatus    @default(in_analysis)
+  campusId             String                 @map("campus_id")
+  administrativeUnitId String                 @map("administrative_unit_id")
+  description          String                 @db.Text
+  involvedPeople       String?                @map("involved_people") @db.Text
+  authorUserId         String?                @map("author_user_id") @db.Uuid
+  accessCodeHash       String?                @map("access_code_hash")
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  author               User?                  @relation(fields: [authorUserId], references: [id])
+  messages             ManifestationMessage[]
+
+  @@index([authorUserId])
+  @@index([status])
+  @@index([type])
+  @@index([campusId])
+  @@index([administrativeUnitId])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@index([campusId, administrativeUnitId])
+  @@index([status, campusId, administrativeUnitId, createdAt])
+  @@map("manifestations")
+}
+
+model ManifestationMessage {
+  id              String                         @id @default(uuid()) @db.Uuid
+  manifestationId String                         @map("manifestation_id") @db.Uuid
+  senderUserId    String?                        @map("sender_user_id") @db.Uuid
+  senderType      ManifestationMessageSenderType @map("sender_type")
+  content         String                         @db.Text
+  createdAt       DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
+  manifestation   Manifestation                  @relation(fields: [manifestationId], references: [id])
+  senderUser      User?                          @relation(fields: [senderUserId], references: [id])
+
+  @@index([manifestationId, createdAt])
+  @@index([senderUserId])
+  @@map("manifestation_messages")
+}
