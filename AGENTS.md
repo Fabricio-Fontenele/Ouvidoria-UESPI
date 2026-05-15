@@ -36,7 +36,7 @@ Forbidden in `domain` and `application` unless explicitly requested: HTTP framew
 Use the current project vocabulary consistently:
 
 - `User` for usuário
-- `protester`, `ombudsman`, and `admin` for user roles
+- `manifestant`, `ombudsman`, and `admin` for user roles
 - `Manifestation`, `Protocol`, and `Attachment` for core domain concepts
 
 Avoid introducing parallel names such as `ticket`, `issue`, or `request` for the same concept unless the domain model is intentionally revised.
@@ -45,9 +45,7 @@ Avoid introducing parallel names such as `ticket`, `issue`, or `request` for the
 
 Use `pnpm` with Node.js 22.
 
-- `pnpm dev`: run the app in development with `tsx`
 - `pnpm build`: clean and compile into `build/`
-- `pnpm start`: run the compiled build
 - `pnpm type:check`: validate TypeScript for `src/` and `test/`
 - `pnpm lint`: run ESLint
 - `pnpm format`: format the repository with Prettier
