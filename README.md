@@ -44,6 +44,52 @@ Run a single spec with:
 pnpm vitest run test/unit/application/sign-in-use-case.spec.ts
 ```
 
+Database and Prisma helpers:
+
+```bash
+pnpm db:up
+pnpm db:down
+pnpm db:logs
+pnpm prisma:format
+pnpm prisma:validate
+```
+
+## Local Database
+
+The repository includes a local PostgreSQL setup via Docker Compose for Prisma-based persistence work.
+
+1. Copy the environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Start the database:
+
+```bash
+pnpm db:up
+```
+
+3. Check container logs if needed:
+
+```bash
+pnpm db:logs
+```
+
+The default connection string is:
+
+```bash
+postgresql://postgres:postgres@localhost:5432/ouvidoria?schema=public
+```
+
+This matches the value documented in `.env.example`.
+
+To stop the local database:
+
+```bash
+pnpm db:down
+```
+
 ## Architecture Rules
 
 - `src/domain/` must stay independent from application, framework, and infrastructure code.
