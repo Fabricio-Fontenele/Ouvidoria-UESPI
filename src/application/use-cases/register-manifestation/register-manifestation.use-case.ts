@@ -7,6 +7,7 @@ import { Manifestation } from '#src/domain/entities/manifestation.js'
 import { AdministrativeUnitId } from '#src/domain/value-objects/administrative-unit-id.js'
 import { CampusId } from '#src/domain/value-objects/campus-id.js'
 import { ManifestationDescription } from '#src/domain/value-objects/manifestation-description.js'
+import { ManifestationInvolvedPeople } from '#src/domain/value-objects/manifestation-involved-people.js'
 import { Protocol } from '#src/domain/value-objects/protocol.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
@@ -20,6 +21,7 @@ interface RegisterManifestationInput {
   campusId: string
   administrativeUnitId: string
   description: string
+  involvedPeople?: string | null
 }
 
 interface RegisterManifestationOutput {
@@ -31,6 +33,7 @@ interface RegisterManifestationOutput {
     campusId: string
     administrativeUnitId: string
     description: string
+    involvedPeople: string | null
     isAnonymous: boolean
     authorUserId: string | null
     createdAt: Date
@@ -53,6 +56,7 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
     campusId,
     administrativeUnitId,
     description,
+    involvedPeople = null,
   }: RegisterManifestationInput): Promise<RegisterManifestationOutput> {
     if (!isAnonymous && requesterId === null) {
       throw new IdentifiedManifestationRequiresRequesterError()
@@ -61,6 +65,10 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
     const normalizedCampusId = CampusId.create(campusId)
     const normalizedAdministrativeUnitId = AdministrativeUnitId.create(administrativeUnitId)
     const normalizedDescription = ManifestationDescription.create(description)
+    const normalizedInvolvedPeople =
+      involvedPeople === null || involvedPeople.trim() === ''
+        ? null
+        : ManifestationInvolvedPeople.create(involvedPeople)
     const generatedProtocol = await this.protocolGenerator.generate()
     const protocol = Protocol.create(generatedProtocol)
     let authorId: UniqueEntityId | null = null
@@ -83,6 +91,7 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
       campusId: normalizedCampusId,
       administrativeUnitId: normalizedAdministrativeUnitId,
       description: normalizedDescription,
+      involvedPeople: normalizedInvolvedPeople,
       authorUserId: authorId,
       accessCodeHash,
     })
@@ -98,6 +107,7 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
         campusId: manifestation.campusId.getValue(),
         administrativeUnitId: manifestation.administrativeUnitId.getValue(),
         description: manifestation.description.getValue(),
+        involvedPeople: manifestation.involvedPeople?.getValue() ?? null,
         isAnonymous,
         authorUserId: manifestation.authorUserId?.toString() ?? null,
         createdAt: manifestation.createdAt,

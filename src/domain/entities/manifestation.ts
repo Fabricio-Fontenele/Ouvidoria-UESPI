@@ -2,6 +2,7 @@ import { Entity } from './entity.js'
 import type { AdministrativeUnitId } from '../value-objects/administrative-unit-id.js'
 import type { CampusId } from '../value-objects/campus-id.js'
 import type { ManifestationDescription } from '../value-objects/manifestation-description.js'
+import type { ManifestationInvolvedPeople } from '../value-objects/manifestation-involved-people.js'
 import type { Protocol } from '../value-objects/protocol.js'
 import type { UniqueEntityId } from '../value-objects/unique-entity-id.js'
 
@@ -47,6 +48,7 @@ interface ManifestationProps {
   campusId: CampusId
   administrativeUnitId: AdministrativeUnitId
   description: ManifestationDescription
+  involvedPeople: ManifestationInvolvedPeople | null
   authorUserId: UniqueEntityId | null
   accessCodeHash: string | null
   createdAt: Date
@@ -58,12 +60,20 @@ interface OpenManifestationProps {
   campusId: CampusId
   administrativeUnitId: AdministrativeUnitId
   description: ManifestationDescription
+  involvedPeople: ManifestationInvolvedPeople | null
   authorUserId: UniqueEntityId | null
   accessCodeHash: string | null
   createdAt?: Date
 }
 
 export class Manifestation extends Entity<ManifestationProps> {
+  private static readonly allowedAdministrativeStatusTransitions: Record<ManifestationStatus, ManifestationStatus[]> = {
+    [ManifestationStatus.IN_ANALYSIS]: [ManifestationStatus.ANSWERED, ManifestationStatus.CANCELED],
+    [ManifestationStatus.ANSWERED]: [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.FINALIZED],
+    [ManifestationStatus.CANCELED]: [],
+    [ManifestationStatus.FINALIZED]: [],
+  }
+
   static open(props: OpenManifestationProps, id?: UniqueEntityId): Manifestation {
     const isAnonymous = props.authorUserId === null
 
@@ -108,7 +118,11 @@ export class Manifestation extends Entity<ManifestationProps> {
   }
 
   recordAdministrativeAnswer(): void {
-    if (!this.canReceiveMessages()) {
+    if (this.props.status === ManifestationStatus.ANSWERED) {
+      return
+    }
+
+    if (this.props.status !== ManifestationStatus.IN_ANALYSIS) {
       throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.ANSWERED)
     }
 
@@ -116,11 +130,9 @@ export class Manifestation extends Entity<ManifestationProps> {
   }
 
   transitionStatusAdministratively(target: ManifestationStatus): void {
-    if (!this.canReceiveMessages()) {
-      throw new ManifestationStatusTransitionNotAllowedError(this.props.status, target)
-    }
+    const allowedTargets = Manifestation.allowedAdministrativeStatusTransitions[this.props.status]
 
-    if (this.props.status === target) {
+    if (!allowedTargets.includes(target)) {
       throw new ManifestationStatusTransitionNotAllowedError(this.props.status, target)
     }
 
@@ -157,6 +169,10 @@ export class Manifestation extends Entity<ManifestationProps> {
 
   get description(): ManifestationDescription {
     return this.props.description
+  }
+
+  get involvedPeople(): ManifestationInvolvedPeople | null {
+    return this.props.involvedPeople
   }
 
   get authorUserId(): UniqueEntityId | null {

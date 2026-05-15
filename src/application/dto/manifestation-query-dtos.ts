@@ -32,6 +32,7 @@ export interface ManifestationDetailsDTO {
   campusId: string
   administrativeUnitId: string
   description: string
+  involvedPeople: string | null
   authorUserId: string | null
   createdAt: Date
   history: ManifestationHistoryEntryDTO[]

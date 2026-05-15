@@ -25,6 +25,7 @@ interface GetAdminManifestationDetailsOutput {
     campusId: string
     administrativeUnitId: string
     description: string
+    involvedPeople: string | null
     authorUserId: string | null
     createdAt: Date
     history: ManifestationHistoryEntryDTO[]
@@ -66,6 +67,7 @@ export class GetAdminManifestationDetailsUseCase implements UseCase<
         campusId: manifestation.campusId,
         administrativeUnitId: manifestation.administrativeUnitId,
         description: manifestation.description,
+        involvedPeople: manifestation.involvedPeople,
         authorUserId: manifestation.authorUserId,
         createdAt: manifestation.createdAt,
         history: manifestation.history,

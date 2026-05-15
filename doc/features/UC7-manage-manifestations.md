@@ -45,6 +45,7 @@ Esta feature deve permitir:
 - listar manifestações disponíveis ao perfil administrativo, com paginação;
 - filtrar a listagem por status, tipo, campus, unidade administrativa e período;
 - consultar os detalhes de qualquer manifestação visível ao perfil, inclusive anônimas;
+- consultar os detalhes administrativos com `involvedPeople`, quando o campo existir;
 - registrar resposta administrativa em manifestação aberta para interação;
 - transitar o status da manifestação para `answered` ao responder;
 - atualizar o status da manifestação respeitando guardas do agregado;
@@ -88,6 +89,7 @@ Após operações bem-sucedidas:
 
 - a listagem retorna manifestações compatíveis com os filtros informados;
 - a consulta de detalhes retorna o estado atual com histórico e mensagens, inclusive para manifestações anônimas;
+- a consulta de detalhes pode expor `involvedPeople` quando o campo existir na manifestação;
 - a resposta administrativa fica registrada como mensagem e o status passa a `answered`;
 - a transição administrativa de status fica persistida no agregado;
 - o histórico de tratamento permanece rastreável.
@@ -182,20 +184,21 @@ Após operações bem-sucedidas:
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                                                 |
-| ---------- | --------------------------------------------------------------------------------------------------------------------- |
-| RN-UC07-01 | Apenas usuários com perfil `ombudsman` ou `admin` podem operar a feature.                                             |
-| RN-UC07-02 | A paginação da listagem administrativa deve aceitar somente páginas maiores ou iguais a `1`.                          |
-| RN-UC07-03 | Os filtros administrativos são opcionais e devem ser repassados ao repositório como informados.                       |
-| RN-UC07-04 | A consulta de detalhes administrativos deve falhar quando a manifestação não existir.                                 |
-| RN-UC07-05 | A consulta administrativa de detalhes deve incluir manifestações anônimas.                                            |
-| RN-UC07-06 | A resposta administrativa deve exigir conteúdo textual não vazio.                                                     |
-| RN-UC07-07 | A resposta administrativa só pode ser registrada quando a manifestação estiver aberta para interação.                 |
-| RN-UC07-08 | A resposta administrativa deve transitar o status da manifestação para `answered`.                                    |
-| RN-UC07-09 | A persistência do novo status deve ocorrer antes do registro da mensagem.                                             |
-| RN-UC07-10 | A atualização administrativa de status não pode partir de manifestações em estado terminal (`finalized`, `canceled`). |
-| RN-UC07-11 | A atualização administrativa de status não pode ter como alvo o mesmo status atual da manifestação.                   |
-| RN-UC07-12 | Regras de transição administrativa devem ficar encapsuladas na entidade `Manifestation`.                              |
+| Código     | Regra                                                                                                                                                |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC07-01 | Apenas usuários com perfil `ombudsman` ou `admin` podem operar a feature.                                                                            |
+| RN-UC07-02 | A paginação da listagem administrativa deve aceitar somente páginas maiores ou iguais a `1`.                                                         |
+| RN-UC07-03 | Os filtros administrativos são opcionais e devem ser repassados ao repositório como informados.                                                      |
+| RN-UC07-04 | A consulta de detalhes administrativos deve falhar quando a manifestação não existir.                                                                |
+| RN-UC07-05 | A consulta administrativa de detalhes deve incluir manifestações anônimas.                                                                           |
+| RN-UC07-06 | A resposta administrativa deve exigir conteúdo textual não vazio.                                                                                    |
+| RN-UC07-07 | A resposta administrativa só pode ser registrada quando a manifestação estiver aberta para interação.                                                |
+| RN-UC07-08 | A resposta administrativa deve transitar o status da manifestação para `answered`.                                                                   |
+| RN-UC07-09 | O fluxo de resposta administrativa deve preservar consistência entre atualização de status e gravação da mensagem.                                   |
+| RN-UC07-10 | A atualização administrativa de status não pode partir de manifestações em estado terminal (`finalized`, `canceled`).                                |
+| RN-UC07-11 | A atualização administrativa de status não pode ter como alvo o mesmo status atual da manifestação.                                                  |
+| RN-UC07-12 | Regras de transição administrativa devem ficar encapsuladas na entidade `Manifestation`.                                                             |
+| RN-UC07-13 | As transições administrativas válidas são `in_analysis -> answered`, `in_analysis -> canceled`, `answered -> in_analysis` e `answered -> finalized`. |
 
 ---
 
@@ -229,11 +232,23 @@ O campo `content` deve:
 
 Para atualização administrativa de status:
 
-- o status atual da manifestação deve permitir transição (não pode estar `finalized` nem `canceled`);
-- o status alvo deve diferir do status atual.
+- o status atual da manifestação deve permitir transição conforme a matriz do agregado;
+- o status alvo deve diferir do status atual;
+- combinações fora da matriz permitida devem falhar.
 
 Observação:
 A guarda fica encapsulada na entidade `Manifestation` por meio dos métodos `recordAdministrativeAnswer()` e `transitionStatusAdministratively(target)`.
+
+### 10.5 Atomicidade da resposta administrativa
+
+No recorte atual do núcleo:
+
+- o status é persistido antes da gravação da mensagem;
+- a implementação ainda não materializa transação de infraestrutura.
+
+Diretriz para a integração futura:
+
+- a persistência do novo status e o registro da mensagem devem ocorrer dentro de uma fronteira transacional única.
 
 ---
 
@@ -362,6 +377,7 @@ O sistema deve falhar com erro de transição não permitida.
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
     "description": "O serviço ficou indisponível durante toda a manhã.",
+    "involvedPeople": "Equipe da coordenação",
     "authorUserId": null,
     "createdAt": "2026-05-10T12:00:00.000Z",
     "history": [
@@ -400,6 +416,7 @@ O sistema deve falhar com erro de transição não permitida.
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
     "description": "O serviço ficou indisponível durante toda a manhã.",
+    "involvedPeople": "Equipe da coordenação",
     "authorUserId": "user-1",
     "createdAt": "2026-05-10T12:00:00.000Z"
   }
@@ -471,6 +488,7 @@ Erro esperado:
 - o sistema deve registrar resposta administrativa em manifestação aberta para interação;
 - o sistema deve transitar o status para `answered` ao registrar resposta administrativa;
 - o sistema deve atualizar o status administrativamente respeitando as guardas do agregado;
+- o sistema deve expor `involvedPeople` nos detalhes e nas saídas de alteração quando o campo existir;
 - o sistema deve bloquear transições a partir de estados terminais;
 - o sistema deve bloquear transições para o mesmo status atual.
 
@@ -512,13 +530,13 @@ Erro esperado:
 
 - dado `manifestationId` existente com autoria identificada;
 - quando o caso de uso de detalhes administrativos for executado por um ouvidor;
-- então deve retornar os detalhes, o histórico e as mensagens da manifestação.
+- então deve retornar os detalhes, o histórico, as mensagens e `involvedPeople` da manifestação.
 
 #### CT-UC07-006 - Deve retornar detalhes administrativos de manifestação anônima
 
 - dado `manifestationId` existente com `authorUserId` igual a `null`;
 - quando o caso de uso de detalhes administrativos for executado por um administrador;
-- então deve retornar os detalhes com `authorUserId` igual a `null`.
+- então deve retornar os detalhes com `authorUserId` igual a `null` e `involvedPeople` quando houver.
 
 #### CT-UC07-007 - Não deve retornar detalhes administrativos de manifestação inexistente
 
@@ -635,6 +653,7 @@ export interface UsersRepository {
 - o erro `ManifestationStatusTransitionNotAllowedError` é exportado pelo módulo do agregado em `src/domain/entities/manifestation.ts`, mantendo o invariante de transição dentro do domínio;
 - a resposta administrativa reaproveita `ManifestationMessage` e o `ManifestationInteractionsRepository.addMessage()`, sem introduzir entidade nova nesta fatia;
 - a transição para `answered` ocorre via `manifestation.recordAdministrativeAnswer()` antes do `save`, e a mensagem só é gravada depois que o novo status é persistido;
+- quando a persistência concreta for introduzida, a atualização de status e o registro da mensagem da resposta administrativa devem ocorrer na mesma transação;
 - a atualização administrativa de status usa `manifestation.transitionStatusAdministratively(target)`, que bloqueia transições a partir de estados terminais e transições para o status atual;
 - a listagem administrativa utiliza um novo contrato `findManyForAdmin(filters, pagination)` no repositório, mantendo `findManyByAuthorUserId` voltado ao fluxo identificado do manifestante;
 - o erro `InvalidPageNumberError` permanece em `list-user-manifestations/errors/` e é reaproveitado pela listagem administrativa enquanto não houver pasta de utilitários compartilhados de paginação;
