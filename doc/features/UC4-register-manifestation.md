@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                 |
-| -------------- | --------------------------------------------------------- |
-| Caso de uso    | UC-04                                                     |
-| Nome           | Registrar manifestação                                    |
-| Feature        | Abertura de manifestação                                  |
-| Ator principal | Usuário                                                   |
-| Prioridade     | Alta                                                      |
-| Status         | Núcleo e controller implementados / adapter HTTP pendente |
+| Campo          | Descrição                                                                               |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-04                                                                                   |
+| Nome           | Registrar manifestação                                                                  |
+| Feature        | Abertura de manifestação                                                                |
+| Ator principal | Usuário                                                                                 |
+| Prioridade     | Alta                                                                                    |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
 ---
 
@@ -605,7 +605,9 @@ interface PasswordHasher {
 - O caso de uso atual trata apenas o registro inicial da manifestação.
 - A camada de apresentação fornece `RegisterManifestationController` em `src/presentation/controllers/manifestation/`, que deriva `requesterId` do contexto autenticado da requisição (`request.user.id`) e não aceita autoria pelo corpo livre.
 - O controller depende de um `Validator<RegisterManifestationBody>` agnóstico e mapeia erros conhecidos (`IdentifiedManifestationRequiresRequesterError`, erros de value-object) para `400 Bad Request`; falhas inesperadas caem no `500` padrão do `BaseController`.
-- O adapter para framework HTTP (Express, Fastify, etc.) e a implementação concreta do `Validator` ainda não foram materializados.
+- A infraestrutura concreta está materializada: `PrismaManifestationsRepository` (`src/infra/database/prisma/repositories/`) implementa `ManifestationsRepository`; `UuidProtocolGenerator` e `RandomAccessCodeGenerator` (`src/infra/protocol/`) implementam os geradores; `BcryptjsHasher` faz hash do `accessCode` antes da persistência; `ZodValidator<RegisterManifestationBody>` (`src/infra/http/fastify/validators/`) materializa o `Validator<T>` da apresentação.
+- O endpoint `POST /manifestations` é registrado em `src/main/routes/manifestation.routes.ts` com `preHandler: optionalAuthenticate` (middleware em `src/infra/http/fastify/middlewares/auth-middleware.ts`), permitindo registro anônimo sem token e injetando `request.user` quando um Bearer válido for enviado.
+- Cobertura e2e: `test/e2e/anonymous-manifestation.e2e.spec.ts` valida o fluxo anônimo + `accessCode` retornado, e `test/e2e/identified-manifestation.e2e.spec.ts` cobre registro autenticado, rejeição sem auth (401) e isolamento entre manifestantes (403).
 - `Campus` e `AdministrativeUnit` não possuem CRUD próprio neste MVP.
 - Nesta versão, campus e unidade administrativa são tratados como catálogos fixos previamente carregados por seed.
 - O caso de uso exige apenas que `campusId` e `administrativeUnitId` sejam informados e usados como referência.

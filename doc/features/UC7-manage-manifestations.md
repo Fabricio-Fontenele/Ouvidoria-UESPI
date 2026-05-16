@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                  |
-| -------------- | ---------------------------------------------------------- |
-| Caso de uso    | UC-07                                                      |
-| Nome           | Gerenciar manifestações                                    |
-| Feature        | Gestão administrativa de manifestações                     |
-| Ator principal | Ouvidor                                                    |
-| Prioridade     | Alta                                                       |
-| Status         | Núcleo e controllers implementados / adapter HTTP pendente |
+| Campo          | Descrição                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-07                                                                                    |
+| Nome           | Gerenciar manifestações                                                                  |
+| Feature        | Gestão administrativa de manifestações                                                   |
+| Ator principal | Ouvidor                                                                                  |
+| Prioridade     | Alta                                                                                     |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rotas HTTP, e2e) |
 
 ---
 
@@ -59,9 +59,7 @@ Esta feature não contempla:
 - atribuição ou encaminhamento da manifestação a responsáveis (RF20);
 - materialização explícita do histórico de ações em entidade própria;
 - notificações ao manifestante;
-- relatórios gerenciais;
-- persistência concreta em banco;
-- rotas HTTP.
+- relatórios gerenciais.
 
 ---
 
@@ -478,7 +476,7 @@ Erro esperado:
 - a verificação de perfil deve ocorrer antes de qualquer acesso à manifestação;
 - a resposta administrativa não deve ser aceita em branco;
 - transições inválidas de status não devem ser persistidas;
-- a camada de apresentação deverá mapear erros de autorização, inexistência e transição conforme o contrato HTTP adotado no futuro.
+- a camada de apresentação mapeia erros de autorização, inexistência e transição conforme o contrato HTTP atual (Fastify) — ver detalhes dos controllers admin na seção 19.
 
 ---
 
@@ -672,14 +670,16 @@ export interface ManifestationAdministrationRepository {
 - a resposta administrativa reaproveita `ManifestationMessage` e delega a persistência atômica ao contrato `ManifestationAdministrationRepository.recordAnswer(...)`;
 - a transição para `answered` continua ocorrendo via `manifestation.recordAdministrativeAnswer()`, e o caso de uso não executa mais gravações separadas de status e mensagem;
 - a atualização administrativa de status delega a persistência ao contrato `ManifestationAdministrationRepository.updateStatus(...)`, também pensado para materializar histórico e mudança de status em uma única transação;
-- a implementação concreta de persistência deve materializar `recordAnswer(...)` e `updateStatus(...)` dentro de fronteiras transacionais únicas;
+- a implementação concreta vive em `PrismaManifestationAdministrationRepository` (`src/infra/database/prisma/repositories/`), que envolve `recordAnswer(...)`, `updateStatus(...)` e `finalizeByAuthor(...)` em `prisma.$transaction` — cada um grava o `UPDATE manifestations` + um `INSERT manifestation_messages` (a mensagem real do `recordAnswer` e/ou uma mensagem com `senderType='system'` carregando o payload JSON definido em `src/infra/database/prisma/system-message-payload.ts`: `{ type, description, actorUserId, actorType, fromStatus, toStatus }`). A fronteira transacional única garante que histórico e estado nunca divirjam;
 - a atualização administrativa de status usa `manifestation.transitionStatusAdministratively(target)`, que bloqueia transições a partir de estados terminais e transições para o status atual;
 - a listagem administrativa utiliza um novo contrato `findManyForAdmin(filters, pagination)` no repositório, mantendo `findManyByAuthorUserId` voltado ao fluxo identificado do manifestante;
 - o erro `InvalidPageNumberError` permanece em `list-user-manifestations/errors/` e é reaproveitado pela listagem administrativa enquanto não houver pasta de utilitários compartilhados de paginação;
-- a implementação concreta de persistência ainda precisa materializar `findManyForAdmin` e o `UsersRepository.findById`;
+- `PrismaManifestationsRepository.findManyForAdmin` (`src/infra/database/prisma/repositories/`) materializa os filtros (`status`, `type`, `campusId`, `administrativeUnitId`, range `createdAt`) e a paginação (`MANIFESTATIONS_PAGE_SIZE = 20`, ordenação `createdAt desc`); `PrismaUsersRepository.findById` (`src/infra/database/prisma/repositories/`) materializa a autorização administrativa;
 - atribuição e encaminhamento (RF20), assim como a materialização explícita do histórico (RF23 em entidade própria), permanecem fora do escopo desta fatia;
 - a camada de apresentação fornece `ListAdminManifestationsController` em `src/presentation/controllers/admin/`, que deriva `requesterUserId` do contexto autenticado, faz parse de `request.query` (`page` por regex `/^[1-9]\d*$/`, `status`/`type` validados contra enums de domínio, `campusId`/`administrativeUnitId` repassados como strings com fallback de string vazia, `from`/`to` aceitos apenas em timestamp ISO UTC completo e então convertidos para `Date`) e rejeita valores inválidos com `400` (`InvalidPageNumberError` ou `InvalidParamError`); mapeia `NotAllowedToManageManifestationError` para `403 Forbidden` e `InvalidPageNumberError` do use case para `400`; sem usuário autenticado retorna `401`;
-- a camada de apresentação fornece `GetAdminManifestationDetailsController`, `AnswerManifestationController` e `UpdateManifestationStatusController` em `src/presentation/controllers/admin/`. Todos derivam `requesterUserId` do contexto autenticado, extraem `manifestationId` de `request.params`, e mapeiam erros compartilhados (`ManifestationNotFoundError` → `404`, `NotAllowedToManageManifestationError` → `403`); os fluxos de escrita (`answer`, `update-status`) validam o body via `Validator` agnóstico e mapeiam `ManifestationStatusTransitionNotAllowedError` para `409 Conflict`; o `answer` também mapeia `InvalidManifestationMessageContentError` para `400` e retorna `201`, enquanto `update-status` retorna `200` com o agregado atualizado; sem usuário autenticado retornam `401` e `manifestationId` vazio retorna `400 MissingParamError`.
+- a camada de apresentação fornece `GetAdminManifestationDetailsController`, `AnswerManifestationController` e `UpdateManifestationStatusController` em `src/presentation/controllers/admin/`. Todos derivam `requesterUserId` do contexto autenticado, extraem `manifestationId` de `request.params`, e mapeiam erros compartilhados (`ManifestationNotFoundError` → `404`, `NotAllowedToManageManifestationError` → `403`); os fluxos de escrita (`answer`, `update-status`) validam o body via `Validator` agnóstico e mapeiam `ManifestationStatusTransitionNotAllowedError` para `409 Conflict`; o `answer` também mapeia `InvalidManifestationMessageContentError` para `400` e retorna `201`, enquanto `update-status` retorna `200` com o agregado atualizado; sem usuário autenticado retornam `401` e `manifestationId` vazio retorna `400 MissingParamError`;
+- os endpoints `GET /admin/manifestations`, `GET /admin/manifestations/:manifestationId`, `POST /admin/manifestations/:manifestationId/answer` e `PATCH /admin/manifestations/:manifestationId/status` são registrados em `src/main/routes/admin.routes.ts` com `preHandler: [ensureAuthenticated, requireRoles(UserRole.OMBUDSMAN, UserRole.ADMIN)]` (`src/infra/http/fastify/middlewares/auth-middleware.ts`); manifestantes recebem `403` e requisições sem token recebem `401`;
+- cobertura e2e em `test/e2e/manifestation-administration.e2e.spec.ts` valida a rastreabilidade: após `answer`, o detalhamento traz `history` na ordem `['registered', 'administrative_answered', 'status_changed']` com `fromStatus='in_analysis'`/`toStatus='answered'` e `prisma.manifestationMessage.count({ senderType: 'system' })` resulta em `1`; após `PATCH status=canceled`, o último item do histórico é o `status_changed` correspondente. Também cobre `403` para manifestante chamando rota admin e `401` sem auth.
 
 ---
 
