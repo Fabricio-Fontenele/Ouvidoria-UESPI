@@ -143,6 +143,46 @@ describe('Manifestation administration with traceability (e2e)', () => {
     expect(lastEntry?.toStatus).toBe('canceled')
   })
 
+  it('rejects PATCH /status with status=answered (only POST /answer can reach answered)', async () => {
+    const app = await getApp()
+    await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+
+    const manifestantToken = await signIn('manifestant@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+    const manifestation = await createIdentifiedManifestation(manifestantToken)
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/admin/manifestations/${manifestation.id}/status`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { status: 'answered' },
+    })
+
+    expect(response.statusCode).toBe(409)
+  })
+
+  it('rejects an ombudsman trying to open an identified manifestation (403)', async () => {
+    const app = await getApp()
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/manifestations',
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: {
+        isAnonymous: false,
+        type: 'complaint',
+        campusId: 'campus-teresina',
+        administrativeUnitId: 'unit-secretaria',
+        description: 'Ouvidor abrindo em nome próprio.',
+      },
+    })
+
+    expect(response.statusCode).toBe(403)
+  })
+
   it('forbids a manifestant from calling admin routes', async () => {
     const app = await getApp()
     await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
