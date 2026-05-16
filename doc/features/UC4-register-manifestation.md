@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                 |
-| -------------- | ----------------------------------------- |
-| Caso de uso    | UC-04                                     |
-| Nome           | Registrar manifestação                    |
-| Feature        | Abertura de manifestação                  |
-| Ator principal | Usuário                                   |
-| Prioridade     | Alta                                      |
-| Status         | Núcleo implementado / integração pendente |
+| Campo          | Descrição                                                 |
+| -------------- | --------------------------------------------------------- |
+| Caso de uso    | UC-04                                                     |
+| Nome           | Registrar manifestação                                    |
+| Feature        | Abertura de manifestação                                  |
+| Ator principal | Usuário                                                   |
+| Prioridade     | Alta                                                      |
+| Status         | Núcleo e controller implementados / adapter HTTP pendente |
 
 ---
 
@@ -557,7 +557,9 @@ interface ProtocolGenerator {
 ## 19. Observações de implementação
 
 - O caso de uso atual trata apenas o registro inicial da manifestação.
-- Em uma camada HTTP futura, `requesterId` deve vir do token/sessão, não do corpo livre da requisição.
+- A camada de apresentação fornece `RegisterManifestationController` em `src/presentation/controllers/manifestation/`, que deriva `requesterId` do contexto autenticado da requisição (`request.user.id`) e não aceita autoria pelo corpo livre.
+- O controller depende de um `Validator<RegisterManifestationBody>` agnóstico e mapeia erros conhecidos (`IdentifiedManifestationRequiresRequesterError`, erros de value-object) para `400 Bad Request`; falhas inesperadas caem no `500` padrão do `BaseController`.
+- O adapter para framework HTTP (Express, Fastify, etc.) e a implementação concreta do `Validator` ainda não foram materializados.
 - `Campus` e `AdministrativeUnit` não possuem CRUD próprio neste MVP.
 - Nesta versão, campus e unidade administrativa são tratados como catálogos fixos previamente carregados por seed.
 - O caso de uso exige apenas que `campusId` e `administrativeUnitId` sejam informados e usados como referência.
