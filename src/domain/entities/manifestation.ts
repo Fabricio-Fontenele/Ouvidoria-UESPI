@@ -68,7 +68,7 @@ interface OpenManifestationProps {
 
 export class Manifestation extends Entity<ManifestationProps> {
   private static readonly allowedAdministrativeStatusTransitions: Record<ManifestationStatus, ManifestationStatus[]> = {
-    [ManifestationStatus.IN_ANALYSIS]: [ManifestationStatus.ANSWERED, ManifestationStatus.CANCELED],
+    [ManifestationStatus.IN_ANALYSIS]: [ManifestationStatus.CANCELED],
     [ManifestationStatus.ANSWERED]: [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.FINALIZED],
     [ManifestationStatus.CANCELED]: [],
     [ManifestationStatus.FINALIZED]: [],
