@@ -30,7 +30,9 @@ export function SiteFooter({ className, variant = 'auth', ...props }: SiteFooter
   return (
     <footer className={cx(footerClasses, textClassName, className)} {...props}>
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 md:flex-row md:justify-between md:gap-8">
-        <p className={cx('text-sm leading-5', isHome ? undefined : 'md:text-left')}>© 2026 Universidade Estadual do Piauí</p>
+        <p className={cx('text-sm leading-5', isHome ? undefined : 'md:text-left')}>
+          © 2026 Universidade Estadual do Piauí
+        </p>
 
         <nav aria-label="Links institucionais" className={cx('flex flex-wrap justify-center gap-y-2', navGapClasses)}>
           <a className={linkClasses} href="https://www.uespi.br">

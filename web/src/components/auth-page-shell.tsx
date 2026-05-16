@@ -25,7 +25,10 @@ function AuthHeader() {
         </strong>
         <a
           aria-label="Ajuda"
-          className={cx('grid size-7 place-items-center justify-self-end rounded-full text-login-blue md:size-8', linkFocusClasses)}
+          className={cx(
+            'grid size-7 place-items-center justify-self-end rounded-full text-login-blue md:size-8',
+            linkFocusClasses,
+          )}
           href="#suporte"
         >
           <Icon className="size-[22px] md:size-6" name="help" />
@@ -43,7 +46,10 @@ export function AuthPageShell({ cardClassName, children, footerId, titleId }: Au
       <div className="flex flex-1 items-start justify-center px-4 py-8 sm:px-8 sm:py-12 md:items-center md:px-10 md:py-14 lg:py-16">
         <section
           aria-labelledby={titleId}
-          className={cx('w-full rounded-lg bg-login-bg px-5 pt-8 pb-[25px] shadow-login-card sm:px-8 sm:pt-10 sm:pb-8 md:px-10 md:py-11', cardClassName)}
+          className={cx(
+            'w-full rounded-lg bg-login-bg px-5 pt-8 pb-[25px] shadow-login-card sm:px-8 sm:pt-10 sm:pb-8 md:px-10 md:py-11',
+            cardClassName,
+          )}
         >
           {children}
         </section>

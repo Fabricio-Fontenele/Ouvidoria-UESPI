@@ -59,11 +59,7 @@ const metrics: Metric[] = [
   { colorClassName: 'text-home-success', label: 'Concluídas.', value: '09' },
 ]
 
-const filters: Filter[] = [
-  { isActive: true, label: 'Todos' },
-  { label: 'Ativas' },
-  { label: 'Concluídos' },
-]
+const filters: Filter[] = [{ isActive: true, label: 'Todos' }, { label: 'Ativas' }, { label: 'Concluídos' }]
 
 const statusStyles: Record<
   ManifestationStatus,
@@ -146,7 +142,12 @@ function Overview() {
       <dl className="grid w-full max-w-[420px] grid-cols-3 gap-5 sm:gap-8 md:mx-auto md:max-w-xl md:text-center lg:max-w-2xl">
         {metrics.map((metric) => (
           <div key={metric.label}>
-            <dd className={cx('text-[30px] leading-9 font-bold tabular-nums md:text-5xl md:leading-none lg:text-6xl', metric.colorClassName ?? 'text-home-text')}>
+            <dd
+              className={cx(
+                'text-[30px] leading-9 font-bold tabular-nums md:text-5xl md:leading-none lg:text-6xl',
+                metric.colorClassName ?? 'text-home-text',
+              )}
+            >
               {metric.value}
             </dd>
             <dt className="text-xs leading-5 text-home-brown md:mt-2 md:text-sm">{metric.label}</dt>
@@ -161,7 +162,9 @@ function FilterBar() {
   return (
     <div className="mx-auto flex w-full gap-3 overflow-x-auto pr-1 sm:overflow-visible md:w-[92%] xl:w-[94%]">
       {filters.map((filter) => {
-        const filterClasses = filter.isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80'
+        const filterClasses = filter.isActive
+          ? 'bg-home-blue text-white'
+          : 'bg-home-chip text-home-brown hover:bg-home-chip/80'
 
         return (
           <button
@@ -202,7 +205,12 @@ function ManifestationCard({ manifestation }: { manifestation: Manifestation }) 
   const styles = statusStyles[manifestation.status]
 
   return (
-    <article className={cx('rounded-lg border-l-4 bg-home-surface px-4 py-4 shadow-home-card sm:px-6 sm:py-5', styles.accentClassName)}>
+    <article
+      className={cx(
+        'rounded-lg border-l-4 bg-home-surface px-4 py-4 shadow-home-card sm:px-6 sm:py-5',
+        styles.accentClassName,
+      )}
+    >
       <div className="grid grid-cols-[32px_1fr] gap-4">
         <span className={cx('grid size-8 place-items-center rounded-full', styles.iconClassName)}>
           <Icon className="size-4" name="info" />
@@ -215,7 +223,11 @@ function ManifestationCard({ manifestation }: { manifestation: Manifestation }) 
               <br />
               {manifestation.protocol}
             </p>
-            <span className={cx('rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase', styles.badgeClassName)}>{styles.label}</span>
+            <span
+              className={cx('rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase', styles.badgeClassName)}
+            >
+              {styles.label}
+            </span>
           </div>
 
           <h3 className="mt-3 text-lg leading-[22.5px] font-bold text-home-text">{manifestation.title}</h3>

@@ -13,7 +13,11 @@ function TermsCheckbox() {
         aria-hidden="true"
         className="mt-0.5 grid size-[22px] place-items-center rounded border border-login-blue text-login-on-blue transition-colors duration-150 peer-checked:bg-login-blue peer-checked:[&>svg]:opacity-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-login-blue"
       >
-        <svg className="size-3.5 opacity-0 transition-opacity duration-150 peer-checked:opacity-100" fill="none" viewBox="0 0 16 16">
+        <svg
+          className="size-3.5 opacity-0 transition-opacity duration-150 peer-checked:opacity-100"
+          fill="none"
+          viewBox="0 0 16 16"
+        >
           <path d="m3.5 8 3 3 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
         </svg>
       </span>
@@ -38,16 +42,38 @@ export function SignPage() {
       footerId="suporte"
       titleId="sign-title"
     >
-      <h1 className="text-center text-[30px] leading-9 font-bold text-login-text sm:text-[32px] md:text-[34px] md:leading-10" id="sign-title">
+      <h1
+        className="text-center text-[30px] leading-9 font-bold text-login-text sm:text-[32px] md:text-[34px] md:leading-10"
+        id="sign-title"
+      >
         Criar Conta
       </h1>
       <p className="mx-auto mt-[15px] mb-5 max-w-[260px] text-center text-lg leading-7 text-login-brown sm:max-w-[350px] md:mb-8 md:max-w-[430px] md:text-xl">
         Inicie seu diálogo com a Universidade de forma segura e transparente.
       </p>
 
-      <form className="grid gap-y-[17px] md:grid-cols-2 md:gap-x-6 md:gap-y-5" onSubmit={(event) => event.preventDefault()}>
-        <AuthField autoComplete="name" icon="user" id="full-name" label="Nome completo" placeholder="Seu nome completo" required type="text" />
-        <AuthField autoComplete="email" icon="email" id="sign-email" label="Email" placeholder="exemplo@uespi.br" required type="email" />
+      <form
+        className="grid gap-y-[17px] md:grid-cols-2 md:gap-x-6 md:gap-y-5"
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <AuthField
+          autoComplete="name"
+          icon="user"
+          id="full-name"
+          label="Nome completo"
+          placeholder="Seu nome completo"
+          required
+          type="text"
+        />
+        <AuthField
+          autoComplete="email"
+          icon="email"
+          id="sign-email"
+          label="Email"
+          placeholder="exemplo@uespi.br"
+          required
+          type="email"
+        />
         <AuthField
           autoComplete="new-password"
           icon="lock"

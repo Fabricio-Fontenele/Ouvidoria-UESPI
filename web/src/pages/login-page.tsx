@@ -8,7 +8,10 @@ export function LoginPage() {
     'transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
   return (
-    <AuthPageShell cardClassName="max-w-[342px] sm:max-w-[420px] md:max-w-[480px] lg:max-w-[500px]" titleId="login-title">
+    <AuthPageShell
+      cardClassName="max-w-[342px] sm:max-w-[420px] md:max-w-[480px] lg:max-w-[500px]"
+      titleId="login-title"
+    >
       <h1
         className="text-center text-[30px] leading-9 font-bold text-login-text sm:text-[32px] md:text-[34px] md:leading-10"
         id="login-title"
@@ -40,7 +43,10 @@ export function LoginPage() {
           type="password"
         />
 
-        <a className={cx('self-end text-sm leading-5 text-login-blue no-underline md:text-[15px]', linkFocusClasses)} href="#recuperar-senha">
+        <a
+          className={cx('self-end text-sm leading-5 text-login-blue no-underline md:text-[15px]', linkFocusClasses)}
+          href="#recuperar-senha"
+        >
           Esqueci minha senha.
         </a>
 

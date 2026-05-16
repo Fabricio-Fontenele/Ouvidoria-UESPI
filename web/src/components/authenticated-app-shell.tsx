@@ -30,7 +30,13 @@ const supportMenuItems: MenuItem[] = [
 const iconButtonClasses =
   'grid size-9 place-items-center rounded-full text-home-blue transition duration-150 hover:bg-home-blue/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue'
 
-function MenuLink({ href, icon, isActive = false, label, onNavigate }: MenuItem & { isActive?: boolean; onNavigate: () => void }) {
+function MenuLink({
+  href,
+  icon,
+  isActive = false,
+  label,
+  onNavigate,
+}: MenuItem & { isActive?: boolean; onNavigate: () => void }) {
   return (
     <a
       aria-current={isActive ? 'page' : undefined}
@@ -140,7 +146,13 @@ function AuthenticatedMenu({
             </strong>
           </a>
 
-          <button aria-label="Fechar menu" className={iconButtonClasses} onClick={handleClose} ref={closeButtonRef} type="button">
+          <button
+            aria-label="Fechar menu"
+            className={iconButtonClasses}
+            onClick={handleClose}
+            ref={closeButtonRef}
+            type="button"
+          >
             <Icon className="size-5" name="x" />
           </button>
         </div>
