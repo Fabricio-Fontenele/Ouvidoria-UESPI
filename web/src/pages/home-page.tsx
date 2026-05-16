@@ -118,7 +118,7 @@ function GuarapiChatTrigger() {
   return (
     <a
       aria-label="Abrir chat com o Guarapi"
-      className="fixed right-1 bottom-5 z-30 block size-32 rounded-full drop-shadow-home-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-home-blue sm:right-5 sm:bottom-8 sm:size-36 lg:right-8 lg:bottom-10"
+      className="fixed right-2 bottom-5 z-30 block size-20 rounded-full drop-shadow-home-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-home-blue sm:right-5 sm:bottom-8 sm:size-28 lg:right-8 lg:bottom-10 lg:size-36"
       href="#chat-guarapi"
     >
       <img alt="" className="size-full rounded-full object-contain" src={guarapiMascot} />
@@ -139,7 +139,7 @@ function Overview() {
         </p>
       </div>
 
-      <dl className="grid w-full max-w-[420px] grid-cols-3 gap-5 sm:gap-8 md:mx-auto md:max-w-xl md:text-center lg:max-w-2xl">
+      <dl className="grid w-full max-w-[420px] grid-cols-3 gap-3 sm:gap-8 md:mx-auto md:max-w-xl md:text-center lg:max-w-2xl">
         {metrics.map((metric) => (
           <div key={metric.label}>
             <dd
@@ -160,7 +160,7 @@ function Overview() {
 
 function FilterBar() {
   return (
-    <div className="mx-auto flex w-full gap-3 overflow-x-auto pr-1 sm:overflow-visible md:w-[92%] xl:w-[94%]">
+    <div className="mx-auto grid w-full grid-cols-3 gap-2 md:w-[92%] xl:w-[94%]">
       {filters.map((filter) => {
         const filterClasses = filter.isActive
           ? 'bg-home-blue text-white'
@@ -170,7 +170,7 @@ function FilterBar() {
           <button
             aria-pressed={filter.isActive ?? false}
             className={cx(
-              'min-h-8 min-w-[95px] rounded-full px-4 text-xs leading-5 font-semibold transition duration-150 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue',
+              'min-h-8 min-w-0 rounded-full px-3 text-xs leading-5 font-semibold transition duration-150 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue',
               filterClasses,
             )}
             key={filter.label}
@@ -258,10 +258,10 @@ export function HomePage() {
   return (
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
       <AuthenticatedAppShell>
-        <main className="mx-auto w-full max-w-6xl px-4 pt-10 min-[375px]:px-[30px] sm:px-8 md:pt-14 lg:px-12">
+        <main className="mx-auto w-full max-w-6xl px-3 pt-8 min-[375px]:px-6 sm:px-8 md:pt-14 lg:px-12">
           <section className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,480px)] lg:items-start lg:gap-12">
             <div>
-              <h1 className="max-w-[342px] text-5xl leading-none font-black text-home-text sm:max-w-xl sm:text-6xl lg:text-7xl">
+              <h1 className="max-w-[320px] text-[38px] leading-[0.98] font-black text-home-text min-[375px]:text-5xl sm:max-w-xl sm:text-6xl lg:text-7xl">
                 Minhas Manifestações
               </h1>
               <p className="mt-4 max-w-[342px] text-base leading-[26px] text-home-brown sm:max-w-lg">
@@ -290,7 +290,7 @@ export function HomePage() {
           </section>
         </main>
 
-        <SiteFooter variant="home" />
+        <SiteFooter />
         <GuarapiChatTrigger />
       </AuthenticatedAppShell>
     </div>
