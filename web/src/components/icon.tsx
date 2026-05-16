@@ -7,13 +7,19 @@ export type IconName =
   | 'email'
   | 'eye'
   | 'eye-off'
+  | 'file-text'
   | 'help'
+  | 'home'
   | 'info'
   | 'lock'
+  | 'log-out'
   | 'menu'
+  | 'plus-circle'
   | 'search'
+  | 'settings'
   | 'share'
   | 'user'
+  | 'x'
 
 interface IconProps extends ComponentProps<'svg'> {
   name: IconName
@@ -84,12 +90,31 @@ export function Icon({ className, name, ...props }: IconProps) {
         </svg>
       )
 
+    case 'file-text':
+      return (
+        <svg {...sharedProps}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+          <path d="M14 2v6h6" />
+          <path d="M8 13h8" />
+          <path d="M8 17h5" />
+        </svg>
+      )
+
     case 'help':
       return (
         <svg {...sharedProps}>
           <circle cx="12" cy="12" r="10" />
           <path d="M9.5 9a2.7 2.7 0 0 1 5.1 1.3c0 1.8-2.6 2.2-2.6 4" />
           <path d="M12 17.5h.01" />
+        </svg>
+      )
+
+    case 'home':
+      return (
+        <svg {...sharedProps}>
+          <path d="m3 11 9-8 9 8" />
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" />
+          <path d="M9 21v-6h6v6" />
         </svg>
       )
 
@@ -109,12 +134,30 @@ export function Icon({ className, name, ...props }: IconProps) {
         </svg>
       )
 
+    case 'log-out':
+      return (
+        <svg {...sharedProps}>
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <path d="M16 17l5-5-5-5" />
+          <path d="M21 12H9" />
+        </svg>
+      )
+
     case 'menu':
       return (
         <svg {...sharedProps}>
           <path d="M4 7h16" />
           <path d="M4 12h16" />
           <path d="M4 17h16" />
+        </svg>
+      )
+
+    case 'plus-circle':
+      return (
+        <svg {...sharedProps}>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v8" />
+          <path d="M8 12h8" />
         </svg>
       )
 
@@ -126,6 +169,14 @@ export function Icon({ className, name, ...props }: IconProps) {
         </svg>
       )
 
+    case 'settings':
+      return (
+        <svg {...sharedProps}>
+          <path d="M12.2 2h-.4a2 2 0 0 0-2 2 1.6 1.6 0 0 1-2.4 1.4 2 2 0 0 0-2.7.7l-.2.3a2 2 0 0 0 .7 2.7 1.6 1.6 0 0 1 0 2.8 2 2 0 0 0-.7 2.7l.2.3a2 2 0 0 0 2.7.7 1.6 1.6 0 0 1 2.4 1.4 2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2 1.6 1.6 0 0 1 2.4-1.4 2 2 0 0 0 2.7-.7l.2-.3a2 2 0 0 0-.7-2.7 1.6 1.6 0 0 1 0-2.8 2 2 0 0 0 .7-2.7l-.2-.3a2 2 0 0 0-2.7-.7 1.6 1.6 0 0 1-2.4-1.4 2 2 0 0 0-2-2Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )
+
     case 'share':
       return (
         <svg {...sharedProps}>
@@ -134,6 +185,14 @@ export function Icon({ className, name, ...props }: IconProps) {
           <circle cx="18" cy="19" r="3" />
           <path d="m8.6 10.5 6.8-4" />
           <path d="m8.6 13.5 6.8 4" />
+        </svg>
+      )
+
+    case 'x':
+      return (
+        <svg {...sharedProps}>
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
         </svg>
       )
 

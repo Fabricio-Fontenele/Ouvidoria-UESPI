@@ -1,5 +1,5 @@
 import guarapiMascot from '../assets/guarapi-mascot.png'
-import uespiLogo from '../assets/brasao.png'
+import { AuthenticatedAppShell } from '../components/authenticated-app-shell'
 import { Icon } from '../components/icon'
 import { SiteFooter } from '../components/site-footer'
 import { cx } from '../utils/cx'
@@ -92,35 +92,6 @@ const statusStyles: Record<
     iconClassName: 'bg-home-success text-white',
     label: 'Concluída',
   },
-}
-
-function Header() {
-  const iconButtonClasses =
-    'grid size-9 place-items-center rounded-full text-home-blue transition duration-150 hover:bg-home-blue/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue'
-
-  return (
-    <header className="sticky top-0 z-20 h-20 bg-home-surface shadow-home-header">
-      <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[44px_1fr_76px] items-center gap-4 px-4 min-[375px]:px-7 sm:grid-cols-[52px_1fr_92px] sm:px-8 lg:px-12">
-        <button aria-label="Abrir menu" className={iconButtonClasses} type="button">
-          <Icon className="size-[18px]" name="menu" />
-        </button>
-
-        <a className="flex min-w-0 items-center justify-center gap-1.5 text-home-blue no-underline" href="/home">
-          <img alt="Brasão da UESPI" className="h-12 w-7 object-contain" src={uespiLogo} />
-          <strong className="truncate text-base leading-6 font-bold sm:text-lg">Ouvidoria UESPI</strong>
-        </a>
-
-        <div className="flex items-center justify-end gap-1">
-          <a aria-label="Buscar" className={iconButtonClasses} href="#buscar-manifestacao">
-            <Icon className="size-5" name="search" />
-          </a>
-          <a aria-label="Notificações" className={iconButtonClasses} href="#notificacoes">
-            <Icon className="size-5" name="bell" />
-          </a>
-        </div>
-      </div>
-    </header>
-  )
 }
 
 function NewRecordCard() {
@@ -273,43 +244,43 @@ function ManifestationCard({ manifestation }: { manifestation: Manifestation }) 
 
 export function HomePage() {
   return (
-    <main className="min-h-svh bg-home-surface font-sans text-home-text">
-      <Header />
-
-      <div className="mx-auto w-full max-w-6xl px-4 pt-10 min-[375px]:px-[30px] sm:px-8 md:pt-14 lg:px-12">
-        <section className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,480px)] lg:items-start lg:gap-12">
-          <div>
-            <h1 className="max-w-[342px] text-5xl leading-none font-black text-home-text sm:max-w-xl sm:text-6xl lg:text-7xl">
-              Minhas Manifestações
-            </h1>
-            <p className="mt-4 max-w-[342px] text-base leading-[26px] text-home-brown sm:max-w-lg">
-              Acompanhe o progresso e registre suas manifestações.
-            </p>
-          </div>
-
-          <NewRecordCard />
-        </section>
-
-        <section className="mt-14 space-y-8 md:mt-16 lg:space-y-10">
-          <Overview />
-
-          <div className="space-y-6" id="buscar-manifestacao">
-            <div className="flex w-full flex-col items-start gap-5">
-              <FilterBar />
-              <SearchField />
+    <div className="min-h-svh bg-home-surface font-sans text-home-text">
+      <AuthenticatedAppShell>
+        <main className="mx-auto w-full max-w-6xl px-4 pt-10 min-[375px]:px-[30px] sm:px-8 md:pt-14 lg:px-12">
+          <section className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,480px)] lg:items-start lg:gap-12">
+            <div>
+              <h1 className="max-w-[342px] text-5xl leading-none font-black text-home-text sm:max-w-xl sm:text-6xl lg:text-7xl">
+                Minhas Manifestações
+              </h1>
+              <p className="mt-4 max-w-[342px] text-base leading-[26px] text-home-brown sm:max-w-lg">
+                Acompanhe o progresso e registre suas manifestações.
+              </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {manifestations.map((manifestation) => (
-                <ManifestationCard key={manifestation.protocol} manifestation={manifestation} />
-              ))}
-            </div>
-          </div>
-        </section>
-      </div>
+            <NewRecordCard />
+          </section>
 
-      <SiteFooter variant="home" />
-      <GuarapiChatTrigger />
-    </main>
+          <section className="mt-14 space-y-8 md:mt-16 lg:space-y-10">
+            <Overview />
+
+            <div className="space-y-6" id="buscar-manifestacao">
+              <div className="flex w-full flex-col items-start gap-5">
+                <FilterBar />
+                <SearchField />
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {manifestations.map((manifestation) => (
+                  <ManifestationCard key={manifestation.protocol} manifestation={manifestation} />
+                ))}
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <SiteFooter variant="home" />
+        <GuarapiChatTrigger />
+      </AuthenticatedAppShell>
+    </div>
   )
 }
