@@ -5,6 +5,7 @@ import { NotAllowedToManageManifestationError } from '#src/application/use-cases
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
 import { InvalidParamError } from '../../errors/invalid-param-error.js'
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
 import { badRequest, forbidden, ok, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import { BaseController } from '../base-controller.js'
@@ -45,7 +46,7 @@ export class ListAdminManifestationsController extends BaseController<ListAdminM
 
   protected async perform(request: ListAdminManifestationsRequest): Promise<HttpResponse> {
     if (request.user === undefined) {
-      return unauthorized(new Error('Authentication required.'))
+      return unauthorized(new UnauthenticatedError())
     }
 
     const { page: rawPage, status, type, campusId, administrativeUnitId, from, to } = request.query

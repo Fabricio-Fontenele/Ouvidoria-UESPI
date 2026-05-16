@@ -9,6 +9,7 @@ import {
   ManifestationStatusTransitionNotAllowedError,
   ManifestationType,
 } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import {
   UpdateManifestationStatusController,
   type UpdateManifestationStatusBody,
@@ -16,6 +17,7 @@ import {
 } from '#src/presentation/controllers/admin/update-manifestation-status.controller.js'
 import { MissingParamError } from '#src/presentation/errors/missing-param-error.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 import type { Validator } from '#src/presentation/protocols/validator.js'
 
@@ -39,7 +41,7 @@ describe('UpdateManifestationStatusController', () => {
       params: { manifestationId: 'manifestation-1' },
       query: {},
       headers: {},
-      user: { id: 'ombudsman-1', role: 'ombudsman' },
+      user: { id: 'ombudsman-1', role: UserRole.OMBUDSMAN },
     }
 
     sut = new UpdateManifestationStatusController(useCase, validator)
@@ -82,6 +84,7 @@ describe('UpdateManifestationStatusController', () => {
     const response = await sut.handle(unauthenticated)
 
     expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(validator.validate.mock.calls).toHaveLength(0)
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })

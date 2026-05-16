@@ -9,12 +9,14 @@ import {
   ManifestationStatusTransitionNotAllowedError,
   ManifestationType,
 } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import {
   FinalizeManifestationController,
   type FinalizeManifestationParams,
 } from '#src/presentation/controllers/manifestation/finalize-manifestation.controller.js'
 import { MissingParamError } from '#src/presentation/errors/missing-param-error.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 
 describe('FinalizeManifestationController', () => {
@@ -31,7 +33,7 @@ describe('FinalizeManifestationController', () => {
       params: { manifestationId: 'manifestation-1' },
       query: {},
       headers: {},
-      user: { id: 'user-1', role: 'manifestant' },
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
     }
 
     sut = new FinalizeManifestationController(useCase)
@@ -72,6 +74,7 @@ describe('FinalizeManifestationController', () => {
     const response = await sut.handle(unauthenticated)
 
     expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })
 

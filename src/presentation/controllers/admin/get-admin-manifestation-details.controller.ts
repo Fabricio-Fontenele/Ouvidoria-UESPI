@@ -3,6 +3,7 @@ import { ManifestationNotFoundError } from '#src/application/use-cases/manifesta
 import { NotAllowedToManageManifestationError } from '#src/application/use-cases/manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
 
 import { MissingParamError } from '../../errors/missing-param-error.js'
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
 import { badRequest, forbidden, notFound, ok, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import { BaseController } from '../base-controller.js'
@@ -20,7 +21,7 @@ export class GetAdminManifestationDetailsController extends BaseController<GetAd
 
   protected async perform(request: GetAdminManifestationDetailsRequest): Promise<HttpResponse> {
     if (request.user === undefined) {
-      return unauthorized(new Error('Authentication required.'))
+      return unauthorized(new UnauthenticatedError())
     }
 
     const { manifestationId } = request.params
