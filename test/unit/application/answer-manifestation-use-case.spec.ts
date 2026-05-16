@@ -101,13 +101,22 @@ describe('AnswerManifestationUseCase', () => {
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
 
     const recordAnswerCall = manifestationAdministrationRepository.recordAnswer.mock.calls[0] as
-      | [Manifestation, ManifestationMessage]
+      | [
+          {
+            manifestation: Manifestation
+            message: ManifestationMessage
+            fromStatus: ManifestationStatus
+            toStatus: ManifestationStatus
+          },
+        ]
       | undefined
-    const answeredManifestation = recordAnswerCall?.[0]
-    const savedMessage = recordAnswerCall?.[1]
+    const answeredManifestation = recordAnswerCall?.[0].manifestation
+    const savedMessage = recordAnswerCall?.[0].message
 
     expect(answeredManifestation).toBe(manifestation)
     expect(savedMessage).toBeInstanceOf(ManifestationMessage)
+    expect(recordAnswerCall?.[0].fromStatus).toBe(ManifestationStatus.IN_ANALYSIS)
+    expect(recordAnswerCall?.[0].toStatus).toBe(ManifestationStatus.ANSWERED)
     expect(savedMessage?.manifestationId.toValue()).toBe('manifestation-1')
     expect(savedMessage?.senderUserId?.toValue()).toBe('ombudsman-1')
     expect(savedMessage?.senderType).toBe(ManifestationMessageSenderType.OMBUDSMAN)
@@ -134,9 +143,16 @@ describe('AnswerManifestationUseCase', () => {
     })
 
     const recordAnswerCall = manifestationAdministrationRepository.recordAnswer.mock.calls[0] as
-      | [Manifestation, ManifestationMessage]
+      | [
+          {
+            manifestation: Manifestation
+            message: ManifestationMessage
+            fromStatus: ManifestationStatus
+            toStatus: ManifestationStatus
+          },
+        ]
       | undefined
-    const savedMessage = recordAnswerCall?.[1]
+    const savedMessage = recordAnswerCall?.[0].message
 
     expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)

@@ -76,7 +76,7 @@ Para executar a consulta:
 - a funcionalidade de IA deve estar disponível por meio de um `AiGateway`;
 - a chamada deve fornecer histórico da conversa e mensagem atual;
 - a integração externa deve operar com conteúdo institucional aprovado;
-- quando houver pré-preenchimento assistido, os catálogos válidos de campus e unidade administrativa devem estar disponíveis para canonização.
+- quando houver pré-preenchimento assistido, os catálogos válidos de campus e unidade administrativa devem estar disponíveis por contratos de aplicação injetados no caso de uso.
 
 ---
 
@@ -96,12 +96,10 @@ Após uma consulta bem-sucedida:
 
 A feature deve receber os seguintes dados:
 
-| Campo               | Tipo   | Obrigatório | Descrição                                                                                                                |
-| ------------------- | ------ | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
-| history             | array  | Sim         | Histórico ordenado da conversa, com `role` e `content`.                                                                  |
-| message             | string | Sim         | Nova mensagem enviada pelo usuário.                                                                                      |
-| campuses            | array  | Sim         | Catálogo válido de campi para canonização de `campusId`.                                                                 |
-| administrativeUnits | array  | Sim         | Catálogo válido de unidades administrativas, incluindo vínculo com `campusId`, para canonização e consistência do draft. |
+| Campo   | Tipo   | Obrigatório | Descrição                                               |
+| ------- | ------ | ----------- | ------------------------------------------------------- |
+| history | array  | Sim         | Histórico ordenado da conversa, com `role` e `content`. |
+| message | string | Sim         | Nova mensagem enviada pelo usuário.                     |
 
 ### Exemplo de entrada
 
@@ -113,15 +111,7 @@ A feature deve receber os seguintes dados:
       "content": "Quero reclamar do atendimento."
     }
   ],
-  "message": "Foi na coordenação de sistemas em Parnaíba.",
-  "campuses": [{ "id": "campus-parnaiba", "label": "Campus Parnaíba" }],
-  "administrativeUnits": [
-    {
-      "id": "coord-sistemas",
-      "label": "Coordenação de Sistemas",
-      "campusId": "campus-parnaiba"
-    }
-  ]
+  "message": "Foi na coordenação de sistemas em Parnaíba."
 }
 ```
 
@@ -165,19 +155,19 @@ A feature deve retornar os seguintes dados:
 
 ## 10. Regras de negócio
 
-| Código     | Regra                                                                                                            |
-| ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| RN-UC09-01 | A resposta pública do caso de uso deve sempre usar um contrato estável do backend.                               |
-| RN-UC09-02 | Intenções fora da lista suportada devem ser convertidas para `unknown`.                                          |
-| RN-UC09-03 | A consulta pode sugerir tratamento formal, mas não pode registrar manifestação.                                  |
-| RN-UC09-04 | O backend deve normalizar e validar os dados recebidos da IA antes de devolvê-los ao chamador.                   |
-| RN-UC09-05 | Valores inválidos de confiança devem ser degradados para `null`.                                                 |
-| RN-UC09-06 | IDs de campus e unidade administrativa só são aceitos se estiverem no catálogo informado.                        |
-| RN-UC09-07 | Respostas inválidas da IA devem produzir um resultado seguro, sem promover ação indevida.                        |
-| RN-UC09-08 | `missingFields` só deve ser preenchido quando houver triagem de manifestação em andamento.                       |
-| RN-UC09-09 | Payloads de draft recebidos fora de intenções de manifestação devem ser descartados.                             |
-| RN-UC09-10 | `shouldOpenManifestationDraft` só pode ser `true` quando a intenção normalizada for `manifestation_draft_ready`. |
-| RN-UC09-11 | A unidade administrativa sugerida só é válida quando pertence ao campus sugerido no catálogo informado.          |
+| Código     | Regra                                                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC09-01 | A resposta pública do caso de uso deve sempre usar um contrato estável do backend.                                                           |
+| RN-UC09-02 | Intenções fora da lista suportada devem ser convertidas para `unknown`.                                                                      |
+| RN-UC09-03 | A consulta pode sugerir tratamento formal, mas não pode registrar manifestação.                                                              |
+| RN-UC09-04 | O backend deve normalizar e validar os dados recebidos da IA antes de devolvê-los ao chamador.                                               |
+| RN-UC09-05 | Valores inválidos de confiança devem ser degradados para `null`.                                                                             |
+| RN-UC09-06 | IDs de campus e unidade administrativa só são aceitos se estiverem no catálogo oficial carregado pelos providers de aplicação.               |
+| RN-UC09-07 | Respostas inválidas da IA devem produzir um resultado seguro, sem promover ação indevida.                                                    |
+| RN-UC09-08 | `missingFields` só deve ser preenchido quando houver triagem de manifestação em andamento.                                                   |
+| RN-UC09-09 | Payloads de draft recebidos fora de intenções de manifestação devem ser descartados.                                                         |
+| RN-UC09-10 | `shouldOpenManifestationDraft` só pode ser `true` quando a intenção normalizada for `manifestation_draft_ready`.                             |
+| RN-UC09-11 | A unidade administrativa sugerida só é válida quando pertence ao campus sugerido no catálogo oficial carregado pelos providers de aplicação. |
 
 ---
 
@@ -231,18 +221,18 @@ O backend:
 
 Os catálogos de campus e unidade administrativa:
 
-- podem ser obtidos por controller, factory ou orquestrador antes da chamada do caso de uso;
-- mantêm o caso de uso puro e independente de persistência neste recorte;
+- são obtidos dentro do caso de uso por contratos de aplicação dedicados;
+- mantêm o caso de uso puro e independente de adapters concretos de persistência neste recorte;
 - devem carregar relação suficiente entre unidade administrativa e campus para validar consistência do draft;
-- podem, em uma evolução futura, ser fornecidos por contratos injetados sem alterar a responsabilidade central da feature.
+- devem expor apenas conteúdo institucional aprovado e IDs canônicos válidos.
 
 ---
 
 ## 12. Fluxo principal
 
 1. O usuário envia uma nova mensagem ao assistente institucional.
-2. O chamador reúne o histórico da conversa e os catálogos válidos de campus e unidade administrativa.
-3. O caso de uso encaminha os dados ao `AiGateway`.
+2. O caso de uso carrega os catálogos oficiais de campus e unidade administrativa pelos contratos de aplicação apropriados.
+3. O caso de uso encaminha histórico, mensagem e catálogos ao `AiGateway`.
 4. O gateway retorna resposta textual e metadados de triagem.
 5. O backend normaliza a resposta, a intenção, o nível de confiança e o rascunho transitório.
 6. O sistema devolve o contrato estável ao chamador.
@@ -271,7 +261,7 @@ O backend deve devolver `confidence` como `null`.
 ### FA03 - IDs não canônicos
 
 Condição:
-O gateway devolve `campusId` ou `administrativeUnitId` fora dos catálogos válidos informados.
+O gateway devolve `campusId` ou `administrativeUnitId` fora dos catálogos oficiais carregados pelo caso de uso.
 
 Comportamento esperado:
 O backend deve invalidar esses campos no draft e marcá-los como faltantes.
@@ -279,7 +269,7 @@ O backend deve invalidar esses campos no draft e marcá-los como faltantes.
 ### FA04 - Combinação campus/unidade inconsistente
 
 Condição:
-O `administrativeUnitId` informado existe, mas não pertence ao `campusId` sugerido no catálogo válido.
+O `administrativeUnitId` informado existe, mas não pertence ao `campusId` sugerido no catálogo oficial carregado pelo caso de uso.
 
 Comportamento esperado:
 O backend deve invalidar a unidade administrativa e tratá-la como ausente no draft.
@@ -297,7 +287,8 @@ A falha deve ser propagada ao chamador para tratamento externo apropriado.
 ## 14. Observações de implementação
 
 - O núcleo atual materializa esse fluxo em `SendAiMessageUseCase`.
-- A dependência externa é expressa apenas pela interface `AiGateway`.
+- A dependência externa é expressa pela interface `AiGateway` e por contratos de catálogo injetados no caso de uso.
 - O caso de uso foi desenhado para receber histórico pronto; modelagem de sessão e persistência ficam fora deste recorte.
 - A abertura do formulário assistido depende do UC-10 e do fluxo regular de registro da manifestação.
-- A camada de apresentação fornece `SendAiMessageController` em `src/presentation/controllers/ai/`, que valida o body via `Validator<SendAiMessageBody>` agnóstico e repassa `history`, `message`, `campuses` e `administrativeUnits` ao use case; o endpoint é público (sem checagem de `request.user`) e qualquer falha do `AiGateway` cai no `500 ServerError` padrão do `BaseController` — o use case não lança erros de domínio específicos por ser resiliente a respostas malformadas da IA.
+- A camada de apresentação fornece `SendAiMessageController` em `src/presentation/controllers/ai/`, que valida o body via `Validator<SendAiMessageBody>` agnóstico e repassa apenas `history` e `message` ao use case; o endpoint é público (sem checagem de `request.user`) e qualquer falha do `AiGateway` ou dos providers de catálogo cai no `500 ServerError` padrão do `BaseController` — o use case não lança erros de domínio específicos por ser resiliente a respostas malformadas da IA.
+- O aprofundamento técnico deste fluxo conversacional e da estratégia de IA fica documentado em `doc/architecture/ai-chatbot.md`.

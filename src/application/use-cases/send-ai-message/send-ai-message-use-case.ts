@@ -1,4 +1,8 @@
 import type {
+  AdministrativeUnitCatalogProvider,
+  CampusCatalogProvider,
+} from '#src/application/ai/ai-catalog-providers.js'
+import type {
   AiAdministrativeUnitCatalogItem,
   AiCatalogItem,
   AiChatIntent,
@@ -21,8 +25,6 @@ type RequiredDraftField = (typeof REQUIRED_DRAFT_FIELDS)[number]
 export interface SendAiMessageInput {
   history: AiChatMessage[]
   message: string
-  campuses: AiCatalogItem[]
-  administrativeUnits: AiAdministrativeUnitCatalogItem[]
 }
 
 export interface SendAiMessageOutput {
@@ -35,9 +37,18 @@ export interface SendAiMessageOutput {
 }
 
 export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiMessageOutput> {
-  constructor(private readonly aiGateway: AiGateway) {}
+  constructor(
+    private readonly aiGateway: AiGateway,
+    private readonly campusCatalogProvider: CampusCatalogProvider,
+    private readonly administrativeUnitCatalogProvider: AdministrativeUnitCatalogProvider,
+  ) {}
 
-  async execute({ history, message, campuses, administrativeUnits }: SendAiMessageInput): Promise<SendAiMessageOutput> {
+  async execute({ history, message }: SendAiMessageInput): Promise<SendAiMessageOutput> {
+    const [campuses, administrativeUnits] = await Promise.all([
+      this.campusCatalogProvider.list(),
+      this.administrativeUnitCatalogProvider.list(),
+    ])
+
     const response = await this.aiGateway.chat({
       history,
       message,

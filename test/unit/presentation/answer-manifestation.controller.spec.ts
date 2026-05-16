@@ -9,6 +9,7 @@ import {
   ManifestationStatus,
   ManifestationStatusTransitionNotAllowedError,
 } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import { InvalidManifestationMessageContentError } from '#src/domain/value-objects/manifestation-message-content.js'
 import {
   AnswerManifestationController,
@@ -17,6 +18,7 @@ import {
 } from '#src/presentation/controllers/admin/answer-manifestation.controller.js'
 import { MissingParamError } from '#src/presentation/errors/missing-param-error.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 import type { Validator } from '#src/presentation/protocols/validator.js'
 
@@ -40,7 +42,7 @@ describe('AnswerManifestationController', () => {
       params: { manifestationId: 'manifestation-1' },
       query: {},
       headers: {},
-      user: { id: 'ombudsman-1', role: 'ombudsman' },
+      user: { id: 'ombudsman-1', role: UserRole.OMBUDSMAN },
     }
 
     sut = new AnswerManifestationController(useCase, validator)
@@ -78,6 +80,7 @@ describe('AnswerManifestationController', () => {
     const response = await sut.handle(unauthenticated)
 
     expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(validator.validate.mock.calls).toHaveLength(0)
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })

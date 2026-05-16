@@ -5,12 +5,14 @@ import type { ListAdminManifestationsUseCase } from '#src/application/use-cases/
 import { InvalidPageNumberError } from '#src/application/use-cases/list-user-manifestations/errors/invalid-page-number-error.js'
 import { NotAllowedToManageManifestationError } from '#src/application/use-cases/manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import {
   ListAdminManifestationsController,
   type ListAdminManifestationsQuery,
 } from '#src/presentation/controllers/admin/list-admin-manifestations.controller.js'
 import { InvalidParamError } from '#src/presentation/errors/invalid-param-error.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 
 describe('ListAdminManifestationsController', () => {
@@ -27,7 +29,7 @@ describe('ListAdminManifestationsController', () => {
       params: {},
       query: {},
       headers: {},
-      user: { id: 'ombudsman-1', role: 'ombudsman' },
+      user: { id: 'ombudsman-1', role: UserRole.OMBUDSMAN },
     }
 
     sut = new ListAdminManifestationsController(useCase)
@@ -97,6 +99,7 @@ describe('ListAdminManifestationsController', () => {
     const response = await sut.handle(unauthenticated)
 
     expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })
 
@@ -113,6 +116,8 @@ describe('ListAdminManifestationsController', () => {
     ['type', { type: 'wrong-type' }],
     ['from', { from: 'not-a-date' }],
     ['to', { to: '2026-13-99' }],
+    ['from', { from: '2026-01-01' }],
+    ['to', { to: '2026-12-31T23:59:59Z' }],
   ])('returns 400 InvalidParamError for invalid %s', async (param, query) => {
     const response = await sut.handle({ ...baseRequest, query })
 
