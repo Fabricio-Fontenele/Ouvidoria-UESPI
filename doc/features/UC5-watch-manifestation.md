@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                 |
-| -------------- | ----------------------------------------- |
-| Caso de uso    | UC-05                                     |
-| Nome           | Acompanhar manifestação                   |
-| Feature        | Consulta e interação da manifestação      |
-| Ator principal | Manifestante                              |
-| Prioridade     | Alta                                      |
-| Status         | Núcleo implementado / integração pendente |
+| Campo          | Descrição                                                                          |
+| -------------- | ---------------------------------------------------------------------------------- |
+| Caso de uso    | UC-05                                                                              |
+| Nome           | Acompanhar manifestação                                                            |
+| Feature        | Consulta e interação da manifestação                                               |
+| Ator principal | Manifestante                                                                       |
+| Prioridade     | Alta                                                                               |
+| Status         | Núcleo implementado / controllers parciais (`get-details`) / adapter HTTP pendente |
 
 ---
 
@@ -528,7 +528,9 @@ export interface ManifestationInteractionsRepository {
 - o envio de mensagem utiliza a entidade `ManifestationMessage` e repositório próprio de interação para evitar acoplamento excessivo em `ManifestationsRepository`;
 - `ManifestationMessageDTO` permanece como contrato de saída e leitura, não como modelo principal de domínio;
 - a implementação concreta de persistência ainda precisa materializar os contratos desta feature;
-- a consulta de manifestações anônimas por protocolo deve ser tratada por caso de uso separado.
+- a consulta de manifestações anônimas por protocolo deve ser tratada por caso de uso separado;
+- a camada de apresentação fornece `GetManifestationDetailsController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado (`request.user.id`), e mapeia `ManifestationNotFoundError` para `404 Not Found` e `NotAllowedToAccessManifestationError` para `403 Forbidden`; requisições sem usuário autenticado retornam `401 Unauthorized` e `manifestationId` vazio retorna `400 Bad Request` com `MissingParamError`;
+- os controllers de `list-user-manifestations` e `add-manifestation-message` ainda não foram implementados.
 
 ---
 
