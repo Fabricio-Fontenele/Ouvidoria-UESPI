@@ -83,7 +83,9 @@ Para executar o registro:
 - o sistema deve estar disponível;
 - o gerador de protocolo deve estar disponível;
 - campus e unidade administrativa devem ser informados;
-- o tipo da manifestação deve estar entre os valores suportados.
+- o tipo da manifestação deve estar entre os valores suportados;
+- manifestações identificadas exigem contexto autenticado;
+- manifestações anônimas podem ser registradas sem usuário autenticado.
 
 ---
 
@@ -156,9 +158,10 @@ A feature deve receber os seguintes dados:
 | RN-UC04-08 | Os tipos permitidos são `report`, `complaint`, `suggestion` e `compliment`.                                          |
 | RN-UC04-09 | O registro pode ser identificado ou anônimo.                                                                         |
 | RN-UC04-10 | Em registros identificados, o autor da manifestação deve ser derivado do `requesterId` autenticado.                  |
-| RN-UC04-11 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                                      |
-| RN-UC04-12 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                                             |
-| RN-UC04-13 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.                             |
+| RN-UC04-11 | Registros identificados sem contexto autenticado devem ser rejeitados antes de chamar o caso de uso.                 |
+| RN-UC04-12 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                                      |
+| RN-UC04-13 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                                             |
+| RN-UC04-14 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.                             |
 
 ---
 
@@ -223,7 +226,8 @@ O campo `requesterId`:
 
 - representa a identidade autenticada do solicitante;
 - não deve ser tratado como autoria arbitrária enviada pelo cliente;
-- pode ser `null` apenas quando o contexto da requisição não tiver usuário autenticado.
+- deve estar presente quando `isAnonymous` for `false`;
+- pode ser `null` apenas quando `isAnonymous` for `true`.
 
 O campo `isAnonymous`:
 
@@ -280,7 +284,7 @@ Condição:
 O usuário tenta registrar manifestação identificada com `isAnonymous` igual a `false`, mas sem `requesterId`.
 
 Comportamento esperado:
-O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação.
+O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação. Na camada de apresentação HTTP, esse cenário deve retornar `401 Unauthorized` sem chamar o caso de uso.
 
 ### FA05 - Falha na geração do protocolo
 
@@ -380,6 +384,21 @@ Exemplo de resposta:
 {
   "error": "INTERNAL_ERROR",
   "message": "Falha ao registrar manifestação."
+}
+```
+
+### 14.3 Registro identificado sem autenticação
+
+Status HTTP:
+
+`401 Unauthorized`
+
+Exemplo de resposta:
+
+```json
+{
+  "error": "UNAUTHENTICATED",
+  "message": "Authentication required."
 }
 ```
 
