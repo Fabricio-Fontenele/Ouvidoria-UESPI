@@ -278,7 +278,7 @@ Erro esperado:
 
 - dado `manifestationId` existente, pertencente ao `userId` e com status `answered`;
 - quando o caso de uso de encerramento for executado;
-- então o agregado deve transitar para `finalized`, o repositório deve ser chamado em `save()` com a manifestação atualizada e a saída deve refletir o novo status.
+- então o agregado deve transitar para `finalized`, `ManifestationAdministrationRepository.finalizeByAuthor(...)` deve ser chamado com `actorUserId`, `actorType`, `fromStatus` e `toStatus`, e a saída deve refletir o novo status.
 
 #### CT-UC06-002 - Não deve encerrar manifestação inexistente
 
