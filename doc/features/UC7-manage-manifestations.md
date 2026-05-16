@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                                   |
-| -------------- | --------------------------------------------------------------------------- |
-| Caso de uso    | UC-07                                                                       |
-| Nome           | Gerenciar manifestações                                                     |
-| Feature        | Gestão administrativa de manifestações                                      |
-| Ator principal | Ouvidor                                                                     |
-| Prioridade     | Alta                                                                        |
-| Status         | Núcleo implementado / controllers parciais (`list`) / adapter HTTP pendente |
+| Campo          | Descrição                                                  |
+| -------------- | ---------------------------------------------------------- |
+| Caso de uso    | UC-07                                                      |
+| Nome           | Gerenciar manifestações                                    |
+| Feature        | Gestão administrativa de manifestações                     |
+| Ator principal | Ouvidor                                                    |
+| Prioridade     | Alta                                                       |
+| Status         | Núcleo e controllers implementados / adapter HTTP pendente |
 
 ---
 
@@ -660,7 +660,7 @@ export interface UsersRepository {
 - a implementação concreta de persistência ainda precisa materializar `findManyForAdmin` e o `UsersRepository.findById`;
 - atribuição e encaminhamento (RF20), assim como a materialização explícita do histórico (RF23 em entidade própria), permanecem fora do escopo desta fatia;
 - a camada de apresentação fornece `ListAdminManifestationsController` em `src/presentation/controllers/admin/`, que deriva `requesterUserId` do contexto autenticado, faz parse de `request.query` (`page` por regex `/^[1-9]\d*$/`, `status`/`type` validados contra enums de domínio, `campusId`/`administrativeUnitId` repassados como strings com fallback de string vazia, `from`/`to` parseados como `Date`) e rejeita valores inválidos com `400` (`InvalidPageNumberError` ou `InvalidParamError`); mapeia `NotAllowedToManageManifestationError` para `403 Forbidden` e `InvalidPageNumberError` do use case para `400`; sem usuário autenticado retorna `401`;
-- os controllers de `get-admin-manifestation-details`, `answer-manifestation` e `update-manifestation-status` ainda não foram implementados.
+- a camada de apresentação fornece `GetAdminManifestationDetailsController`, `AnswerManifestationController` e `UpdateManifestationStatusController` em `src/presentation/controllers/admin/`. Todos derivam `requesterUserId` do contexto autenticado, extraem `manifestationId` de `request.params`, e mapeiam erros compartilhados (`ManifestationNotFoundError` → `404`, `NotAllowedToManageManifestationError` → `403`); os fluxos de escrita (`answer`, `update-status`) validam o body via `Validator` agnóstico e mapeiam `ManifestationStatusTransitionNotAllowedError` para `409 Conflict`; o `answer` também mapeia `InvalidManifestationMessageContentError` para `400` e retorna `201`, enquanto `update-status` retorna `200` com o agregado atualizado; sem usuário autenticado retornam `401` e `manifestationId` vazio retorna `400 MissingParamError`.
 
 ---
 
