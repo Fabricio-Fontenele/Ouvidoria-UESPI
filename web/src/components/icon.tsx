@@ -21,6 +21,7 @@ export type IconName =
   | 'message-circle'
   | 'plus-circle'
   | 'search'
+  | 'send'
   | 'settings'
   | 'shield'
   | 'share'
@@ -215,6 +216,14 @@ export function Icon({ className, name, ...props }: IconProps) {
         <svg {...sharedProps}>
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
+        </svg>
+      )
+
+    case 'send':
+      return (
+        <svg {...sharedProps}>
+          <path d="m22 2-7 20-4-9-9-4Z" />
+          <path d="M22 2 11 13" />
         </svg>
       )
 

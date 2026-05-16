@@ -105,7 +105,7 @@ function NewRecordCard() {
         </p>
         <a
           className="mt-6 inline-flex min-h-12 w-full max-w-56 items-center justify-center rounded-lg bg-home-blue px-5 text-lg leading-7 font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href="#guarapi"
+          href="/guarapi?mode=new"
         >
           Fale com o Guarapi
         </a>
@@ -119,7 +119,7 @@ function GuarapiChatTrigger() {
     <a
       aria-label="Abrir chat com o Guarapi"
       className="fixed right-2 bottom-5 z-30 block size-20 rounded-full drop-shadow-home-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-home-blue sm:right-5 sm:bottom-8 sm:size-28 lg:right-8 lg:bottom-10 lg:size-36"
-      href="#chat-guarapi"
+      href="/guarapi?mode=new"
     >
       <img alt="" className="size-full rounded-full object-contain" src={guarapiMascot} />
     </a>
@@ -245,7 +245,7 @@ function ManifestationCard({ manifestation }: { manifestation: Manifestation }) 
         <a
           aria-label={`Abrir manifestação ${manifestation.protocol}`}
           className="grid size-10 place-items-center rounded-lg bg-home-action text-home-text transition duration-150 hover:bg-home-chip active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href={`#manifestacao-${manifestation.protocol.replace('#', '')}`}
+          href={`/manifestation?protocol=${manifestation.protocol.replace('#', '')}`}
         >
           <Icon className="size-4" name="chevron-right" />
         </a>
