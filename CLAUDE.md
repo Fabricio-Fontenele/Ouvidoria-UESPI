@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Context
 
-Backend core for the Institutional Ombudsman System (UESPI). Scope is intentionally limited to the **domain** and **application** layers — no HTTP, ORM, DB, queues, or external integrations live here. Business rules must stay traceable to the PRD, Cockburn use cases, and feature specs under `doc/`.
+Backend for the Institutional Ombudsman System (UESPI). Implements the full clean-architecture stack: **domain → application → presentation → infrastructure → main (composition root + HTTP bootstrap)**. Business rules must stay traceable to the PRD, Cockburn use cases, and feature specs under `doc/`.
 
 `AGENTS.md` contains the canonical contributor handbook (architecture rules, naming, commit policy). Read it when in doubt — this file complements it with Claude-specific notes.
 
@@ -20,23 +20,49 @@ Package manager is **pnpm 10** (Node 22).
 - `pnpm test` — Vitest single run
 - `pnpm test:watch` / `pnpm test:coverage` — watch / coverage modes
 - `pnpm check` — full local gate: format check → lint → type-check → tests
+- `pnpm db:up` / `pnpm db:down` / `pnpm db:logs` — Postgres via docker-compose
+- `pnpm prisma:format` / `pnpm prisma:validate` — Prisma schema checks
 
 Single test: `pnpm vitest run test/unit/application/sign-in-use-case.spec.ts`
 
+Run the HTTP server (after `pnpm db:up` + applying migrations + populating `.env`):
+`pnpm build && node build/main/server.js`. No `dev` script is wired yet — add one with `tsx`/`node --watch` as needed.
+
 ## Architecture
 
-Clean-architecture layering with two layers currently materialized:
+Clean-architecture layering:
 
 - `src/domain/` — entities (`Entity` base, `Manifestation`, `User`, `ManifestationMessage`) and value objects (`Email`, `Password`, `Protocol`, `UniqueEntityId`, etc.). Must remain pure: no framework, DB, env, or network code.
 - `src/application/` — use cases, plus _contracts_ (interfaces) for everything infrastructural:
   - `repositories/` — e.g. `ManifestationsRepository`, `UsersRepository`, `ManifestationInteractionsRepository`, `PaginationParams`
   - `cryptography/` — `HashComparer`, `PasswordHasher`
   - `auth/` — `TokenGenerator`
-  - `protocol/` — `ProtocolGenerator`
+  - `protocol/` — `ProtocolGenerator`, `AccessCodeGenerator`
   - `dto/` — query-side DTOs (e.g. `manifestation-query-dtos.ts`)
   - `use-cases/<feature>/` — each feature folder owns the use case class plus an `errors/` subfolder for domain-specific error types
+- `src/presentation/` — framework-agnostic HTTP layer. `BaseController` + `Controller<TRequest>` + `HttpRequest`/`HttpResponse` protocols + `Validator<T>` contract. Controllers translate input, call the use case, and map errors to HTTP semantics. No Fastify/Express coupling here.
+- `src/infra/` — concrete adapters that satisfy application/presentation contracts:
+  - `database/prisma/` — Prisma client singleton, mappers (`user`, `manifestation`, `manifestation-message`), repositories. `prisma-manifestation-administration-repository.ts` wraps aggregate writes + system audit messages in `$transaction` for traceability.
+  - `cryptography/bcryptjs-hasher.ts` — implements both `PasswordHasher` and `HashComparer`
+  - `auth/jwt-token-generator.ts` — `jsonwebtoken` HS256 signer
+  - `protocol/` — UUID-based `ProtocolGenerator` and random `AccessCodeGenerator`
+  - `http/fastify/` — `adaptRoute(controller)` converting Fastify req/reply to the presentation contract, `ZodValidator<T>` implementing `Validator<T>`, and auth middlewares (`ensureAuthenticated`, `optionalAuthenticate`, `requireRoles`) backed by `@fastify/jwt`
+- `src/main/` — composition root:
+  - `config/env.ts` — zod-validated env loader
+  - `factories/infrastructure.ts` — singleton wires (Prisma + adapters)
+  - `factories/controllers/{auth,manifestation,admin}.ts` — one `make<Name>Controller()` per controller; assembles use case + validator
+  - `routes/{auth,manifestation,admin}.routes.ts` — Fastify route plugins, applying middlewares per scope
+  - `server.ts` — `buildApp()` / `startServer()` bootstrap (registers `@fastify/cors`, `@fastify/jwt`, all route plugins, disconnects Prisma on close)
 
 Every use case implements `UseCase<Input, Output>` (`src/application/use-cases/use-case.ts`) with a single `execute(input)` method. Dependencies arrive through the constructor as the contract interfaces above — never as concrete adapters.
+
+### Manifestation history without an audit table
+
+History entries in `ManifestationDetailsDTO` are reconstructed from `manifestation_messages` rows:
+
+- `registered` is synthesized from the manifestation's `createdAt` + author.
+- `administrative_answered` is inferred from non-system messages sent by ombudsman/admin.
+- `status_changed` and `finalized_by_author` are emitted by the administration repository as **system** messages whose `content` is a JSON payload (`src/infra/database/prisma/system-message-payload.ts`). The administration repository persists these inside the same `$transaction` as the aggregate update, so the audit log can never diverge from the aggregate state.
 
 Tests in `test/unit/` mirror the production tree. Mocking uses `vitest-mock-extended` against the contract interfaces; do **not** introduce real DBs, HTTP servers, or concrete crypto/JWT libs in unit tests.
 
