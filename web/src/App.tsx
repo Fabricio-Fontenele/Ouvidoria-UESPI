@@ -1,3 +1,4 @@
+import { GuarapiPage } from './pages/guarapi-page'
 import { HomePage } from './pages/home-page'
 import { LandingPage } from './pages/landing-page'
 import { LoginPage } from './pages/login-page'
@@ -16,6 +17,14 @@ function App() {
 
   if (normalizedPath === '/home') {
     return <HomePage />
+  }
+
+  if (normalizedPath === '/guarapi') {
+    return <GuarapiPage />
+  }
+
+  if (normalizedPath === '/manifestation') {
+    return <GuarapiPage />
   }
 
   if (normalizedPath === '/sign') {
