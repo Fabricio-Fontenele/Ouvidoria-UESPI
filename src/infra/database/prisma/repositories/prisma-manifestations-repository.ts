@@ -16,7 +16,7 @@ import type { AdminManifestationFilters } from '#src/application/repositories/ad
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { PaginationParams } from '#src/application/repositories/pagination-params.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
-import type { Manifestation, ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
+import { ManifestationStatus, type Manifestation, type ManifestationType } from '#src/domain/entities/manifestation.js'
 
 import { manifestationMessageMapper } from '../mappers/manifestation-message.mapper.js'
 import { manifestationMapper } from '../mappers/manifestation.mapper.js'
@@ -171,7 +171,7 @@ function buildDetailsDTO(
           ? ManifestationMessageSenderType.ANONYMOUS_MANIFESTANT
           : ManifestationMessageSenderType.MANIFESTANT,
       fromStatus: null,
-      toStatus: manifestation.status as ManifestationStatus,
+      toStatus: ManifestationStatus.IN_ANALYSIS,
       createdAt: manifestation.createdAt,
     },
   ]
