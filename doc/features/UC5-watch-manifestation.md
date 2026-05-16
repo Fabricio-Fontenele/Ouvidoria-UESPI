@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                  |
-| -------------- | ---------------------------------------------------------- |
-| Caso de uso    | UC-05                                                      |
-| Nome           | Acompanhar manifestação                                    |
-| Feature        | Consulta e interação da manifestação                       |
-| Ator principal | Manifestante                                               |
-| Prioridade     | Alta                                                       |
-| Status         | Núcleo e controllers implementados / adapter HTTP pendente |
+| Campo          | Descrição                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-05                                                                                    |
+| Nome           | Acompanhar manifestação                                                                  |
+| Feature        | Consulta e interação da manifestação                                                     |
+| Ator principal | Manifestante                                                                             |
+| Prioridade     | Alta                                                                                     |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rotas HTTP, e2e) |
 
 ---
 
@@ -57,9 +57,7 @@ Esta feature não contempla:
 - resposta administrativa;
 - alteração de status;
 - encerramento da manifestação;
-- avaliação do atendimento;
-- persistência concreta em banco;
-- rotas HTTP.
+- avaliação do atendimento.
 
 ---
 
@@ -386,7 +384,7 @@ Erro esperado:
 - o sistema não deve expor manifestação de outro usuário neste fluxo;
 - manifestações anônimas devem ser consultadas por fluxo específico baseado em protocolo;
 - o conteúdo de mensagem não deve ser aceito em branco;
-- a camada de apresentação deverá mapear erros de autorização e inexistência conforme o contrato HTTP adotado no futuro.
+- a camada de apresentação mapeia erros de autorização e inexistência conforme o contrato HTTP atual (Fastify) — ver detalhes nos controllers descritos na seção 19.
 
 ---
 
@@ -527,8 +525,10 @@ export interface ManifestationInteractionsRepository {
 - erros compartilhados de acesso à manifestação devem permanecer em pasta comum para evitar dependência entre casos de uso;
 - o envio de mensagem utiliza a entidade `ManifestationMessage` e repositório próprio de interação para evitar acoplamento excessivo em `ManifestationsRepository`;
 - `ManifestationMessageDTO` permanece como contrato de saída e leitura, não como modelo principal de domínio;
-- a implementação concreta de persistência ainda precisa materializar os contratos desta feature;
-- a consulta de manifestações anônimas por protocolo deve ser tratada por caso de uso separado;
+- a infraestrutura concreta materializa os contratos: `PrismaManifestationsRepository` (`src/infra/database/prisma/repositories/`) cobre `findById`, `findDetailsById` e `findManyByAuthorUserId` com `MANIFESTATIONS_PAGE_SIZE = 20`; `PrismaManifestationInteractionsRepository` cobre `addMessage`. O histórico em `findDetailsById` é reconstruído a partir das `ManifestationMessage` (criação sintetizada de `createdAt`, mensagens de ombudsman/admin viram `administrative_answered`, e mensagens com `senderType='system'` carregam um payload JSON decodificado por `src/infra/database/prisma/system-message-payload.ts`);
+- a consulta de manifestações anônimas por protocolo é tratada pelo UC-05b;
+- os endpoints `GET /manifestations`, `GET /manifestations/:manifestationId` e `POST /manifestations/:manifestationId/messages` são registrados em `src/main/routes/manifestation.routes.ts` com `preHandler: [ensureAuthenticated, requireRoles(UserRole.MANIFESTANT)]` (`src/infra/http/fastify/middlewares/auth-middleware.ts`), bloqueando ombudsman/admin com `403`;
+- cobertura e2e em `test/e2e/identified-manifestation.e2e.spec.ts` exercita listagem, detalhes (`history === ['registered']` para manifestação recém-criada, `messages === []`), `401` sem auth e `403` entre manifestantes distintos; `test/e2e/manifestation-interaction.e2e.spec.ts` cobre envio de mensagem (sucesso + listagem nos detalhes, body vazio `400`, isolamento entre manifestantes `403`, bloqueio em manifestação finalizada `409`, `401` sem auth);
 - a camada de apresentação fornece `GetManifestationDetailsController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado (`request.user.id`), e mapeia `ManifestationNotFoundError` para `404 Not Found` e `NotAllowedToAccessManifestationError` para `403 Forbidden`; requisições sem usuário autenticado retornam `401 Unauthorized` e `manifestationId` vazio retorna `400 Bad Request` com `MissingParamError`;
 - a camada de apresentação fornece `ListUserManifestationsController` em `src/presentation/controllers/manifestation/`, que deriva `userId` do contexto autenticado, faz parse de `page` a partir de `request.query.page` (default `1`, exige inteiro positivo via regex `/^[1-9]\d*$/`), rejeita valores inválidos com `400 InvalidPageNumberError` antes de chamar o use case, e também mapeia `InvalidPageNumberError` lançado pelo use case para `400 Bad Request`; sem usuário autenticado retorna `401 Unauthorized`;
 - a camada de apresentação fornece `AddManifestationMessageController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado, valida o body via `Validator<AddManifestationMessageBody>` e mapeia: `ManifestationNotFoundError` → `404`, `NotAllowedToAccessManifestationError` → `403`, `ManifestationInteractionNotAllowedError` → `409 Conflict` (manifestação fechada para interação), e `InvalidManifestationMessageContentError` → `400`; sem usuário autenticado retorna `401` e `manifestationId` vazio retorna `400 MissingParamError`.

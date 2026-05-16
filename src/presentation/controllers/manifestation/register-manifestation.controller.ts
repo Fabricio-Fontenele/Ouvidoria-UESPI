@@ -1,13 +1,15 @@
+import { IdentifiedManifestationRequiresManifestantRoleError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-manifestant-role-error.js'
 import { IdentifiedManifestationRequiresRequesterError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-requester-error.js'
 import type { RegisterManifestationUseCase } from '#src/application/use-cases/register-manifestation/register-manifestation.use-case.js'
 import type { ManifestationType } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import { InvalidAdministrativeUnitIdError } from '#src/domain/value-objects/administrative-unit-id.js'
 import { InvalidCampusIdError } from '#src/domain/value-objects/campus-id.js'
 import { InvalidManifestationDescriptionError } from '#src/domain/value-objects/manifestation-description.js'
 import { InvalidManifestationInvolvedPeopleError } from '#src/domain/value-objects/manifestation-involved-people.js'
 
 import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
-import { badRequest, created, unauthorized } from '../../helpers/http-helpers.js'
+import { badRequest, created, forbidden, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import type { Validator } from '../../protocols/validator.js'
 import { BaseController } from '../base-controller.js'
@@ -40,6 +42,10 @@ export class RegisterManifestationController extends BaseController {
 
     if (!isAnonymous && request.user === undefined) {
       return unauthorized(new UnauthenticatedError())
+    }
+
+    if (!isAnonymous && request.user !== undefined && request.user.role !== UserRole.MANIFESTANT) {
+      return forbidden(new IdentifiedManifestationRequiresManifestantRoleError())
     }
 
     const result = await this.useCase.execute({

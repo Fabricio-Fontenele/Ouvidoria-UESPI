@@ -187,7 +187,7 @@ describe('UpdateManifestationStatusUseCase', () => {
       sut.execute({
         requesterUserId: 'ombudsman-1',
         manifestationId: 'manifestation-1',
-        status: ManifestationStatus.ANSWERED,
+        status: ManifestationStatus.CANCELED,
       }),
     ).rejects.toThrow(saveError)
   })

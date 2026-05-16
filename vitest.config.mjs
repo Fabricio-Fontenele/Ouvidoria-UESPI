@@ -16,15 +16,22 @@ export default defineConfig({
     environment: 'node',
     clearMocks: true,
     restoreMocks: true,
-    include: ['test/**/*.spec.ts', 'test/**/*.test.ts'],
-    exclude: ['build/**', 'coverage/**', 'node_modules/**'],
+    include: ['test/unit/**/*.spec.ts', 'test/unit/**/*.test.ts'],
+    exclude: ['build/**', 'coverage/**', 'node_modules/**', 'test/e2e/**'],
     coverage: {
       provider: 'v8',
       enabled: false,
       reportsDirectory: './coverage',
       reporter: ['text', 'text-summary', 'lcov'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.d.ts', 'src/main.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/main.ts',
+        // infra and main layers are covered by the e2e suite (`pnpm test:e2e`).
+        // Coverage thresholds here apply to the unit-tested layers (domain, application, presentation).
+        'src/infra/**',
+        'src/main/**',
+      ],
       thresholds: {
         branches: 80,
         functions: 90,

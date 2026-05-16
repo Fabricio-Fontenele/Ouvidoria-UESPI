@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                              |
-| -------------- | ---------------------------------------------------------------------- |
-| Caso de uso    | UC-06 (parcial — somente encerramento)                                 |
-| Nome           | Finalizar manifestação                                                 |
-| Feature        | Encerramento da manifestação pelo manifestante                         |
-| Ator principal | Manifestante                                                           |
-| Prioridade     | Alta                                                                   |
-| Status         | Núcleo e controller implementados / adapter HTTP e avaliação pendentes |
+| Campo          | Descrição                                                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-06 (parcial — somente encerramento)                                                                                                                                       |
+| Nome           | Finalizar manifestação                                                                                                                                                       |
+| Feature        | Encerramento da manifestação pelo manifestante                                                                                                                               |
+| Ator principal | Manifestante                                                                                                                                                                 |
+| Prioridade     | Alta                                                                                                                                                                         |
+| Status         | Encerramento implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e). Avaliação do atendimento (UC-06 completo Cockburn) permanece pendente. |
 
 ---
 
@@ -53,9 +53,7 @@ Esta feature não contempla:
 - relatórios de satisfação;
 - encerramento de manifestação anônima por protocolo;
 - encerramento administrativo (coberto pelo UC-07 via `UpdateManifestationStatusUseCase`);
-- notificações de encerramento ao manifestante;
-- persistência concreta em banco;
-- rotas HTTP.
+- notificações de encerramento ao manifestante.
 
 ---
 
@@ -255,7 +253,7 @@ Erro esperado:
 - o sistema não deve expor nem encerrar manifestação de outro usuário neste fluxo;
 - manifestações anônimas devem ser tratadas por fluxos específicos baseados em protocolo;
 - transições inválidas de status não devem ser persistidas;
-- a camada de apresentação deverá mapear erros de autorização, inexistência e transição conforme o contrato HTTP adotado no futuro.
+- a camada de apresentação mapeia erros de autorização, inexistência e transição conforme o contrato HTTP atual (Fastify) — ver detalhes do `FinalizeManifestationController` na seção 19.
 
 ---
 
@@ -366,7 +364,10 @@ export interface ManifestationAdministrationRepository {
 - a saída do use case repete o contrato de leitura usado no `UpdateManifestationStatusUseCase` (UC-07), preservando consistência entre fluxos que retornam o agregado atualizado;
 - a persistência do encerramento foi deslocada para `ManifestationAdministrationRepository.finalizeByAuthor(...)`, permitindo que a infraestrutura grave mudança de status e histórico do ator em fronteira única;
 - a avaliação do atendimento (UC-06 completo) permanece como backlog pós-MVP, sem entidade nem use case implementado nesta fatia;
-- a camada de apresentação fornece `FinalizeManifestationController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado, e mapeia: `ManifestationNotFoundError` → `404`, `NotAllowedToAccessManifestationError` → `403`, e `ManifestationStatusTransitionNotAllowedError` → `409 Conflict` (transição inválida a partir do status corrente); sem usuário autenticado retorna `401` e `manifestationId` vazio retorna `400 MissingParamError`.
+- a camada de apresentação fornece `FinalizeManifestationController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado, e mapeia: `ManifestationNotFoundError` → `404`, `NotAllowedToAccessManifestationError` → `403`, e `ManifestationStatusTransitionNotAllowedError` → `409 Conflict` (transição inválida a partir do status corrente); sem usuário autenticado retorna `401` e `manifestationId` vazio retorna `400 MissingParamError`;
+- a infraestrutura concreta materializa a fronteira transacional única: `PrismaManifestationAdministrationRepository.finalizeByAuthor(...)` (`src/infra/database/prisma/repositories/`) executa o `UPDATE manifestations` + `INSERT manifestation_messages` (system) dentro do mesmo `prisma.$transaction`, garantindo que a mudança de status e o registro histórico do ator (encoded em JSON por `system-message-payload.ts`, com `type: 'finalized_by_author'`, `actorUserId`, `fromStatus`, `toStatus`) nunca divirjam;
+- o endpoint `POST /manifestations/:manifestationId/finalize` é registrado em `src/main/routes/manifestation.routes.ts` com `preHandler: [ensureAuthenticated, requireRoles(UserRole.MANIFESTANT)]`;
+- cobertura e2e em `test/e2e/manifestation-interaction.e2e.spec.ts` exercita o ciclo completo: ombudsman responde via `POST /admin/.../answer` → manifestante finaliza com `POST /finalize` (`200`); valida `status='finalized'`, último entry do `history` com `type='finalized_by_author'`/`fromStatus='answered'`/`toStatus='finalized'`, e `manifestationMessage.count({ senderType: 'system' })` igual a `2` (transição da resposta + transição da finalização). Também cobre `409` ao finalizar antes da resposta, `403` para outro manifestante, e `401` sem auth.
 
 ---
 

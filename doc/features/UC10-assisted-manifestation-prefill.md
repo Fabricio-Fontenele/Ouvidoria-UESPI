@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                  |
-| -------------- | ------------------------------------------ |
-| Caso de uso    | UC-10                                      |
-| Nome           | Pré-preencher manifestação com apoio da IA |
-| Feature        | Abertura assistida de manifestação         |
-| Ator principal | Usuário                                    |
-| Prioridade     | Alta                                       |
-| Status         | Núcleo implementado / integração pendente  |
+| Campo          | Descrição                                                                                                                                                       |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-10                                                                                                                                                           |
+| Nome           | Pré-preencher manifestação com apoio da IA                                                                                                                      |
+| Feature        | Abertura assistida de manifestação                                                                                                                              |
+| Ator principal | Usuário                                                                                                                                                         |
+| Prioridade     | Alta                                                                                                                                                            |
+| Status         | Núcleo implementado (draft extraído do output de `SendAiMessageUseCase`) / adapters de IA e wiring HTTP pendentes — compartilha as mesmas dependências do UC-09 |
 
 ---
 
@@ -244,3 +244,5 @@ O sistema deve permitir continuidade por preenchimento manual no fluxo regular.
 - O campo `involvedPeople` passou a fazer parte do domínio e do caso de uso de registro para manter compatibilidade entre draft assistido e envio formal.
 - O draft assistido é consumido pelo chamador; a decisão de abrir formulário, exibir pendências e chamar o UC-04 fica fora deste repositório.
 - A consistência entre campus e unidade administrativa depende de os catálogos oficiais carregados para o fluxo preservarem relacionamento suficiente para essa validação na integração final.
+- O draft é entregue como parte do output de `SendAiMessageUseCase` (`draft`, `shouldOpenManifestationDraft`, `missingFields`). Quando o chamador identificar `shouldOpenManifestationDraft === true`, ele monta o body do `RegisterManifestationController` (UC-04) — que já tem rota e infraestrutura wireadas — e o usuário confirma o envio formal.
+- Como o UC-09 ainda depende dos adapters concretos de `AiGateway` e providers de catálogo (não materializados em `src/infra/`), esta feature herda o mesmo gap até que aqueles sejam implementados.
