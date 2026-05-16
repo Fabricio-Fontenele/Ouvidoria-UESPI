@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import type {
+  AdministrativeUnitCatalogProvider,
+  CampusCatalogProvider,
+} from '#src/application/ai/ai-catalog-providers.js'
 import type { AiGateway } from '#src/application/ai/ai-gateway.js'
 import { SendAiMessageUseCase } from '#src/application/use-cases/send-ai-message/send-ai-message-use-case.js'
 import { ManifestationType } from '#src/domain/entities/manifestation.js'
 
 describe('SendAiMessageUseCase', () => {
+  let administrativeUnitCatalogProvider: DeepMockProxy<AdministrativeUnitCatalogProvider>
   let aiGateway: DeepMockProxy<AiGateway>
+  let campusCatalogProvider: DeepMockProxy<CampusCatalogProvider>
   let sut: SendAiMessageUseCase
 
   const input = {
@@ -17,21 +23,31 @@ describe('SendAiMessageUseCase', () => {
       },
     ],
     message: 'Foi na coordenação de sistemas em Parnaíba.',
-    campuses: [
-      { id: 'campus-parnaiba', label: 'Campus Parnaíba' },
-      { id: 'campus-teresina', label: 'Campus Teresina' },
-    ],
-    administrativeUnits: [
-      { id: 'coord-sistemas', label: 'Coordenação de Sistemas', campusId: 'campus-parnaiba' },
-      { id: 'biblioteca-central', label: 'Biblioteca Central', campusId: 'campus-teresina' },
-    ],
   }
 
-  beforeEach(() => {
-    aiGateway = mockDeep<AiGateway>()
-    mockReset(aiGateway)
+  const campuses = [
+    { id: 'campus-parnaiba', label: 'Campus Parnaíba' },
+    { id: 'campus-teresina', label: 'Campus Teresina' },
+  ]
 
-    sut = new SendAiMessageUseCase(aiGateway)
+  const administrativeUnits = [
+    { id: 'coord-sistemas', label: 'Coordenação de Sistemas', campusId: 'campus-parnaiba' },
+    { id: 'biblioteca-central', label: 'Biblioteca Central', campusId: 'campus-teresina' },
+  ]
+
+  beforeEach(() => {
+    administrativeUnitCatalogProvider = mockDeep<AdministrativeUnitCatalogProvider>()
+    aiGateway = mockDeep<AiGateway>()
+    campusCatalogProvider = mockDeep<CampusCatalogProvider>()
+
+    mockReset(administrativeUnitCatalogProvider)
+    mockReset(aiGateway)
+    mockReset(campusCatalogProvider)
+
+    campusCatalogProvider.list.mockResolvedValue(campuses)
+    administrativeUnitCatalogProvider.list.mockResolvedValue(administrativeUnits)
+
+    sut = new SendAiMessageUseCase(aiGateway, campusCatalogProvider, administrativeUnitCatalogProvider)
   })
 
   it('returns a normalized institutional answer without a draft', async () => {
@@ -46,7 +62,17 @@ describe('SendAiMessageUseCase', () => {
 
     const result = await sut.execute(input)
 
-    expect(aiGateway.chat.mock.calls).toStrictEqual([[input]])
+    expect(campusCatalogProvider.list.mock.calls).toStrictEqual([[]])
+    expect(administrativeUnitCatalogProvider.list.mock.calls).toStrictEqual([[]])
+    expect(aiGateway.chat.mock.calls).toStrictEqual([
+      [
+        {
+          ...input,
+          campuses,
+          administrativeUnits,
+        },
+      ],
+    ])
     expect(result).toStrictEqual({
       answer: 'A biblioteca funciona de segunda a sexta, das 8h às 18h.',
       intent: 'institutional_question',
@@ -244,5 +270,15 @@ describe('SendAiMessageUseCase', () => {
     aiGateway.chat.mockRejectedValue(gatewayError)
 
     await expect(sut.execute(input)).rejects.toThrow(gatewayError)
+  })
+
+  it('propagates catalog provider failures before calling the gateway', async () => {
+    const catalogError = new Error('catalog unavailable')
+
+    campusCatalogProvider.list.mockRejectedValue(catalogError)
+
+    await expect(sut.execute(input)).rejects.toThrow(catalogError)
+
+    expect(aiGateway.chat.mock.calls).toHaveLength(0)
   })
 })

@@ -12,6 +12,7 @@ import {
   type RegisterManifestationBody,
 } from '#src/presentation/controllers/manifestation/register-manifestation.controller.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 import type { Validator } from '#src/presentation/protocols/validator.js'
 
@@ -107,7 +108,11 @@ describe('RegisterManifestationController', () => {
     validator.validate.mockReturnValue({ success: true, data: bodyWithoutInvolvedPeople })
     arrangeUseCaseSuccess()
 
-    await sut.handle({ ...baseRequest, body: bodyWithoutInvolvedPeople })
+    await sut.handle({
+      ...baseRequest,
+      body: bodyWithoutInvolvedPeople,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
 
     expect(useCase.execute.mock.calls[0]?.[0].involvedPeople).toBeNull()
   })
@@ -123,8 +128,21 @@ describe('RegisterManifestationController', () => {
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })
 
-  it('maps IdentifiedManifestationRequiresRequesterError to 400', async () => {
-    validator.validate.mockReturnValue({ success: true, data: validBody })
+  it('returns 401 and skips the use case when identified manifestation has no authenticated user', async () => {
+    validator.validate.mockReturnValue({
+      success: true,
+      data: { ...validBody, isAnonymous: false },
+    })
+
+    const response = await sut.handle(baseRequest)
+
+    expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
+    expect(useCase.execute.mock.calls).toHaveLength(0)
+  })
+
+  it('still maps IdentifiedManifestationRequiresRequesterError to 400 as a use-case safeguard', async () => {
+    validator.validate.mockReturnValue({ success: true, data: { ...validBody, isAnonymous: true } })
     useCase.execute.mockRejectedValue(new IdentifiedManifestationRequiresRequesterError())
 
     const response = await sut.handle(baseRequest)
@@ -137,14 +155,20 @@ describe('RegisterManifestationController', () => {
     validator.validate.mockReturnValue({ success: true, data: validBody })
     useCase.execute.mockRejectedValueOnce(new InvalidCampusIdError())
 
-    const firstResponse = await sut.handle(baseRequest)
+    const firstResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
 
     expect(firstResponse.statusCode).toBe(400)
     expect(firstResponse.body).toBeInstanceOf(InvalidCampusIdError)
 
     useCase.execute.mockRejectedValueOnce(new InvalidManifestationDescriptionError())
 
-    const secondResponse = await sut.handle(baseRequest)
+    const secondResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
 
     expect(secondResponse.statusCode).toBe(400)
     expect(secondResponse.body).toBeInstanceOf(InvalidManifestationDescriptionError)
@@ -155,7 +179,10 @@ describe('RegisterManifestationController', () => {
     const unexpected = new Error('database is on fire')
     useCase.execute.mockRejectedValue(unexpected)
 
-    const response = await sut.handle(baseRequest)
+    const response = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
 
     expect(response.statusCode).toBe(500)
     expect(response.body).toBeInstanceOf(ServerError)

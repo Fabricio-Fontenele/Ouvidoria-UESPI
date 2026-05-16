@@ -1,4 +1,6 @@
+import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
@@ -27,7 +29,10 @@ interface FinalizeManifestationOutput {
 }
 
 export class FinalizeManifestationUseCase implements UseCase<FinalizeManifestationInput, FinalizeManifestationOutput> {
-  constructor(private readonly manifestationsRepository: ManifestationsRepository) {}
+  constructor(
+    private readonly manifestationsRepository: ManifestationsRepository,
+    private readonly manifestationAdministrationRepository: ManifestationAdministrationRepository,
+  ) {}
 
   async execute({ userId, manifestationId }: FinalizeManifestationInput): Promise<FinalizeManifestationOutput> {
     const requesterId = new UniqueEntityId(userId)
@@ -41,9 +46,16 @@ export class FinalizeManifestationUseCase implements UseCase<FinalizeManifestati
       throw new NotAllowedToAccessManifestationError()
     }
 
+    const previousStatus = manifestation.status
     manifestation.finalizeByAuthor()
 
-    await this.manifestationsRepository.save(manifestation)
+    await this.manifestationAdministrationRepository.finalizeByAuthor({
+      manifestation,
+      actorUserId: userId,
+      actorType: ManifestationMessageSenderType.MANIFESTANT,
+      fromStatus: previousStatus,
+      toStatus: manifestation.status,
+    })
 
     return {
       manifestation: {
