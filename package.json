@@ -32,7 +32,8 @@
     "prisma:validate": "prisma validate",
     "check": "pnpm format:check && pnpm lint && pnpm type:check && pnpm test",
     "check:ci": "pnpm format:check && pnpm lint:ci && pnpm type:check && pnpm test:ci",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "prisma generate"
   },
   "private": true,
   "packageManager": "pnpm@10.33.0",

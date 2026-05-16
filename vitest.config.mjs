@@ -24,7 +24,14 @@ export default defineConfig({
       reportsDirectory: './coverage',
       reporter: ['text', 'text-summary', 'lcov'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.d.ts', 'src/main.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/main.ts',
+        // infra and main layers are covered by the e2e suite (`pnpm test:e2e`).
+        // Coverage thresholds here apply to the unit-tested layers (domain, application, presentation).
+        'src/infra/**',
+        'src/main/**',
+      ],
       thresholds: {
         branches: 80,
         functions: 90,
