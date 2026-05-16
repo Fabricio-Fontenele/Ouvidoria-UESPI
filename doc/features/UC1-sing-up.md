@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                   |
-| -------------- | --------------------------- |
-| Caso de uso    | UC-01                       |
-| Nome           | Cadastrar usuário           |
-| Feature        | Cadastro de conta de acesso |
-| Ator principal | Usuário                     |
-| Prioridade     | Alta                        |
-| Status         | Em especificação            |
+| Campo          | Descrição                                                 |
+| -------------- | --------------------------------------------------------- |
+| Caso de uso    | UC-01                                                     |
+| Nome           | Cadastrar usuário                                         |
+| Feature        | Cadastro de conta de acesso                               |
+| Ator principal | Usuário                                                   |
+| Prioridade     | Alta                                                      |
+| Status         | Núcleo e controller implementados / adapter HTTP pendente |
 
 ---
 
@@ -705,6 +705,8 @@ interface PasswordHasher {
 - O caso de uso deve depender de uma abstração como `UsersRepository`.
 - O retorno do caso de uso deve ser um objeto seguro, sem dados sensíveis.
 - Erros de domínio devem ser mapeados para status HTTP na camada de apresentação.
+- A camada de apresentação fornece `RegisterUserController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<RegisterUserBody>` agnóstico e mapeia `UserAlreadyExistsError` para `409 Conflict` e erros de value-object (`InvalidNameError`, `InvalidEmailError`, `InvalidPasswordError`) para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
+- O adapter para framework HTTP e a implementação concreta do `Validator` ainda não foram materializados.
 
 ---
 
