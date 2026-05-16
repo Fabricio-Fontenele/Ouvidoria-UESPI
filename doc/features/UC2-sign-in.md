@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                |
-| -------------- | ------------------------ |
-| Caso de uso    | UC-02                    |
-| Nome           | Autenticar usuário       |
-| Feature        | Login de conta de acesso |
-| Ator principal | Usuário                  |
-| Prioridade     | Alta                     |
-| Status         | Em especificação         |
+| Campo          | Descrição                                                 |
+| -------------- | --------------------------------------------------------- |
+| Caso de uso    | UC-02                                                     |
+| Nome           | Autenticar usuário                                        |
+| Feature        | Login de conta de acesso                                  |
+| Ator principal | Usuário                                                   |
+| Prioridade     | Alta                                                      |
+| Status         | Núcleo e controller implementados / adapter HTTP pendente |
 
 ---
 
@@ -544,6 +544,8 @@ interface TokenGenerator {
 - O caso de uso não deve depender diretamente de biblioteca de JWT.
 - Erros de domínio devem ser mapeados para status HTTP na camada de apresentação.
 - A resposta pública de falha de autenticação deve permanecer genérica.
+- A camada de apresentação fornece `SignInController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<SignInBody>` agnóstico, mapeia `InvalidCredentialsError` para `401 Unauthorized` e `InvalidEmailError` para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
+- O adapter para framework HTTP e a implementação concreta do `Validator` ainda não foram materializados.
 
 ---
 
