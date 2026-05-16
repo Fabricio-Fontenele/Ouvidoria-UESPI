@@ -16,8 +16,8 @@ export default defineConfig({
     environment: 'node',
     clearMocks: true,
     restoreMocks: true,
-    include: ['test/**/*.spec.ts', 'test/**/*.test.ts'],
-    exclude: ['build/**', 'coverage/**', 'node_modules/**'],
+    include: ['test/unit/**/*.spec.ts', 'test/unit/**/*.test.ts'],
+    exclude: ['build/**', 'coverage/**', 'node_modules/**', 'test/e2e/**'],
     coverage: {
       provider: 'v8',
       enabled: false,

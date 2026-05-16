@@ -75,15 +75,24 @@ Prefer explicit names such as `sign-in-use-case.ts`, `user-repository.ts`, and `
 
 ## Testing Guidelines
 
-Vitest is the test runner, and `vitest-mock-extended` is the default mocking helper. Place tests under `test/unit/` and name them `*.spec.ts`.
+Vitest is the test runner, and `vitest-mock-extended` is the default mocking helper.
 
-- Mirror the production module under test
+### Unit tests (`test/unit/`)
+
+- Mirror the production module under test, name them `*.spec.ts`
 - Cover success paths, invalid input, and dependency failures
 - Mock dependencies through contracts (`UsersRepository`, `PasswordHasher`, `TokenGenerator`, etc.)
-- Do not use real databases, HTTP servers, or concrete crypto/JWT libraries in unit tests for the domain/application/presentation layers
-- Infra adapters (`src/infra/database/prisma/*`, Fastify wiring, `JwtTokenGenerator`, `BcryptjsHasher`) are not currently unit-tested — they are thin shims over libraries and verified at integration level. If you add behavior to them, add tests behind a real Postgres (`pnpm db:up`) or use `prismock`/equivalent.
+- Do not use real databases, HTTP servers, or concrete crypto/JWT libraries
 
-Run `pnpm test` before opening a PR. Prefer `pnpm test:coverage` when changing core behavior.
+### E2E tests (`test/e2e/`)
+
+- Run via `pnpm test:e2e` (separate vitest config). Require Postgres up (`pnpm db:up`).
+- `test/e2e/setup-e2e.ts` creates a per-file Postgres schema (`e2e_<uuid>`), sets `DATABASE_URL`, applies migrations with `prisma migrate deploy`, and drops the schema in `afterAll`.
+- Tests use `app.inject()` from the Fastify instance (no actual HTTP socket). Helper in `test/e2e/utils/app.ts` exposes `getApp()` (cached) and `resetDatabase()` (call in `afterEach`).
+- File parallelism is disabled in `vitest.config.e2e.mjs` so the cached Fastify app does not race across files.
+- Cover end-to-end flows that wouldn't surface in unit tests — especially the traceability invariants enforced by `prisma.$transaction` (e.g. assert that a system message row exists after a status transition).
+
+Run `pnpm test` before opening a PR; run `pnpm test:e2e` when touching infra adapters, Prisma schema/repositories, Fastify routes, or middleware. `pnpm check` runs the unit gate; e2e is intentionally excluded because it depends on Docker.
 
 ## Documentation Guidelines
 
