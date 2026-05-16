@@ -322,10 +322,12 @@ Corpo da resposta:
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
     "description": "O serviço ficou indisponível durante toda a manhã.",
+    "involvedPeople": null,
     "isAnonymous": false,
     "authorUserId": "user-1",
     "createdAt": "2026-05-10T15:00:00.000Z"
-  }
+  },
+  "accessCode": null
 }
 ```
 
@@ -341,10 +343,12 @@ Exemplo de resposta anônima:
     "campusId": "campus-2",
     "administrativeUnitId": "unit-7",
     "description": "Há indícios de irregularidade no processo informado.",
+    "involvedPeople": null,
     "isAnonymous": true,
     "authorUserId": null,
     "createdAt": "2026-05-10T15:00:00.000Z"
-  }
+  },
+  "accessCode": "plain-access-code"
 }
 ```
 
@@ -445,9 +449,11 @@ Resultado esperado:
 
 - protocolo gerado e normalizado;
 - descrição normalizada;
+- `involvedPeople` normalizado ou persistido como `null` quando ausente;
 - status inicial `in_analysis`;
 - manifestação persistida;
-- resposta com os dados públicos da manifestação.
+- resposta com os dados públicos da manifestação;
+- `accessCode` igual a `null` para manifestação identificada.
 
 #### CT-UC04-002 - Deve registrar manifestação anônima quando o usuário escolher anonimato
 
@@ -458,7 +464,9 @@ Então o sistema deve registrar a manifestação sem autor identificado.
 Resultado esperado:
 
 - `authorUserId` persistido como `null`;
-- resposta com `authorUserId` igual a `null`.
+- `accessCodeHash` persistido a partir do código gerado;
+- resposta com `authorUserId` igual a `null`;
+- resposta com `accessCode` em texto plano apenas nesse momento.
 
 #### CT-UC04-003 - Não deve registrar manifestação identificada sem `requesterId`
 
@@ -533,6 +541,7 @@ interface RegisterManifestationInput {
   campusId: string
   administrativeUnitId: string
   description: string
+  involvedPeople?: string | null
 }
 ```
 
@@ -548,10 +557,12 @@ interface RegisterManifestationOutput {
     campusId: string
     administrativeUnitId: string
     description: string
+    involvedPeople: string | null
     isAnonymous: boolean
     authorUserId: string | null
     createdAt: Date
   }
+  accessCode: string | null
 }
 ```
 
@@ -571,6 +582,22 @@ interface ProtocolGenerator {
 }
 ```
 
+Gerador de código de acompanhamento:
+
+```ts
+interface AccessCodeGenerator {
+  generate(): Promise<string>
+}
+```
+
+Hash do código de acompanhamento:
+
+```ts
+interface PasswordHasher {
+  hash(value: string): Promise<string>
+}
+```
+
 ---
 
 ## 19. Observações de implementação
@@ -583,9 +610,13 @@ interface ProtocolGenerator {
 - Nesta versão, campus e unidade administrativa são tratados como catálogos fixos previamente carregados por seed.
 - O caso de uso exige apenas que `campusId` e `administrativeUnitId` sejam informados e usados como referência.
 - A validação de tipo pode ocorrer na camada de entrada ou por enum do domínio.
-- O caso de uso depende de `ManifestationsRepository` e `ProtocolGenerator`.
+- Em manifestações anônimas, o caso de uso gera `accessCode` em texto plano, cria `accessCodeHash` por `PasswordHasher` e persiste apenas o hash no agregado.
+- O `accessCode` em texto plano só deve ser retornado no output do registro anônimo, nunca persistido nem reexposto em projeções futuras.
+- O caso de uso depende de `ManifestationsRepository`, `ProtocolGenerator`, `AccessCodeGenerator` e `PasswordHasher`.
 - O caso de uso não deve depender diretamente de banco de dados ou biblioteca concreta de geração de protocolo.
-- O fluxo de anexos, envolvidos, sigilo administrativo e IA deve ser especificado em features próprias ou em evoluções posteriores desta feature.
+- O campo `involvedPeople` já faz parte do recorte atual e deve permanecer alinhado com o draft assistido por IA.
+- A camada de apresentação deve retornar `401 Unauthorized` quando o registro for identificado e não houver usuário autenticado no contexto da requisição.
+- O fluxo de anexos, sigilo administrativo e IA deve ser especificado em features próprias ou em evoluções posteriores desta feature.
 
 ---
 

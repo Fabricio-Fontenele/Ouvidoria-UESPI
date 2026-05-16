@@ -1,3 +1,6 @@
+> Documento legado preservado para consulta histórica.
+> A numeração e o conteúdo deste arquivo foram substituídos por [doc/cockburn/cockburn.md](../cockburn/cockburn.md), que é a referência canônica atual dos casos de uso.
+
 # Casos de Uso – Sistema de Ouvidoria UESPI
 
 ## UC01 – Cadastrar usuário
