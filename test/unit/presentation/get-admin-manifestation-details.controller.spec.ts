@@ -5,12 +5,14 @@ import type { GetAdminManifestationDetailsUseCase } from '#src/application/use-c
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToManageManifestationError } from '#src/application/use-cases/manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import {
   GetAdminManifestationDetailsController,
   type GetAdminManifestationDetailsParams,
 } from '#src/presentation/controllers/admin/get-admin-manifestation-details.controller.js'
 import { MissingParamError } from '#src/presentation/errors/missing-param-error.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 
 describe('GetAdminManifestationDetailsController', () => {
@@ -27,7 +29,7 @@ describe('GetAdminManifestationDetailsController', () => {
       params: { manifestationId: 'manifestation-1' },
       query: {},
       headers: {},
-      user: { id: 'ombudsman-1', role: 'ombudsman' },
+      user: { id: 'ombudsman-1', role: UserRole.OMBUDSMAN },
     }
 
     sut = new GetAdminManifestationDetailsController(useCase)
@@ -70,6 +72,7 @@ describe('GetAdminManifestationDetailsController', () => {
     const response = await sut.handle(unauthenticated)
 
     expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })
 

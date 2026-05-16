@@ -6,6 +6,7 @@ import { ManifestationInteractionNotAllowedError } from '#src/application/use-ca
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import { InvalidManifestationMessageContentError } from '#src/domain/value-objects/manifestation-message-content.js'
 import {
   AddManifestationMessageController,
@@ -14,6 +15,7 @@ import {
 } from '#src/presentation/controllers/manifestation/add-manifestation-message.controller.js'
 import { MissingParamError } from '#src/presentation/errors/missing-param-error.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 import type { Validator } from '#src/presentation/protocols/validator.js'
 
@@ -37,7 +39,7 @@ describe('AddManifestationMessageController', () => {
       params: { manifestationId: 'manifestation-1' },
       query: {},
       headers: {},
-      user: { id: 'user-1', role: 'manifestant' },
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
     }
 
     sut = new AddManifestationMessageController(useCase, validator)
@@ -75,6 +77,7 @@ describe('AddManifestationMessageController', () => {
     const response = await sut.handle(unauthenticated)
 
     expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(validator.validate.mock.calls).toHaveLength(0)
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })

@@ -5,6 +5,7 @@ import { NotAllowedToAccessManifestationError } from '#src/application/use-cases
 import { InvalidManifestationMessageContentError } from '#src/domain/value-objects/manifestation-message-content.js'
 
 import { MissingParamError } from '../../errors/missing-param-error.js'
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
 import { badRequest, conflict, created, forbidden, notFound, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import type { Validator } from '../../protocols/validator.js'
@@ -30,7 +31,7 @@ export class AddManifestationMessageController extends BaseController<AddManifes
 
   protected async perform(request: AddManifestationMessageRequest): Promise<HttpResponse> {
     if (request.user === undefined) {
-      return unauthorized(new Error('Authentication required.'))
+      return unauthorized(new UnauthenticatedError())
     }
 
     const { manifestationId } = request.params

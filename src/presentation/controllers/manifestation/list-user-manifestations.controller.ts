@@ -1,6 +1,7 @@
 import { InvalidPageNumberError } from '#src/application/use-cases/list-user-manifestations/errors/invalid-page-number-error.js'
 import type { ListUserManifestationsUseCase } from '#src/application/use-cases/list-user-manifestations/list-user-manifestations-use-case.js'
 
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
 import { badRequest, ok, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import { BaseController } from '../base-controller.js'
@@ -20,7 +21,7 @@ export class ListUserManifestationsController extends BaseController<ListUserMan
 
   protected async perform(request: ListUserManifestationsRequest): Promise<HttpResponse> {
     if (request.user === undefined) {
-      return unauthorized(new Error('Authentication required.'))
+      return unauthorized(new UnauthenticatedError())
     }
 
     const rawPage = request.query.page

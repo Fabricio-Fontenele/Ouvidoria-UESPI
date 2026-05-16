@@ -4,6 +4,7 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 import { IdentifiedManifestationRequiresRequesterError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-requester-error.js'
 import type { RegisterManifestationUseCase } from '#src/application/use-cases/register-manifestation/register-manifestation.use-case.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import { InvalidCampusIdError } from '#src/domain/value-objects/campus-id.js'
 import { InvalidManifestationDescriptionError } from '#src/domain/value-objects/manifestation-description.js'
 import {
@@ -72,7 +73,7 @@ describe('RegisterManifestationController', () => {
 
     const response = await sut.handle({
       ...baseRequest,
-      user: { id: 'user-1', role: 'manifestant' },
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
     })
 
     expect(response.statusCode).toBe(201)
