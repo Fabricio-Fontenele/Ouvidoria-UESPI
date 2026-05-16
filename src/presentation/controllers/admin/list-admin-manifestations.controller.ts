@@ -23,6 +23,7 @@ export interface ListAdminManifestationsQuery {
 type ListAdminManifestationsRequest = HttpRequest<unknown, Record<string, string>, ListAdminManifestationsQuery>
 
 const POSITIVE_INTEGER = /^[1-9]\d*$/
+const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 const MANIFESTATION_STATUS_VALUES = Object.values(ManifestationStatus) as readonly string[]
 const MANIFESTATION_TYPE_VALUES = Object.values(ManifestationType) as readonly string[]
 
@@ -35,8 +36,17 @@ function isManifestationType(value: string): value is ManifestationType {
 }
 
 function parseIsoDate(raw: string): Date | null {
-  const ms = Date.parse(raw)
-  return Number.isNaN(ms) ? null : new Date(ms)
+  if (!ISO_DATE_TIME.test(raw)) {
+    return null
+  }
+
+  const date = new Date(raw)
+
+  if (Number.isNaN(date.getTime()) || date.toISOString() !== raw) {
+    return null
+  }
+
+  return date
 }
 
 export class ListAdminManifestationsController extends BaseController<ListAdminManifestationsRequest> {

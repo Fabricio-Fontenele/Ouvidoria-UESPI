@@ -116,6 +116,8 @@ describe('ListAdminManifestationsController', () => {
     ['type', { type: 'wrong-type' }],
     ['from', { from: 'not-a-date' }],
     ['to', { to: '2026-13-99' }],
+    ['from', { from: '2026-01-01' }],
+    ['to', { to: '2026-12-31T23:59:59Z' }],
   ])('returns 400 InvalidParamError for invalid %s', async (param, query) => {
     const response = await sut.handle({ ...baseRequest, query })
 

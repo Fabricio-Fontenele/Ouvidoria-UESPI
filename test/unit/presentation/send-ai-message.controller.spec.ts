@@ -27,8 +27,6 @@ describe('SendAiMessageController', () => {
     validBody = {
       history: [],
       message: 'Quero registrar uma reclamação sobre o serviço.',
-      campuses: [{ id: 'campus-1', label: 'Campus 1' }],
-      administrativeUnits: [{ id: 'unit-1', label: 'Unidade 1', campusId: 'campus-1' }],
     }
     baseRequest = { body: validBody, params: {}, query: {}, headers: {} }
 

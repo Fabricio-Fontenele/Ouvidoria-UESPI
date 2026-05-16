@@ -6,7 +6,8 @@ import { InvalidCampusIdError } from '#src/domain/value-objects/campus-id.js'
 import { InvalidManifestationDescriptionError } from '#src/domain/value-objects/manifestation-description.js'
 import { InvalidManifestationInvolvedPeopleError } from '#src/domain/value-objects/manifestation-involved-people.js'
 
-import { badRequest, created } from '../../helpers/http-helpers.js'
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
+import { badRequest, created, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import type { Validator } from '../../protocols/validator.js'
 import { BaseController } from '../base-controller.js'
@@ -36,6 +37,10 @@ export class RegisterManifestationController extends BaseController {
     }
 
     const { isAnonymous, type, campusId, administrativeUnitId, description, involvedPeople } = validation.data
+
+    if (!isAnonymous && request.user === undefined) {
+      return unauthorized(new UnauthenticatedError())
+    }
 
     const result = await this.useCase.execute({
       requesterId: request.user?.id ?? null,
