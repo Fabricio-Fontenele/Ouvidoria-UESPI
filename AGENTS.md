@@ -2,22 +2,26 @@
 
 ## Project Overview
 
-This repository contains the backend core for the Institutional Ombudsman System.
+This repository contains the full backend for the Institutional Ombudsman System: domain, application, presentation, infrastructure adapters, and the composition root.
 
-The current implementation is intentionally limited to the domain and application layers. Keep business rules traceable to the PRD, Cockburn use cases, and feature specs in `doc/`.
-
-## Current Implementation Focus
-
-Do not add HTTP controllers, database adapters, ORM models, migrations, queues, background jobs, or external integrations unless the current task explicitly asks for them.
-
-Prefer small, isolated use cases with clear contracts and unit tests.
+Keep business rules traceable to the PRD, Cockburn use cases, and feature specs in `doc/`.
 
 ## Project Structure & Module Organization
 
-- `src/domain/`: entities and value objects
-- `src/application/`: use cases, repository contracts, auth, and cryptography abstractions
-- `test/unit/`: unit tests mirroring application behavior
-- `doc/`: PRD, requirements, Cockburn use cases, and feature specs
+- `src/domain/`: entities and value objects (pure)
+- `src/application/`: use cases, repository contracts, auth/cryptography/protocol abstractions, DTOs
+- `src/presentation/`: framework-agnostic controllers, HTTP protocols (`HttpRequest`/`HttpResponse`), `Validator<T>`, base controller, helpers
+- `src/infra/`: concrete adapters
+  - `database/prisma/`: client, mappers, repositories. Aggregate writes + system audit messages are wrapped in `prisma.$transaction` for traceability.
+  - `cryptography/`: `BcryptjsHasher` (implements `PasswordHasher` + `HashComparer`)
+  - `auth/`: `JwtTokenGenerator` (jsonwebtoken HS256)
+  - `protocol/`: `UuidProtocolGenerator`, `RandomAccessCodeGenerator`
+  - `http/fastify/`: `adaptRoute`, `ZodValidator`, auth middlewares (`ensureAuthenticated`, `optionalAuthenticate`, `requireRoles`)
+- `src/main/`: composition root
+  - `config/env.ts` (zod-validated env), `factories/infrastructure.ts` (DI singletons), `factories/controllers/*` (per-area factories), `routes/*.routes.ts` (Fastify plugins), `server.ts` (bootstrap)
+- `prisma/`: schema + migrations
+- `test/unit/`: unit tests mirroring application/presentation behavior
+- `doc/`: PRD, requirements, Cockburn use cases, feature specs
 - `scripts/`: repository automation such as commit validation
 
 Build output goes to `build/` and should not be edited manually.
@@ -26,10 +30,13 @@ Build output goes to `build/` and should not be edited manually.
 
 - `src/domain/` must stay independent from application, framework, database, and external service code.
 - `src/application/` may depend on domain objects and application contracts, but not on concrete implementations.
-- Repository, cryptography, token, file, and AI dependencies should be expressed as interfaces in the application layer.
+- `src/presentation/` may depend on domain and application contracts only. **Never import from `src/infra/` or `src/main/`** — controllers must remain framework-agnostic.
+- `src/infra/` adapts external libraries (Prisma, Fastify, JWT, bcrypt) to application/presentation contracts. Infra modules may depend on application/presentation/domain but never on `src/main/`.
+- `src/main/` is the only place that knows about everything: it instantiates infra adapters and injects them into use cases/controllers, then registers HTTP routes.
+- Repository, cryptography, token, file, and AI dependencies should be expressed as interfaces in the application layer; their concrete adapters live in `src/infra/`.
 - Use cases orchestrate flows; they should not contain framework, ORM, or transport logic.
 
-Forbidden in `domain` and `application` unless explicitly requested: HTTP frameworks, ORM code, direct environment access, direct filesystem access, and direct network calls.
+Forbidden in `domain`, `application`, and `presentation`: HTTP frameworks, ORM code, direct environment access, direct filesystem access, and direct network calls.
 
 ## Domain Language
 
@@ -72,8 +79,9 @@ Vitest is the test runner, and `vitest-mock-extended` is the default mocking hel
 
 - Mirror the production module under test
 - Cover success paths, invalid input, and dependency failures
-- Mock dependencies through contracts
-- Do not use real databases, HTTP servers, or concrete crypto/JWT libraries in unit tests
+- Mock dependencies through contracts (`UsersRepository`, `PasswordHasher`, `TokenGenerator`, etc.)
+- Do not use real databases, HTTP servers, or concrete crypto/JWT libraries in unit tests for the domain/application/presentation layers
+- Infra adapters (`src/infra/database/prisma/*`, Fastify wiring, `JwtTokenGenerator`, `BcryptjsHasher`) are not currently unit-tested — they are thin shims over libraries and verified at integration level. If you add behavior to them, add tests behind a real Postgres (`pnpm db:up`) or use `prismock`/equivalent.
 
 Run `pnpm test` before opening a PR. Prefer `pnpm test:coverage` when changing core behavior.
 
