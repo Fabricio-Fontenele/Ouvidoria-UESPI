@@ -3,7 +3,10 @@ import type { ComponentProps } from 'react'
 export type IconName =
   | 'arrow-right'
   | 'bell'
+  | 'braces'
+  | 'check-circle'
   | 'chevron-right'
+  | 'edit'
   | 'email'
   | 'eye'
   | 'eye-off'
@@ -12,11 +15,14 @@ export type IconName =
   | 'home'
   | 'info'
   | 'lock'
+  | 'lock-open'
   | 'log-out'
   | 'menu'
+  | 'message-circle'
   | 'plus-circle'
   | 'search'
   | 'settings'
+  | 'shield'
   | 'share'
   | 'user'
   | 'x'
@@ -57,10 +63,34 @@ export function Icon({ className, name, ...props }: IconProps) {
         </svg>
       )
 
+    case 'braces':
+      return (
+        <svg {...sharedProps}>
+          <path d="M8 3c-2 0-3 1-3 3v2c0 1.4-.8 2-2 2 1.2 0 2 .6 2 2v2c0 2 1 3 3 3" />
+          <path d="M16 3c2 0 3 1 3 3v2c0 1.4.8 2 2 2-1.2 0-2 .6-2 2v2c0 2-1 3-3 3" />
+        </svg>
+      )
+
+    case 'check-circle':
+      return (
+        <svg {...sharedProps}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="m8 12 2.5 2.5L16 9" />
+        </svg>
+      )
+
     case 'chevron-right':
       return (
         <svg {...sharedProps}>
           <path d="m9 18 6-6-6-6" />
+        </svg>
+      )
+
+    case 'edit':
+      return (
+        <svg {...sharedProps}>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
         </svg>
       )
 
@@ -134,6 +164,15 @@ export function Icon({ className, name, ...props }: IconProps) {
         </svg>
       )
 
+    case 'lock-open':
+      return (
+        <svg {...sharedProps}>
+          <rect height="10" rx="2" width="14" x="5" y="11" />
+          <path d="M8 11V8a4 4 0 0 1 7.5-2" />
+          <path d="M12 15v2" />
+        </svg>
+      )
+
     case 'log-out':
       return (
         <svg {...sharedProps}>
@@ -149,6 +188,16 @@ export function Icon({ className, name, ...props }: IconProps) {
           <path d="M4 7h16" />
           <path d="M4 12h16" />
           <path d="M4 17h16" />
+        </svg>
+      )
+
+    case 'message-circle':
+      return (
+        <svg {...sharedProps}>
+          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 21l1.8-4.8A8.4 8.4 0 1 1 21 11.5Z" />
+          <path d="M8 11h.01" />
+          <path d="M12 11h.01" />
+          <path d="M16 11h.01" />
         </svg>
       )
 
@@ -174,6 +223,14 @@ export function Icon({ className, name, ...props }: IconProps) {
         <svg {...sharedProps}>
           <path d="M12.2 2h-.4a2 2 0 0 0-2 2 1.6 1.6 0 0 1-2.4 1.4 2 2 0 0 0-2.7.7l-.2.3a2 2 0 0 0 .7 2.7 1.6 1.6 0 0 1 0 2.8 2 2 0 0 0-.7 2.7l.2.3a2 2 0 0 0 2.7.7 1.6 1.6 0 0 1 2.4 1.4 2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2 1.6 1.6 0 0 1 2.4-1.4 2 2 0 0 0 2.7-.7l.2-.3a2 2 0 0 0-.7-2.7 1.6 1.6 0 0 1 0-2.8 2 2 0 0 0 .7-2.7l-.2-.3a2 2 0 0 0-2.7-.7 1.6 1.6 0 0 1-2.4-1.4 2 2 0 0 0-2-2Z" />
           <circle cx="12" cy="12" r="3" />
+        </svg>
+      )
+
+    case 'shield':
+      return (
+        <svg {...sharedProps}>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+          <path d="m9 12 2 2 4-4" />
         </svg>
       )
 

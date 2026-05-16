@@ -81,7 +81,7 @@ export function SignPage() {
 
       <p className="mx-auto mt-[15px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-5 md:text-[15px]">
         Já tem uma conta?{' '}
-        <a className={cx('text-login-blue no-underline', linkFocusClasses)} href="/">
+        <a className={cx('text-login-blue no-underline', linkFocusClasses)} href="/login">
           Faça login.
         </a>
       </p>

@@ -31,6 +31,25 @@
   --shadow-home-header: 0 4px 4px rgb(51 51 51 / 0.25);
   --shadow-home-card: 0 4px 4px rgb(51 51 51 / 0.25);
   --drop-shadow-home-mascot: 0 25px 25px rgb(0 0 0 / 0.15);
+
+  --color-landing-blue: #0d47a1;
+  --color-landing-text: #1a1c1d;
+  --color-landing-brown: #5b403d;
+  --color-landing-chip: #d1d1d6;
+  --color-landing-action: #f3f3f4;
+  --color-landing-surface: #ffffff;
+  --color-landing-muted-surface: #f2f2f7;
+  --color-landing-menu: #4b5563;
+  --color-landing-footer: #e5e5e5;
+  --color-landing-social: #d8d8d8;
+  --color-landing-warning: #ffb300;
+  --color-landing-success: #34c759;
+
+  --shadow-landing-header: 0 4px 4px rgb(51 51 51 / 0.25);
+  --shadow-landing-card: 0 4px 8px rgb(174 174 178 / 0.6);
+  --shadow-landing-drawer: 0 16px 48px rgb(26 28 29 / 0.28);
+  --shadow-landing-step: 0 3px 4px rgb(51 51 51 / 0.22);
+  --drop-shadow-landing-mascot: 0 22px 22px rgb(0 0 0 / 0.15);
 }
 
 :root {
@@ -51,12 +70,65 @@
   body {
     min-width: 320px;
     min-height: 100svh;
+    overflow-x: hidden;
     background: var(--color-login-bg);
   }
 
   button,
   input {
     font: inherit;
+  }
+
+  .landing-hero-bg {
+    background:
+      linear-gradient(90deg, rgb(255 255 255 / 0.97) 0%, rgb(255 255 255 / 0.9) 43%, rgb(255 255 255 / 0.62) 100%),
+      repeating-linear-gradient(90deg, rgb(187 196 207 / 0.34) 0 1px, transparent 1px 32px),
+      repeating-linear-gradient(0deg, rgb(187 196 207 / 0.34) 0 1px, transparent 1px 32px),
+      radial-gradient(circle at 83% 48%, rgb(13 71 161 / 0.12) 0 34px, transparent 35px),
+      radial-gradient(circle at 92% 72%, rgb(201 72 38 / 0.14) 0 44px, transparent 45px),
+      linear-gradient(135deg, #eef2f5 0%, #f8f2ea 52%, #dfe4e8 100%);
+    background-position: center;
+    background-size: cover;
+  }
+
+  .landing-hero-bg::before {
+    position: absolute;
+    right: -10px;
+    bottom: 12px;
+    width: 174px;
+    height: 128px;
+    background:
+      linear-gradient(90deg, transparent 0 12px, rgb(116 125 135 / 0.18) 12px 16px, transparent 16px 24px),
+      linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(185 194 202 / 0.2));
+    border-radius: 2px;
+    clip-path: polygon(10% 42%, 100% 0, 100% 100%, 0 100%);
+    content: '';
+  }
+
+  .landing-hero-bg::after {
+    position: absolute;
+    right: 9px;
+    bottom: 39px;
+    color: rgb(13 71 161 / 0.13);
+    content: 'UESPI';
+    font-size: 31px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+  }
+
+  @media (min-width: 768px) {
+    .landing-hero-bg::before {
+      right: 24px;
+      bottom: 34px;
+      width: 320px;
+      height: 230px;
+    }
+
+    .landing-hero-bg::after {
+      right: 42px;
+      bottom: 98px;
+      font-size: 56px;
+    }
   }
 }
 

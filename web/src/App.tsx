@@ -1,9 +1,18 @@
 import { HomePage } from './pages/home-page'
+import { LandingPage } from './pages/landing-page'
 import { LoginPage } from './pages/login-page'
 import { SignPage } from './pages/sign-page'
 
 function App() {
   const normalizedPath = window.location.pathname.replace(/\/$/, '')
+
+  if (normalizedPath === '') {
+    return <LandingPage />
+  }
+
+  if (normalizedPath === '/login') {
+    return <LoginPage />
+  }
 
   if (normalizedPath === '/home') {
     return <HomePage />
@@ -13,7 +22,7 @@ function App() {
     return <SignPage />
   }
 
-  return <LoginPage />
+  return <LandingPage />
 }
 
 export default App
