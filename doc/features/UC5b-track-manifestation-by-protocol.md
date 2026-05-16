@@ -9,7 +9,7 @@
 | Feature        | Consulta pública de manifestação anônima por protocolo e código de acompanhamento |
 | Ator principal | Manifestante anônimo                                                              |
 | Prioridade     | Alta                                                                              |
-| Status         | Núcleo implementado / integração pendente                                         |
+| Status         | Núcleo e controller implementados / adapter HTTP pendente                         |
 
 ---
 
@@ -361,7 +361,8 @@ export class Manifestation extends Entity<ManifestationProps> {
 - o agregado expõe apenas `accessCodeHash` (somente leitura); a comparação fica no caso de uso, e a geração no fluxo de registro;
 - o erro `ManifestationTrackingNotFoundError` fica em `track-manifestation-by-protocol/errors/` porque ainda é usado por um único caso de uso; se outro fluxo público vier a reaproveitá-lo, mover para uma pasta compartilhada do tipo `manifestation-tracking/errors/`;
 - o `RegisterManifestationUseCase` passa a retornar `accessCode` em texto plano no campo `accessCode` do output, apenas no caso anônimo; para manifestações identificadas o campo é `null`;
-- nenhuma rota HTTP foi introduzida; a camada de transporte deverá expor o caso de uso preservando o erro genérico para evitar enumeração de protocolos.
+- a camada de apresentação fornece `TrackManifestationByProtocolController` em `src/presentation/controllers/manifestation/`, que valida o body via `Validator<TrackManifestationByProtocolBody>` agnóstico e mapeia `ManifestationTrackingNotFoundError` para `404 Not Found` — preservando o erro genérico do caso de uso para evitar enumeração de protocolos e códigos de acesso;
+- o adapter para framework HTTP e a implementação concreta do `Validator` ainda não foram materializados.
 
 ---
 
