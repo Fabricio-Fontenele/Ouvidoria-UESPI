@@ -2,7 +2,9 @@ import { serverError } from '../helpers/http-helpers.js'
 import type { Controller } from '../protocols/controller.js'
 import type { HttpRequest, HttpResponse } from '../protocols/http.js'
 
-export abstract class BaseController<TRequest extends HttpRequest = HttpRequest> implements Controller<TRequest> {
+export abstract class BaseController<
+  TRequest extends HttpRequest<unknown, object, object> = HttpRequest,
+> implements Controller<TRequest> {
   async handle(request: TRequest): Promise<HttpResponse> {
     try {
       return await this.perform(request)
