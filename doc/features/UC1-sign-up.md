@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                 |
-| -------------- | --------------------------------------------------------- |
-| Caso de uso    | UC-01                                                     |
-| Nome           | Cadastrar usuário                                         |
-| Feature        | Cadastro de conta de acesso                               |
-| Ator principal | Usuário                                                   |
-| Prioridade     | Alta                                                      |
-| Status         | Núcleo e controller implementados / adapter HTTP pendente |
+| Campo          | Descrição                                                                               |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-01                                                                                   |
+| Nome           | Cadastrar usuário                                                                       |
+| Feature        | Cadastro de conta de acesso                                                             |
+| Ator principal | Usuário                                                                                 |
+| Prioridade     | Alta                                                                                    |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
 ---
 
@@ -706,7 +706,9 @@ interface PasswordHasher {
 - O retorno do caso de uso deve ser um objeto seguro, sem dados sensíveis.
 - Erros de domínio devem ser mapeados para status HTTP na camada de apresentação.
 - A camada de apresentação fornece `RegisterUserController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<RegisterUserBody>` agnóstico e mapeia `UserAlreadyExistsError` para `409 Conflict` e erros de value-object (`InvalidNameError`, `InvalidEmailError`, `InvalidPasswordError`) para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
-- O adapter para framework HTTP e a implementação concreta do `Validator` ainda não foram materializados.
+- A infraestrutura concreta está materializada: `PrismaUsersRepository` (`src/infra/database/prisma/repositories/`) implementa `UsersRepository`; `BcryptjsHasher` (`src/infra/cryptography/`) implementa `PasswordHasher`; `ZodValidator<RegisterUserBody>` (`src/infra/http/fastify/validators/`) materializa o `Validator<T>` da apresentação.
+- O endpoint `POST /users` é registrado em `src/main/routes/auth.routes.ts` via `adaptRoute(makeRegisterUserController())` (composition root em `src/main/factories/controllers/auth.ts`); o bootstrap completo do Fastify vive em `src/main/server.ts`.
+- Cobertura e2e em `test/e2e/auth.e2e.spec.ts` exercita os fluxos de cadastro com sucesso, duplicidade de e-mail (409) e encadeamento com sign-in.
 
 ---
 
