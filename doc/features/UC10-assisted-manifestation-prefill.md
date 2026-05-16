@@ -161,8 +161,8 @@ O draft transitório deve usar a seguinte forma:
 O sinalizador `shouldOpenManifestationDraft` só pode ser `true` quando:
 
 - `type` estiver entre os tipos válidos do domínio;
-- `campusId` for canônico e estiver no catálogo informado;
-- `administrativeUnitId` for canônico e estiver no catálogo informado;
+- `campusId` for canônico e estiver no catálogo oficial carregado para o fluxo;
+- `administrativeUnitId` for canônico e estiver no catálogo oficial carregado para o fluxo;
 - `description` for texto válido após normalização.
 
 ### 10.2 Pessoas envolvidas
@@ -243,4 +243,4 @@ O sistema deve permitir continuidade por preenchimento manual no fluxo regular.
 - O núcleo atual não persiste draft nem conversa.
 - O campo `involvedPeople` passou a fazer parte do domínio e do caso de uso de registro para manter compatibilidade entre draft assistido e envio formal.
 - O draft assistido é consumido pelo chamador; a decisão de abrir formulário, exibir pendências e chamar o UC-04 fica fora deste repositório.
-- A consistência entre campus e unidade administrativa depende de o catálogo fornecido ao fluxo carregar relacionamento suficiente para essa validação na integração final.
+- A consistência entre campus e unidade administrativa depende de os catálogos oficiais carregados para o fluxo preservarem relacionamento suficiente para essa validação na integração final.

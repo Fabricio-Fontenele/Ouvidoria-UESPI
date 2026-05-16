@@ -41,7 +41,7 @@ Esta feature deve permitir:
 - encerrar uma manifestação identificada do próprio manifestante;
 - exigir que a manifestação esteja em `answered` para aceitar o encerramento;
 - transitar o status da manifestação para `finalized`;
-- persistir a transição pelo repositório de manifestações;
+- persistir a transição e o histórico de encerramento por contrato administrativo atômico;
 - retornar o estado atualizado da manifestação.
 
 ### 4.2 Não incluído
@@ -75,7 +75,7 @@ Para executar o encerramento:
 - a manifestação deve existir;
 - a manifestação deve pertencer ao `userId` informado;
 - a manifestação deve estar no status `answered`;
-- a infraestrutura de persistência deve disponibilizar consulta e atualização de manifestação.
+- a infraestrutura de persistência deve disponibilizar consulta da manifestação e persistência auditável do encerramento.
 
 ---
 
@@ -112,15 +112,15 @@ Após operação bem-sucedida:
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                                       |
-| ---------- | ----------------------------------------------------------------------------------------------------------- |
-| RN-UC06-01 | Apenas o autor identificado da manifestação pode encerrá-la por este fluxo.                                 |
-| RN-UC06-02 | Manifestações anônimas não podem ser encerradas pelo fluxo identificado.                                    |
-| RN-UC06-03 | A manifestação só pode ser encerrada quando estiver no status `answered`.                                   |
-| RN-UC06-04 | Manifestações em `in_analysis` não podem ser encerradas pelo manifestante.                                  |
-| RN-UC06-05 | Manifestações em estado terminal (`finalized`, `canceled`) não podem ser reencerradas.                      |
-| RN-UC06-06 | A transição para `finalized` deve ficar encapsulada na entidade `Manifestation` por `finalizeByAuthor()`.   |
-| RN-UC06-07 | A persistência da transição deve ocorrer pelo `ManifestationsRepository.save()` após a chamada ao agregado. |
+| Código     | Regra                                                                                                                                            |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RN-UC06-01 | Apenas o autor identificado da manifestação pode encerrá-la por este fluxo.                                                                      |
+| RN-UC06-02 | Manifestações anônimas não podem ser encerradas pelo fluxo identificado.                                                                         |
+| RN-UC06-03 | A manifestação só pode ser encerrada quando estiver no status `answered`.                                                                        |
+| RN-UC06-04 | Manifestações em `in_analysis` não podem ser encerradas pelo manifestante.                                                                       |
+| RN-UC06-05 | Manifestações em estado terminal (`finalized`, `canceled`) não podem ser reencerradas.                                                           |
+| RN-UC06-06 | A transição para `finalized` deve ficar encapsulada na entidade `Manifestation` por `finalizeByAuthor()`.                                        |
+| RN-UC06-07 | A persistência da transição deve ocorrer por um contrato administrativo que registre ator, status anterior e status final em uma única operação. |
 
 ---
 
@@ -152,7 +152,7 @@ A guarda fica encapsulada em `Manifestation.finalizeByAuthor()` e é mais estrit
 2. O sistema localiza a manifestação por identificador.
 3. O sistema valida que a manifestação pertence ao manifestante autenticado.
 4. O agregado aplica a transição `answered → finalized`.
-5. O sistema persiste o novo status da manifestação.
+5. O sistema persiste o novo status com metadados de auditoria do ator e da transição.
 6. O sistema retorna o estado atualizado da manifestação.
 
 ---
@@ -320,10 +320,10 @@ Erro esperado:
 - quando o caso de uso de encerramento for executado;
 - então deve lançar `ManifestationStatusTransitionNotAllowedError`.
 
-#### CT-UC06-008 - Deve propagar falhas do `save()` após a transição
+#### CT-UC06-008 - Deve propagar falhas de persistência auditável após a transição
 
 - dado `manifestationId` existente pertencente ao `userId` com status `answered`;
-- quando o repositório falhar ao salvar;
+- quando o contrato administrativo falhar ao persistir o encerramento;
 - então o erro deve ser propagado.
 
 ---
@@ -342,7 +342,16 @@ export class Manifestation extends Entity<ManifestationProps> {
 
 export interface ManifestationsRepository {
   findById(manifestationId: string): Promise<Manifestation | null>
-  save(manifestation: Manifestation): Promise<void>
+}
+
+export interface ManifestationAdministrationRepository {
+  finalizeByAuthor(params: {
+    manifestation: Manifestation
+    actorUserId: string
+    actorType: 'manifestant'
+    fromStatus: ManifestationStatus
+    toStatus: ManifestationStatus
+  }): Promise<void>
 }
 ```
 
@@ -355,6 +364,7 @@ export interface ManifestationsRepository {
 - o `ManifestationStatusTransitionNotAllowedError` é exportado pelo módulo de domínio de `Manifestation`, sem entrada nova em pasta de erros da aplicação;
 - o use case não consulta `UsersRepository`: a identidade é tratada como dado de entrada e a verificação de autoria é suficiente para esta fatia;
 - a saída do use case repete o contrato de leitura usado no `UpdateManifestationStatusUseCase` (UC-07), preservando consistência entre fluxos que retornam o agregado atualizado;
+- a persistência do encerramento foi deslocada para `ManifestationAdministrationRepository.finalizeByAuthor(...)`, permitindo que a infraestrutura grave mudança de status e histórico do ator em fronteira única;
 - a avaliação do atendimento (UC-06 completo) permanece como backlog pós-MVP, sem entidade nem use case implementado nesta fatia;
 - a camada de apresentação fornece `FinalizeManifestationController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado, e mapeia: `ManifestationNotFoundError` → `404`, `NotAllowedToAccessManifestationError` → `403`, e `ManifestationStatusTransitionNotAllowedError` → `409 Conflict` (transição inválida a partir do status corrente); sem usuário autenticado retorna `401` e `manifestationId` vazio retorna `400 MissingParamError`.
 
