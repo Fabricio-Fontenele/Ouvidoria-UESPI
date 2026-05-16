@@ -1,6 +1,8 @@
+import type { UserRole } from '#src/domain/entities/user.js'
+
 export interface AuthenticatedUser {
   id: string
-  role: string
+  role: UserRole
 }
 
 export interface HttpRequest<

@@ -7,6 +7,7 @@ import {
 } from '#src/domain/entities/manifestation.js'
 
 import { MissingParamError } from '../../errors/missing-param-error.js'
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
 import { badRequest, conflict, forbidden, notFound, ok, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import type { Validator } from '../../protocols/validator.js'
@@ -32,7 +33,7 @@ export class UpdateManifestationStatusController extends BaseController<UpdateMa
 
   protected async perform(request: UpdateManifestationStatusRequest): Promise<HttpResponse> {
     if (request.user === undefined) {
-      return unauthorized(new Error('Authentication required.'))
+      return unauthorized(new UnauthenticatedError())
     }
 
     const { manifestationId } = request.params

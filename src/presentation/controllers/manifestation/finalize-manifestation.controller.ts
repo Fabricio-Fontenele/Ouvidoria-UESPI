@@ -4,6 +4,7 @@ import { NotAllowedToAccessManifestationError } from '#src/application/use-cases
 import { ManifestationStatusTransitionNotAllowedError } from '#src/domain/entities/manifestation.js'
 
 import { MissingParamError } from '../../errors/missing-param-error.js'
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
 import { badRequest, conflict, forbidden, notFound, ok, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import { BaseController } from '../base-controller.js'
@@ -21,7 +22,7 @@ export class FinalizeManifestationController extends BaseController<FinalizeMani
 
   protected async perform(request: FinalizeManifestationRequest): Promise<HttpResponse> {
     if (request.user === undefined) {
-      return unauthorized(new Error('Authentication required.'))
+      return unauthorized(new UnauthenticatedError())
     }
 
     const { manifestationId } = request.params

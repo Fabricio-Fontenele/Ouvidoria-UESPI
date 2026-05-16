@@ -5,6 +5,7 @@ import { NotAllowedToManageManifestationError } from '#src/application/use-cases
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
 import { InvalidParamError } from '../../errors/invalid-param-error.js'
+import { UnauthenticatedError } from '../../errors/unauthenticated-error.js'
 import { badRequest, forbidden, ok, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import { BaseController } from '../base-controller.js'
@@ -22,6 +23,7 @@ export interface ListAdminManifestationsQuery {
 type ListAdminManifestationsRequest = HttpRequest<unknown, Record<string, string>, ListAdminManifestationsQuery>
 
 const POSITIVE_INTEGER = /^[1-9]\d*$/
+const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 const MANIFESTATION_STATUS_VALUES = Object.values(ManifestationStatus) as readonly string[]
 const MANIFESTATION_TYPE_VALUES = Object.values(ManifestationType) as readonly string[]
 
@@ -34,8 +36,17 @@ function isManifestationType(value: string): value is ManifestationType {
 }
 
 function parseIsoDate(raw: string): Date | null {
-  const ms = Date.parse(raw)
-  return Number.isNaN(ms) ? null : new Date(ms)
+  if (!ISO_DATE_TIME.test(raw)) {
+    return null
+  }
+
+  const date = new Date(raw)
+
+  if (Number.isNaN(date.getTime()) || date.toISOString() !== raw) {
+    return null
+  }
+
+  return date
 }
 
 export class ListAdminManifestationsController extends BaseController<ListAdminManifestationsRequest> {
@@ -45,7 +56,7 @@ export class ListAdminManifestationsController extends BaseController<ListAdminM
 
   protected async perform(request: ListAdminManifestationsRequest): Promise<HttpResponse> {
     if (request.user === undefined) {
-      return unauthorized(new Error('Authentication required.'))
+      return unauthorized(new UnauthenticatedError())
     }
 
     const { page: rawPage, status, type, campusId, administrativeUnitId, from, to } = request.query

@@ -4,11 +4,13 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 import { InvalidPageNumberError } from '#src/application/use-cases/list-user-manifestations/errors/invalid-page-number-error.js'
 import type { ListUserManifestationsUseCase } from '#src/application/use-cases/list-user-manifestations/list-user-manifestations-use-case.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import {
   ListUserManifestationsController,
   type ListUserManifestationsQuery,
 } from '#src/presentation/controllers/manifestation/list-user-manifestations.controller.js'
 import { ServerError } from '#src/presentation/errors/server-error.js'
+import { UnauthenticatedError } from '#src/presentation/errors/unauthenticated-error.js'
 import type { HttpRequest } from '#src/presentation/protocols/http.js'
 
 describe('ListUserManifestationsController', () => {
@@ -25,7 +27,7 @@ describe('ListUserManifestationsController', () => {
       params: {},
       query: {},
       headers: {},
-      user: { id: 'user-1', role: 'manifestant' },
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
     }
 
     sut = new ListUserManifestationsController(useCase)
@@ -72,6 +74,7 @@ describe('ListUserManifestationsController', () => {
     const response = await sut.handle(unauthenticated)
 
     expect(response.statusCode).toBe(401)
+    expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(useCase.execute.mock.calls).toHaveLength(0)
   })
 
