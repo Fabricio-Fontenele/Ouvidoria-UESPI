@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                 |
-| -------------- | --------------------------------------------------------- |
-| Caso de uso    | UC-09                                                     |
-| Nome           | Consultar IA                                              |
-| Feature        | Consulta institucional com apoio de IA                    |
-| Ator principal | Usuário                                                   |
-| Prioridade     | Alta                                                      |
-| Status         | Núcleo e controller implementados / adapter HTTP pendente |
+| Campo          | Descrição                                                                                                       |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-09                                                                                                           |
+| Nome           | Consultar IA                                                                                                    |
+| Feature        | Consulta institucional com apoio de IA                                                                          |
+| Ator principal | Usuário                                                                                                         |
+| Prioridade     | Alta                                                                                                            |
+| Status         | Núcleo e controller implementados / adapters de IA (`AiGateway`, providers de catálogo) e wiring HTTP pendentes |
 
 ---
 
@@ -291,4 +291,5 @@ A falha deve ser propagada ao chamador para tratamento externo apropriado.
 - O caso de uso foi desenhado para receber histórico pronto; modelagem de sessão e persistência ficam fora deste recorte.
 - A abertura do formulário assistido depende do UC-10 e do fluxo regular de registro da manifestação.
 - A camada de apresentação fornece `SendAiMessageController` em `src/presentation/controllers/ai/`, que valida o body via `Validator<SendAiMessageBody>` agnóstico e repassa apenas `history` e `message` ao use case; o endpoint é público (sem checagem de `request.user`) e qualquer falha do `AiGateway` ou dos providers de catálogo cai no `500 ServerError` padrão do `BaseController` — o use case não lança erros de domínio específicos por ser resiliente a respostas malformadas da IA.
+- Diferente dos demais controllers, **o `SendAiMessageController` não tem factory nem rota registrados em `src/main/`** porque `AiGateway`, `CampusCatalogProvider` e `AdministrativeUnitCatalogProvider` ainda não possuem implementação concreta em `src/infra/`. Quando esses adapters forem materializados, basta adicionar `makeSendAiMessageController()` em `src/main/factories/controllers/` e registrar a rota em um novo `src/main/routes/ai.routes.ts`.
 - O aprofundamento técnico deste fluxo conversacional e da estratégia de IA fica documentado em `doc/architecture/ai-chatbot.md`.

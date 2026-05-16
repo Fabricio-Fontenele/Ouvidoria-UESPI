@@ -97,14 +97,20 @@ describe('Manifestation', () => {
     expect(canceled.status).toBe(ManifestationStatus.CANCELED)
   })
 
-  it('transitions status administratively between open states', () => {
-    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
-
-    manifestation.transitionStatusAdministratively(ManifestationStatus.ANSWERED)
-    expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
+  it('reopens an answered manifestation administratively', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.ANSWERED })
 
     manifestation.transitionStatusAdministratively(ManifestationStatus.IN_ANALYSIS)
     expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
+  })
+
+  it('blocks reaching ANSWERED via administrative status transition (must go through recordAdministrativeAnswer)', () => {
+    const inAnalysis = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    expect(() => {
+      inAnalysis.transitionStatusAdministratively(ManifestationStatus.ANSWERED)
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(inAnalysis.status).toBe(ManifestationStatus.IN_ANALYSIS)
   })
 
   it('finalizes and cancels manifestations administratively', () => {

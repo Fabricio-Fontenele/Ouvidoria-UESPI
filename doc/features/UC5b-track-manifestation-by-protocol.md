@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                                         |
-| -------------- | --------------------------------------------------------------------------------- |
-| Caso de uso    | UC-05 (complementar — fluxo anônimo)                                              |
-| Nome           | Acompanhar manifestação anônima por protocolo                                     |
-| Feature        | Consulta pública de manifestação anônima por protocolo e código de acompanhamento |
-| Ator principal | Manifestante anônimo                                                              |
-| Prioridade     | Alta                                                                              |
-| Status         | Núcleo e controller implementados / adapter HTTP pendente                         |
+| Campo          | Descrição                                                                               |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-05 (complementar — fluxo anônimo)                                                    |
+| Nome           | Acompanhar manifestação anônima por protocolo                                           |
+| Feature        | Consulta pública de manifestação anônima por protocolo e código de acompanhamento       |
+| Ator principal | Manifestante anônimo                                                                    |
+| Prioridade     | Alta                                                                                    |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
 ---
 
@@ -54,9 +54,7 @@ Esta feature não contempla:
 - exposição da descrição original ou de respostas administrativas em texto livre;
 - reemissão ou rotação de `accessCode`;
 - rate limiting ou bloqueio por tentativa (responsabilidade da camada de transporte);
-- notificações ao manifestante anônimo;
-- persistência concreta em banco;
-- rotas HTTP.
+- notificações ao manifestante anônimo.
 
 ---
 
@@ -362,7 +360,9 @@ export class Manifestation extends Entity<ManifestationProps> {
 - o erro `ManifestationTrackingNotFoundError` fica em `track-manifestation-by-protocol/errors/` porque ainda é usado por um único caso de uso; se outro fluxo público vier a reaproveitá-lo, mover para uma pasta compartilhada do tipo `manifestation-tracking/errors/`;
 - o `RegisterManifestationUseCase` passa a retornar `accessCode` em texto plano no campo `accessCode` do output, apenas no caso anônimo; para manifestações identificadas o campo é `null`;
 - a camada de apresentação fornece `TrackManifestationByProtocolController` em `src/presentation/controllers/manifestation/`, que valida o body via `Validator<TrackManifestationByProtocolBody>` agnóstico e mapeia `ManifestationTrackingNotFoundError` para `404 Not Found` — preservando o erro genérico do caso de uso para evitar enumeração de protocolos e códigos de acesso;
-- o adapter para framework HTTP e a implementação concreta do `Validator` ainda não foram materializados.
+- a infraestrutura concreta está materializada: `PrismaManifestationsRepository.findByProtocol` (`src/infra/database/prisma/repositories/`), `BcryptjsHasher` como `HashComparer` para checar o `accessCode` e `ZodValidator<TrackManifestationByProtocolBody>` (`src/infra/http/fastify/validators/`) como `Validator`;
+- o endpoint público `POST /manifestations/track` é registrado em `src/main/routes/manifestation.routes.ts` sem middleware de autenticação;
+- cobertura e2e em `test/e2e/anonymous-manifestation.e2e.spec.ts` valida tracking bem-sucedido após registro anônimo e retorna `404` para `accessCode` incorreto.
 
 ---
 

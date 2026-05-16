@@ -63,6 +63,7 @@ export default defineConfig([
     files: [
       'eslint.config.mjs',
       'vitest.config.mjs',
+      'vitest.config.e2e.mjs',
       'lint-staged.config.mjs',
       '.extra/**/*.js',
       '.extra/**/*.mjs',

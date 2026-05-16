@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                 |
-| -------------- | --------------------------------------------------------- |
-| Caso de uso    | UC-04                                                     |
-| Nome           | Registrar manifestação                                    |
-| Feature        | Abertura de manifestação                                  |
-| Ator principal | Usuário                                                   |
-| Prioridade     | Alta                                                      |
-| Status         | Núcleo e controller implementados / adapter HTTP pendente |
+| Campo          | Descrição                                                                               |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-04                                                                                   |
+| Nome           | Registrar manifestação                                                                  |
+| Feature        | Abertura de manifestação                                                                |
+| Ator principal | Usuário                                                                                 |
+| Prioridade     | Alta                                                                                    |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
 ---
 
@@ -146,22 +146,23 @@ A feature deve receber os seguintes dados:
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                                                |
-| ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| RN-UC04-01 | O tipo da manifestação é obrigatório.                                                                                |
-| RN-UC04-02 | O campus da manifestação é obrigatório.                                                                              |
-| RN-UC04-03 | A unidade administrativa da manifestação é obrigatória.                                                              |
-| RN-UC04-04 | A descrição da manifestação é obrigatória.                                                                           |
-| RN-UC04-05 | `involvedPeople` é opcional, deve ser normalizado quando informado e pode ser tratado como `null` quando vier vazio. |
-| RN-UC04-06 | Toda manifestação deve possuir protocolo único.                                                                      |
-| RN-UC04-07 | Toda manifestação deve estar vinculada a um campus e a uma unidade administrativa.                                   |
-| RN-UC04-08 | Os tipos permitidos são `report`, `complaint`, `suggestion` e `compliment`.                                          |
-| RN-UC04-09 | O registro pode ser identificado ou anônimo.                                                                         |
-| RN-UC04-10 | Em registros identificados, o autor da manifestação deve ser derivado do `requesterId` autenticado.                  |
-| RN-UC04-11 | Registros identificados sem contexto autenticado devem ser rejeitados antes de chamar o caso de uso.                 |
-| RN-UC04-12 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                                      |
-| RN-UC04-13 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                                             |
-| RN-UC04-14 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.                             |
+| Código     | Regra                                                                                                                                                                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC04-01 | O tipo da manifestação é obrigatório.                                                                                                                                                                                                    |
+| RN-UC04-02 | O campus da manifestação é obrigatório.                                                                                                                                                                                                  |
+| RN-UC04-03 | A unidade administrativa da manifestação é obrigatória.                                                                                                                                                                                  |
+| RN-UC04-04 | A descrição da manifestação é obrigatória.                                                                                                                                                                                               |
+| RN-UC04-05 | `involvedPeople` é opcional, deve ser normalizado quando informado e pode ser tratado como `null` quando vier vazio.                                                                                                                     |
+| RN-UC04-06 | Toda manifestação deve possuir protocolo único.                                                                                                                                                                                          |
+| RN-UC04-07 | Toda manifestação deve estar vinculada a um campus e a uma unidade administrativa.                                                                                                                                                       |
+| RN-UC04-08 | Os tipos permitidos são `report`, `complaint`, `suggestion` e `compliment`.                                                                                                                                                              |
+| RN-UC04-09 | O registro pode ser identificado ou anônimo.                                                                                                                                                                                             |
+| RN-UC04-10 | Em registros identificados, o autor da manifestação deve ser derivado do `requesterId` autenticado.                                                                                                                                      |
+| RN-UC04-11 | Registros identificados sem contexto autenticado devem ser rejeitados antes de chamar o caso de uso.                                                                                                                                     |
+| RN-UC04-12 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                                                                                                                                                          |
+| RN-UC04-13 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                                                                                                                                                                 |
+| RN-UC04-14 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.                                                                                                                                                 |
+| RN-UC04-15 | Em registros identificados, o autor deve possuir papel `manifestant`. Usuários com papel `ombudsman` ou `admin` não podem abrir manifestações identificadas em nome próprio (mantendo a separação entre quem manifesta e quem responde). |
 
 ---
 
@@ -285,6 +286,14 @@ O usuário tenta registrar manifestação identificada com `isAnonymous` igual a
 
 Comportamento esperado:
 O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação. Na camada de apresentação HTTP, esse cenário deve retornar `401 Unauthorized` sem chamar o caso de uso.
+
+### FA04b - Registro identificado por usuário sem papel `manifestant`
+
+Condição:
+O usuário autenticado possui papel `ombudsman` ou `admin` e tenta registrar manifestação identificada (`isAnonymous=false`).
+
+Comportamento esperado:
+O sistema deve rejeitar o registro com `403 Forbidden` (`IdentifiedManifestationRequiresManifestantRoleError`) antes de chamar o caso de uso. Anônimas continuam permitidas (o `requesterId` é descartado e o agregado é aberto sem autor).
 
 ### FA05 - Falha na geração do protocolo
 
@@ -605,7 +614,10 @@ interface PasswordHasher {
 - O caso de uso atual trata apenas o registro inicial da manifestação.
 - A camada de apresentação fornece `RegisterManifestationController` em `src/presentation/controllers/manifestation/`, que deriva `requesterId` do contexto autenticado da requisição (`request.user.id`) e não aceita autoria pelo corpo livre.
 - O controller depende de um `Validator<RegisterManifestationBody>` agnóstico e mapeia erros conhecidos (`IdentifiedManifestationRequiresRequesterError`, erros de value-object) para `400 Bad Request`; falhas inesperadas caem no `500` padrão do `BaseController`.
-- O adapter para framework HTTP (Express, Fastify, etc.) e a implementação concreta do `Validator` ainda não foram materializados.
+- A infraestrutura concreta está materializada: `PrismaManifestationsRepository` (`src/infra/database/prisma/repositories/`) implementa `ManifestationsRepository`; `UuidProtocolGenerator` e `RandomAccessCodeGenerator` (`src/infra/protocol/`) implementam os geradores; `BcryptjsHasher` faz hash do `accessCode` antes da persistência; `ZodValidator<RegisterManifestationBody>` (`src/infra/http/fastify/validators/`) materializa o `Validator<T>` da apresentação.
+- O endpoint `POST /manifestations` é registrado em `src/main/routes/manifestation.routes.ts` com `preHandler: optionalAuthenticate` (middleware em `src/infra/http/fastify/middlewares/auth-middleware.ts`), permitindo registro anônimo sem token e injetando `request.user` quando um Bearer válido for enviado.
+- A guarda de papel (RN-UC04-15) é aplicada no `RegisterManifestationController` logo após o check de autenticação: se `request.user.role !== UserRole.MANIFESTANT` e `isAnonymous=false`, retorna `403` com `IdentifiedManifestationRequiresManifestantRoleError` (`src/application/use-cases/register-manifestation/errors/`). Anônimas seguem o caminho normal porque o use case ignora `requesterId` nesse caso.
+- Cobertura e2e: `test/e2e/anonymous-manifestation.e2e.spec.ts` valida o fluxo anônimo + `accessCode` retornado; `test/e2e/identified-manifestation.e2e.spec.ts` cobre registro autenticado, rejeição sem auth (401) e isolamento entre manifestantes (403); `test/e2e/manifestation-administration.e2e.spec.ts` cobre o `403` para ombudsman tentando abrir identificada.
 - `Campus` e `AdministrativeUnit` não possuem CRUD próprio neste MVP.
 - Nesta versão, campus e unidade administrativa são tratados como catálogos fixos previamente carregados por seed.
 - O caso de uso exige apenas que `campusId` e `administrativeUnitId` sejam informados e usados como referência.

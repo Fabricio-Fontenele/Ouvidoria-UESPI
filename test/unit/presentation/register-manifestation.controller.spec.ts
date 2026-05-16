@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import { IdentifiedManifestationRequiresManifestantRoleError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-manifestant-role-error.js'
 import { IdentifiedManifestationRequiresRequesterError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-requester-error.js'
 import type { RegisterManifestationUseCase } from '#src/application/use-cases/register-manifestation/register-manifestation.use-case.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
@@ -139,6 +140,55 @@ describe('RegisterManifestationController', () => {
     expect(response.statusCode).toBe(401)
     expect(response.body).toBeInstanceOf(UnauthenticatedError)
     expect(useCase.execute.mock.calls).toHaveLength(0)
+  })
+
+  it('returns 403 when an ombudsman tries to open an identified manifestation', async () => {
+    validator.validate.mockReturnValue({
+      success: true,
+      data: { ...validBody, isAnonymous: false },
+    })
+
+    const response = await sut.handle({
+      ...baseRequest,
+      user: { id: 'ombudsman-1', role: UserRole.OMBUDSMAN },
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.body).toBeInstanceOf(IdentifiedManifestationRequiresManifestantRoleError)
+    expect(useCase.execute.mock.calls).toHaveLength(0)
+  })
+
+  it('returns 403 when an admin tries to open an identified manifestation', async () => {
+    validator.validate.mockReturnValue({
+      success: true,
+      data: { ...validBody, isAnonymous: false },
+    })
+
+    const response = await sut.handle({
+      ...baseRequest,
+      user: { id: 'admin-1', role: UserRole.ADMIN },
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.body).toBeInstanceOf(IdentifiedManifestationRequiresManifestantRoleError)
+    expect(useCase.execute.mock.calls).toHaveLength(0)
+  })
+
+  it('still allows ombudsman/admin to open anonymous manifestations (no requesterId derived)', async () => {
+    validator.validate.mockReturnValue({
+      success: true,
+      data: { ...validBody, isAnonymous: true },
+    })
+    arrangeUseCaseSuccess()
+
+    const response = await sut.handle({
+      ...baseRequest,
+      user: { id: 'admin-1', role: UserRole.ADMIN },
+    })
+
+    expect(response.statusCode).toBe(201)
+    expect(useCase.execute.mock.calls).toHaveLength(1)
+    expect(useCase.execute.mock.calls[0]?.[0].isAnonymous).toBe(true)
   })
 
   it('still maps IdentifiedManifestationRequiresRequesterError to 400 as a use-case safeguard', async () => {
