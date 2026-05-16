@@ -17,13 +17,17 @@ Package manager is **pnpm 10** (Node 22).
 - `pnpm type:check:ts7` — adds `--stableTypeOrdering` for the TS 7 migration check
 - `pnpm lint` / `pnpm lint:ci` — ESLint (CI variant fails on warnings)
 - `pnpm format` / `pnpm format:check` — Prettier
-- `pnpm test` — Vitest single run
-- `pnpm test:watch` / `pnpm test:coverage` — watch / coverage modes
-- `pnpm check` — full local gate: format check → lint → type-check → tests
+- `pnpm test` — Vitest unit suite (under `test/unit/`)
+- `pnpm test:watch` / `pnpm test:coverage` — watch / coverage modes for the unit suite
+- `pnpm test:e2e` — separate Vitest run against `test/e2e/`. Requires Postgres (`pnpm db:up`). Each spec file gets an isolated Postgres schema (`e2e_<uuid>`) and runs `prisma migrate deploy` before the suite, dropping it on teardown.
+- `pnpm check` — full local gate: format check → lint → type-check → unit tests. **Does not include e2e** (those need Docker).
 - `pnpm db:up` / `pnpm db:down` / `pnpm db:logs` — Postgres via docker-compose
 - `pnpm prisma:format` / `pnpm prisma:validate` — Prisma schema checks
 
-Single test: `pnpm vitest run test/unit/application/sign-in-use-case.spec.ts`
+Single unit test: `pnpm vitest run test/unit/application/sign-in-use-case.spec.ts`
+Single e2e spec: `pnpm vitest run --config ./vitest.config.e2e.mjs test/e2e/auth.e2e.spec.ts`
+
+Override the e2e Postgres URL with `DATABASE_URL_E2E` (defaults to `postgresql://postgres:postgres@localhost:5432/ouvidoria`). The `?schema=...` suffix is appended automatically per spec.
 
 Run the HTTP server (after `pnpm db:up` + applying migrations + populating `.env`):
 `pnpm build && node build/main/server.js`. No `dev` script is wired yet — add one with `tsx`/`node --watch` as needed.
