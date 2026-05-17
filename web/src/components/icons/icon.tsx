@@ -5,7 +5,10 @@ export type IconName =
   | 'bell'
   | 'braces'
   | 'check-circle'
+  | 'chevron-left'
   | 'chevron-right'
+  | 'clock'
+  | 'copy'
   | 'edit'
   | 'email'
   | 'eye'
@@ -25,6 +28,7 @@ export type IconName =
   | 'settings'
   | 'shield'
   | 'share'
+  | 'upload-cloud'
   | 'user'
   | 'x'
 
@@ -84,6 +88,29 @@ export function Icon({ className, name, ...props }: IconProps) {
       return (
         <svg {...sharedProps}>
           <path d="m9 18 6-6-6-6" />
+        </svg>
+      )
+
+    case 'chevron-left':
+      return (
+        <svg {...sharedProps}>
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      )
+
+    case 'clock':
+      return (
+        <svg {...sharedProps}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      )
+
+    case 'copy':
+      return (
+        <svg {...sharedProps}>
+          <rect height="12" rx="2" width="12" x="8" y="8" />
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
         </svg>
       )
 
@@ -251,6 +278,17 @@ export function Icon({ className, name, ...props }: IconProps) {
           <circle cx="18" cy="19" r="3" />
           <path d="m8.6 10.5 6.8-4" />
           <path d="m8.6 13.5 6.8 4" />
+        </svg>
+      )
+
+    case 'upload-cloud':
+      return (
+        <svg {...sharedProps}>
+          <path d="M16 16l-4-4-4 4" />
+          <path d="M12 12v9" />
+          <path d="M20.4 18.4A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 4 16.3" />
+          <path d="M16 21h1a4 4 0 0 0 0-8" />
+          <path d="M8 21H7a4 4 0 1 1 0-8" />
         </svg>
       )
 

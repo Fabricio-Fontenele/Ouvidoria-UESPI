@@ -7,9 +7,10 @@ import { AppHeader } from './app-header'
 
 interface AuthenticatedAppShellProps {
   children: ReactNode
+  fixedHeader?: boolean
 }
 
-export function AuthenticatedAppShell({ children }: AuthenticatedAppShellProps) {
+export function AuthenticatedAppShell({ children, fixedHeader = false }: AuthenticatedAppShellProps) {
   const { isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
@@ -33,7 +34,16 @@ export function AuthenticatedAppShell({ children }: AuthenticatedAppShellProps) 
 
   return (
     <>
-      <AppHeader isAuthenticated />
+      {fixedHeader ? (
+        <>
+          <div className="fixed inset-x-0 top-0 z-50">
+            <AppHeader isAuthenticated />
+          </div>
+          <div aria-hidden="true" className="h-22 md:h-24" />
+        </>
+      ) : (
+        <AppHeader isAuthenticated />
+      )}
       {children}
     </>
   )
