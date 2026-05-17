@@ -4,6 +4,11 @@ import guarapiMascot from '../assets/guarapi-mascot.png'
 import { getGuarapiInitialMessages, getGuarapiSuggestions } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatSuggestion } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatMode, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
+import {
+  getManifestationStatusBadgeClassName,
+  getManifestationStatusContract,
+} from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
 import { AppHeader } from '../components/app-header'
 import { Icon } from '../components/icon'
 import { SiteFooter } from '../components/site-footer'
@@ -15,11 +20,13 @@ interface DetailItem {
   value: string
 }
 
+const manifestationDetailStatus: ManifestationStatus = 'in_analysis'
+
 const manifestationDetails: DetailItem[] = [
   { label: 'Protocolo', value: '#2024-0772' },
   { label: 'Tipo', value: 'Sugestão' },
   { label: 'Área', value: 'Administração Superior' },
-  { label: 'Status', value: 'Aguardando análise' },
+  { label: 'Status', value: getManifestationStatusContract(manifestationDetailStatus).viewLabel },
   { label: 'Última atualização', value: '02 Set, 2024' },
 ]
 
@@ -92,6 +99,7 @@ function MessageBubble({ message }: { message: GuarapiMessage }) {
 
 function DetailPanel({ protocol }: { protocol: string }) {
   const formHref = `/manifestation-form?protocol=${protocol.replace('#', '')}`
+  const status = getManifestationStatusContract(manifestationDetailStatus)
 
   return (
     <aside className="rounded-lg border border-landing-chip bg-landing-surface p-5 shadow-landing-step lg:sticky lg:top-28">
@@ -100,8 +108,8 @@ function DetailPanel({ protocol }: { protocol: string }) {
           <p className="text-xs leading-4 font-black tracking-[0.1em] text-landing-blue uppercase">Manifestação</p>
           <h2 className="mt-2 text-2xl leading-8 font-black text-landing-text">{protocol}</h2>
         </div>
-        <span className="rounded bg-home-blue px-2.5 py-1 text-[10px] leading-none font-black text-white uppercase">
-          Aguardando
+        <span className={getManifestationStatusBadgeClassName(manifestationDetailStatus, 'px-2.5 leading-none')}>
+          {status.viewLabel}
         </span>
       </div>
 

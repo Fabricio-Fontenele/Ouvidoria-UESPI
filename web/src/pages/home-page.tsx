@@ -1,14 +1,22 @@
+import { useMemo, useState } from 'react'
+
+import {
+  getManifestationStatusContract,
+  manifestationStatusContracts,
+} from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
 import guarapiMascot from '../assets/guarapi-mascot.png'
 import { AuthenticatedAppShell } from '../components/authenticated-app-shell'
 import { Icon } from '../components/icon'
 import { SiteFooter } from '../components/site-footer'
 import { cx } from '../utils/cx'
 
-type ManifestationStatus = 'active' | 'waiting' | 'done'
+type ManifestationFilter = 'all' | ManifestationStatus
 
-interface Manifestation {
+interface ManifestationSummary {
   area: string
-  category: string
+  createdAt: string
+  manifestationType: string
   protocol: string
   status: ManifestationStatus
   title: string
@@ -22,73 +30,53 @@ interface Metric {
 }
 
 interface Filter {
-  isActive?: boolean
+  id: ManifestationFilter
   label: string
 }
 
-const manifestations: Manifestation[] = [
+const manifestations: ManifestationSummary[] = [
   {
     area: 'Administração Superior',
-    category: 'Sugestão',
+    createdAt: '01 Set, 2024',
+    manifestationType: 'Sugestão',
     protocol: '#2024-0772',
-    status: 'active',
+    status: 'in_analysis',
     title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
     updatedAt: '02 Set, 2024',
   },
   {
     area: 'Administração Superior',
-    category: 'Sugestão',
+    createdAt: '01 Set, 2024',
+    manifestationType: 'Sugestão',
     protocol: '#2024-0773',
-    status: 'waiting',
+    status: 'answered',
     title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
     updatedAt: '02 Set, 2024',
   },
   {
     area: 'Administração Superior',
-    category: 'Sugestão',
+    createdAt: '01 Set, 2024',
+    manifestationType: 'Sugestão',
     protocol: '#2024-0774',
-    status: 'done',
+    status: 'finalized',
     title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
     updatedAt: '02 Set, 2024',
   },
-]
-
-const metrics: Metric[] = [
-  { label: 'Totais.', value: '17' },
-  { colorClassName: 'text-home-warning', label: 'Ativas.', value: '03' },
-  { colorClassName: 'text-home-success', label: 'Concluídas.', value: '09' },
-]
-
-const filters: Filter[] = [{ isActive: true, label: 'Todos' }, { label: 'Ativas' }, { label: 'Concluídos' }]
-
-const statusStyles: Record<
-  ManifestationStatus,
   {
-    accentClassName: string
-    badgeClassName: string
-    iconClassName: string
-    label: string
-  }
-> = {
-  active: {
-    accentClassName: 'border-l-home-warning',
-    badgeClassName: 'bg-home-warning-strong text-home-text',
-    iconClassName: 'bg-home-warning text-white',
-    label: 'Ativa',
+    area: 'Assistência Estudantil',
+    createdAt: '03 Set, 2024',
+    manifestationType: 'Reclamação',
+    protocol: '#2024-0775',
+    status: 'canceled',
+    title: 'Atualização de documentação pendente para atendimento estudantil',
+    updatedAt: '03 Set, 2024',
   },
-  waiting: {
-    accentClassName: 'border-l-home-blue',
-    badgeClassName: 'bg-home-blue text-white',
-    iconClassName: 'bg-home-blue text-white',
-    label: 'Aguardando',
-  },
-  done: {
-    accentClassName: 'border-l-home-success',
-    badgeClassName: 'bg-home-success text-white',
-    iconClassName: 'bg-home-success text-white',
-    label: 'Concluída',
-  },
-}
+]
+
+const filters: Filter[] = [
+  { id: 'all', label: 'Todos' },
+  ...manifestationStatusContracts.map((status) => ({ id: status.value, label: status.filterLabel })),
+]
 
 function NewRecordCard() {
   return (
@@ -126,7 +114,20 @@ function GuarapiChatTrigger() {
   )
 }
 
-function Overview() {
+function getMetrics(items: ManifestationSummary[]): Metric[] {
+  const total = items.length
+
+  return [
+    { label: 'Totais.', value: String(total).padStart(2, '0') },
+    ...manifestationStatusContracts.map((status) => ({
+      colorClassName: status.metricColorClassName,
+      label: status.metricLabel,
+      value: String(items.filter((manifestation) => manifestation.status === status.value).length).padStart(2, '0'),
+    })),
+  ]
+}
+
+function Overview({ metrics }: { metrics: Metric[] }) {
   return (
     <section aria-labelledby="overview-title" className="space-y-6">
       <div className="max-w-2xl">
@@ -139,7 +140,7 @@ function Overview() {
         </p>
       </div>
 
-      <dl className="grid w-full max-w-[420px] grid-cols-3 gap-3 sm:gap-8 md:mx-auto md:max-w-xl md:text-center lg:max-w-2xl">
+      <dl className="grid w-full grid-cols-2 gap-4 min-[420px]:grid-cols-3 sm:gap-8 md:mx-auto md:max-w-3xl md:text-center lg:grid-cols-5">
         {metrics.map((metric) => (
           <div key={metric.label}>
             <dd
@@ -158,21 +159,58 @@ function Overview() {
   )
 }
 
-function FilterBar() {
+function matchesFilter(manifestation: ManifestationSummary, filter: ManifestationFilter) {
+  if (filter === 'all') {
+    return true
+  }
+
+  return manifestation.status === filter
+}
+
+function matchesSearch(manifestation: ManifestationSummary, search: string) {
+  const normalizedSearch = search.trim().toLowerCase()
+
+  if (normalizedSearch.length === 0) {
+    return true
+  }
+
+  return [
+    manifestation.protocol,
+    manifestation.title,
+    manifestation.manifestationType,
+    manifestation.area,
+    manifestation.createdAt,
+    manifestation.updatedAt,
+    getManifestationStatusContract(manifestation.status).viewLabel,
+  ]
+    .join(' ')
+    .toLowerCase()
+    .includes(normalizedSearch)
+}
+
+function FilterBar({
+  activeFilter,
+  onFilterChange,
+}: {
+  activeFilter: ManifestationFilter
+  onFilterChange: (filter: ManifestationFilter) => void
+}) {
   return (
-    <div className="mx-auto grid w-full grid-cols-3 gap-2 md:w-[92%] xl:w-[94%]">
+    <div className="mx-auto grid w-full grid-cols-2 gap-2 min-[420px]:grid-cols-3 md:w-[92%] lg:grid-cols-5 xl:w-[94%]">
       {filters.map((filter) => {
-        const filterClasses = filter.isActive
+        const isActive = filter.id === activeFilter
+        const filterClasses = isActive
           ? 'bg-home-blue text-white'
           : 'bg-home-chip text-home-brown hover:bg-home-chip/80'
 
         return (
           <button
-            aria-pressed={filter.isActive ?? false}
+            aria-pressed={isActive}
             className={cx(
               'min-h-8 min-w-0 rounded-full px-3 text-xs leading-5 font-semibold transition duration-150 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue',
               filterClasses,
             )}
+            onClick={() => onFilterChange(filter.id)}
             key={filter.label}
             type="button"
           >
@@ -184,7 +222,7 @@ function FilterBar() {
   )
 }
 
-function SearchField() {
+function SearchField({ onSearchChange, search }: { onSearchChange: (search: string) => void; search: string }) {
   return (
     <label className="mx-auto block w-full md:w-[92%] xl:w-[94%]" htmlFor="manifestation-search">
       <span className="sr-only">Buscar manifestação</span>
@@ -193,26 +231,28 @@ function SearchField() {
         <input
           className="min-w-0 bg-transparent text-sm leading-none text-home-text outline-none placeholder:text-home-muted"
           id="manifestation-search"
+          onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Buscar manifestação..."
           type="search"
+          value={search}
         />
       </span>
     </label>
   )
 }
 
-function ManifestationCard({ manifestation }: { manifestation: Manifestation }) {
-  const styles = statusStyles[manifestation.status]
+function ManifestationCard({ manifestation }: { manifestation: ManifestationSummary }) {
+  const status = getManifestationStatusContract(manifestation.status)
 
   return (
     <article
       className={cx(
         'rounded-lg border-l-4 bg-home-surface px-4 py-4 shadow-home-card sm:px-6 sm:py-5',
-        styles.accentClassName,
+        status.accentClassName,
       )}
     >
       <div className="grid grid-cols-[32px_1fr] gap-4">
-        <span className={cx('grid size-8 place-items-center rounded-full', styles.iconClassName)}>
+        <span className={cx('grid size-8 place-items-center rounded-full', status.iconClassName)}>
           <Icon className="size-4" name="info" />
         </span>
 
@@ -224,15 +264,15 @@ function ManifestationCard({ manifestation }: { manifestation: Manifestation }) 
               {manifestation.protocol}
             </p>
             <span
-              className={cx('rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase', styles.badgeClassName)}
+              className={cx('rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase', status.badgeClassName)}
             >
-              {styles.label}
+              {status.viewLabel}
             </span>
           </div>
 
           <h3 className="mt-3 text-lg leading-[22.5px] font-bold text-home-text">{manifestation.title}</h3>
           <p className="mt-2 text-sm leading-5 text-home-brown">
-            {manifestation.category} • {manifestation.area}
+            {manifestation.manifestationType} • {manifestation.area}
           </p>
         </div>
       </div>
@@ -255,6 +295,17 @@ function ManifestationCard({ manifestation }: { manifestation: Manifestation }) 
 }
 
 export function HomePage() {
+  const [activeFilter, setActiveFilter] = useState<ManifestationFilter>('all')
+  const [search, setSearch] = useState('')
+  const metrics = useMemo(() => getMetrics(manifestations), [])
+  const filteredManifestations = useMemo(
+    () =>
+      manifestations.filter(
+        (manifestation) => matchesFilter(manifestation, activeFilter) && matchesSearch(manifestation, search),
+      ),
+    [activeFilter, search],
+  )
+
   return (
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
       <AuthenticatedAppShell>
@@ -273,19 +324,25 @@ export function HomePage() {
           </section>
 
           <section className="mt-14 space-y-8 md:mt-16 lg:space-y-10">
-            <Overview />
+            <Overview metrics={metrics} />
 
             <div className="space-y-6" id="buscar-manifestacao">
               <div className="flex w-full flex-col items-start gap-5">
-                <FilterBar />
-                <SearchField />
+                <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+                <SearchField onSearchChange={setSearch} search={search} />
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                {manifestations.map((manifestation) => (
-                  <ManifestationCard key={manifestation.protocol} manifestation={manifestation} />
-                ))}
-              </div>
+              {filteredManifestations.length > 0 ? (
+                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredManifestations.map((manifestation) => (
+                    <ManifestationCard key={manifestation.protocol} manifestation={manifestation} />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg bg-home-action px-5 py-8 text-center text-sm leading-6 text-home-brown">
+                  Nenhuma manifestação encontrada para o filtro selecionado.
+                </div>
+              )}
             </div>
           </section>
         </main>
