@@ -3,12 +3,7 @@ import type { ChangeEvent } from 'react'
 import type { FieldValues, Path, PathValue, UseFormReturn } from 'react-hook-form'
 
 import type { BaseFormField } from './base-form-types'
-import {
-  formatFileSize,
-  getFileLimitError,
-  getFileSizeLimitError,
-  hasOversizedFile,
-} from './form-file-utils'
+import { formatFileSize, getFileLimitError, getFileSizeLimitError, hasOversizedFile } from './form-file-utils'
 import { Icon } from '../icons/icon'
 import { cx } from '../../utils/cx'
 
