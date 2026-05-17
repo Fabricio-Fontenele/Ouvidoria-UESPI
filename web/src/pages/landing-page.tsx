@@ -1,16 +1,12 @@
 import { routes } from '../app/routes'
 import guarapiMascot from '../assets/guarapi-mascot.png'
-<<<<<<< HEAD
+
 import guarapiPoses from '../assets/poses-guara.webp'
 import uespiImageBg from '../assets/uespi-img-bg.webp'
-import { AppHeader } from '../components/app-header'
-import { Icon, type IconName } from '../components/icon'
-import { SiteFooter } from '../components/site-footer'
-=======
 import { Icon, type IconName } from '../components/icons/icon'
 import { AppHeader } from '../components/layout/app-header'
 import { SiteFooter } from '../components/layout/site-footer'
->>>>>>> c93f43d92bd55d608bbd9c7102076c75a454e8aa
+
 import { cx } from '../utils/cx'
 
 interface ManifestationType {
