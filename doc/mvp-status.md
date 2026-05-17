@@ -10,23 +10,23 @@ Funcionalidades cobertas de ponta a ponta (domínio → aplicação → presenta
 - Autenticação (UC-02) — `POST /sessions`
 - Registro de manifestação identificada (UC-04) — `POST /manifestations` (Bearer válido com papel `manifestant`)
 - Registro de manifestação anônima (UC-04) — `POST /manifestations` (sem token, retorna `accessCode`)
-- Acompanhamento por usuário autenticado (UC-05) — `GET /manifestations`, `GET /manifestations/:id`
-- Mensagens no chamado (UC-05) — `POST /manifestations/:id/messages`
+- Acompanhamento por usuário autenticado (UC-05) — `GET /manifestations`, `GET /manifestations/:manifestationId`
+- Mensagens no chamado (UC-05) — `POST /manifestations/:manifestationId/messages`
 - Rastreamento anônimo por protocolo e código de acesso (UC-05b) — `POST /manifestations/track`
-- Finalização pelo manifestante (UC-06) — `POST /manifestations/:id/finalize`
-- Avaliação do atendimento pelo manifestante (UC-11) — `POST /manifestations/:id/evaluation` (rating 1–5 + comentário opcional, snapshot do papel do atendente em `attendant_role_snapshot`)
+- Finalização pelo manifestante (UC-06) — `POST /manifestations/:manifestationId/finalize`
+- Avaliação do atendimento pelo manifestante (UC-11) — `POST /manifestations/:manifestationId/evaluation` (rating 1–5 + comentário opcional, snapshot do papel do atendente em `attendant_role_snapshot`)
 - Listagem administrativa (UC-07) — `GET /admin/manifestations` (filtros: status, type, campusId, administrativeUnitId, from, to)
-- Detalhamento administrativo (UC-07) — `GET /admin/manifestations/:id`
-- Resposta administrativa (UC-07) — `POST /admin/manifestations/:id/answer`
-- Alteração administrativa de status (UC-07) — `PATCH /admin/manifestations/:id/status` (transições válidas: `IN_ANALYSIS→CANCELED`, `ANSWERED→IN_ANALYSIS`, `ANSWERED→FINALIZED`)
+- Detalhamento administrativo (UC-07) — `GET /admin/manifestations/:manifestationId`
+- Resposta administrativa (UC-07) — `POST /admin/manifestations/:manifestationId/answer`
+- Alteração administrativa de status (UC-07) — `PATCH /admin/manifestations/:manifestationId/status` (transições válidas: `in_analysis -> canceled`, `answered -> in_analysis`, `answered -> finalized`)
 - Histórico por mensagens de sistema — reconstruído em `findDetailsById` a partir de `ManifestationMessage` com `senderType='system'` + payload JSON, gravado dentro do mesmo `prisma.$transaction` que altera o agregado
 
 ### Invariantes de domínio aplicados
 
-- `ANSWERED` só é atingido via `POST /answer` (resposta administrativa). `PATCH status=answered` é bloqueado pelo agregado com `409` — garante que toda manifestação `answered` tenha de fato uma resposta registrada.
+- `answered` só é atingido via `POST /answer` (resposta administrativa). `PATCH status=answered` é bloqueado pelo agregado com `409` — garante que toda manifestação `answered` tenha de fato uma resposta registrada.
 - Usuários com papel `ombudsman` ou `admin` não podem abrir manifestações identificadas em nome próprio (`403`). Anônimas seguem permitidas para qualquer perfil.
 - Manifestações `canceled` e `finalized` são estados terminais — não aceitam novas mensagens (`409`) nem novas transições.
-- Manifestações anônimas só podem ser acessadas via `POST /manifestations/track` com protocolo + código de acesso; os fluxos identificados (`GET /manifestations/:id`, etc.) recusam acesso (`403`).
+- Manifestações anônimas só podem ser acessadas via `POST /manifestations/track` com protocolo + código de acesso; os fluxos identificados (`GET /manifestations/:manifestationId`, etc.) recusam acesso (`403`).
 
 ### Cobertura de testes
 
