@@ -119,7 +119,11 @@ export function EvaluationPage() {
                   rating={rating}
                 />
                 {hasRatingError ? (
-                  <p className="text-sm leading-5 font-bold text-[#ba1a1a]" id={`${feedbackId}-rating-error`} role="alert">
+                  <p
+                    className="text-sm leading-5 font-bold text-[#ba1a1a]"
+                    id={`${feedbackId}-rating-error`}
+                    role="alert"
+                  >
                     Selecione uma nota para registrar a avaliação.
                   </p>
                 ) : null}
