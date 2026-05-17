@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { routes } from '../../app/routes'
+import { buildEvaluationHref, routes } from '../../app/routes'
 import { cx } from '../../utils/cx'
 import { Icon } from '../icons/icon'
 import type { IconName } from '../icons/icon'
@@ -122,7 +122,15 @@ export function ManifestationSubmissionSuccess({ protocol }: ManifestationSubmis
           </section>
 
           <a
-            className="mt-7 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg border-2 border-[#2b5bb5]/20 px-6 text-base leading-6 font-bold text-[#2b5bb5] no-underline transition duration-150 hover:bg-[#2b5bb5]/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
+            className="mt-7 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg bg-[#2b5bb5] px-6 text-base leading-6 font-bold text-white no-underline transition duration-150 hover:bg-[#234d9d] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
+            href={buildEvaluationHref(protocol)}
+          >
+            <Icon className="size-5" name="star" />
+            Avaliar atendimento
+          </a>
+
+          <a
+            className="mt-3 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg border-2 border-[#2b5bb5]/20 px-6 text-base leading-6 font-bold text-[#2b5bb5] no-underline transition duration-150 hover:bg-[#2b5bb5]/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
             href={routes.home}
           >
             <Icon className="size-5" name="home" />
