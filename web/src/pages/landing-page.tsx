@@ -1,4 +1,6 @@
 import guarapiMascot from '../assets/guarapi-mascot.png'
+import guarapiPoses from '../assets/poses-guara.webp'
+import uespiImageBg from '../assets/uespi-img-bg.webp'
 import { AppHeader } from '../components/app-header'
 import { Icon, type IconName } from '../components/icon'
 import { SiteFooter } from '../components/site-footer'
@@ -63,7 +65,13 @@ function SectionPill() {
 
 function HeroSection() {
   return (
-    <section className="landing-hero-bg relative min-h-[245px] overflow-hidden px-[17px] pt-[21px] pb-5 md:min-h-[340px] md:rounded-b-lg md:px-8 md:pt-12 lg:min-h-[390px] lg:px-10 lg:pt-14">
+    <section className="relative min-h-[245px] bg-landing-surface px-[17px] pt-[21px] pb-5 md:min-h-[340px] md:rounded-b-lg md:px-8 md:pt-12 lg:min-h-[390px] lg:px-10 lg:pt-14">
+      <img
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 left-1/2 h-full w-screen max-w-none -translate-x-1/2 object-cover opacity-[0.12] select-none"
+        src={uespiImageBg}
+      />
       <div className="relative max-w-[188px] md:max-w-sm lg:max-w-md">
         <h1 className="text-[31px] leading-[1.1] font-black tracking-[-0.02em] text-landing-text md:text-[44px] lg:text-5xl">
           Sua voz constrói a nossa <span className="text-landing-blue">universidade.</span>
@@ -187,8 +195,8 @@ function GuarapiSection() {
     >
       <img
         alt="Guarapi segurando um celular"
-        className="mx-auto mt-5 h-[136px] w-[156px] object-contain md:order-first md:mt-0 md:h-56 md:w-64"
-        src={guarapiMascot}
+        className="mx-auto mt-5 h-[164px] w-[188px] object-contain md:order-first md:mt-0 md:h-72 md:w-80"
+        src={guarapiPoses}
       />
       <div>
         <h2 className="text-[20px] leading-none font-black text-landing-text md:text-3xl md:leading-none">
