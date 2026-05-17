@@ -1,10 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import guarapiMascot from '../assets/guarapi-mascot.png'
-import {
-  getGuarapiInitialMessages,
-  getGuarapiSuggestions,
-} from '../application/guarapi-chat/guarapi-chat-content'
+import { getGuarapiInitialMessages, getGuarapiSuggestions } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatSuggestion } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatMode, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
 import { AppHeader } from '../components/app-header'
@@ -229,7 +226,11 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
       </div>
 
       <div className="space-y-4 border-t border-landing-chip px-4 py-4 sm:px-5">
-        <QuickActions isSending={isSending} onSelect={(suggestion) => void handleSuggestionSelect(suggestion)} suggestions={suggestions} />
+        <QuickActions
+          isSending={isSending}
+          onSelect={(suggestion) => void handleSuggestionSelect(suggestion)}
+          suggestions={suggestions}
+        />
 
         <a
           className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-landing-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue sm:w-auto"
