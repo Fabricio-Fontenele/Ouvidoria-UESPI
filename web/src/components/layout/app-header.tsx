@@ -162,7 +162,7 @@ function AppSideMenu({
       <aside
         aria-labelledby={titleId}
         aria-modal="true"
-        className="absolute top-0 left-0 flex h-full w-[min(86vw,360px)] flex-col bg-login-surface px-5 pt-5 pb-6 shadow-login-card"
+        className="absolute top-0 right-0 flex h-full w-[min(86vw,360px)] flex-col bg-login-surface px-5 pt-5 pb-6 shadow-login-card"
         onKeyDown={handlePanelKeyDown}
         role="dialog"
       >
