@@ -51,7 +51,7 @@ export class PrismaManifestationAdministrationRepository implements Manifestatio
     const persistedMessage = await this.prisma.$transaction(async (tx) => {
       await tx.manifestation.update({
         where: { id: manifestationData.id },
-        data: { status: manifestationData.status },
+        data: { status: manifestationData.status, attendantUserId: manifestationData.attendantUserId },
       })
 
       const created = await tx.manifestationMessage.create({ data: messageData })
@@ -93,7 +93,7 @@ export class PrismaManifestationAdministrationRepository implements Manifestatio
     await this.prisma.$transaction(async (tx) => {
       await tx.manifestation.update({
         where: { id: manifestationData.id },
-        data: { status: manifestationData.status },
+        data: { status: manifestationData.status, attendantUserId: manifestationData.attendantUserId },
       })
 
       await tx.manifestationMessage.create({
@@ -127,7 +127,7 @@ export class PrismaManifestationAdministrationRepository implements Manifestatio
     await this.prisma.$transaction(async (tx) => {
       await tx.manifestation.update({
         where: { id: manifestationData.id },
-        data: { status: manifestationData.status },
+        data: { status: manifestationData.status, attendantUserId: manifestationData.attendantUserId },
       })
 
       await tx.manifestationMessage.create({

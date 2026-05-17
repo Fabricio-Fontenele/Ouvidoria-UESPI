@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                                                                                                                                    |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Caso de uso    | UC-06 (parcial — somente encerramento)                                                                                                                                       |
-| Nome           | Finalizar manifestação                                                                                                                                                       |
-| Feature        | Encerramento da manifestação pelo manifestante                                                                                                                               |
-| Ator principal | Manifestante                                                                                                                                                                 |
-| Prioridade     | Alta                                                                                                                                                                         |
-| Status         | Encerramento implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e). Avaliação do atendimento (UC-06 completo Cockburn) permanece pendente. |
+| Campo          | Descrição                                                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-06 (encerramento). Avaliação do atendimento especificada em UC-11.                                                                                                                 |
+| Nome           | Finalizar manifestação                                                                                                                                                                |
+| Feature        | Encerramento da manifestação pelo manifestante                                                                                                                                        |
+| Ator principal | Manifestante                                                                                                                                                                          |
+| Prioridade     | Alta                                                                                                                                                                                  |
+| Status         | Encerramento implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e). Avaliação do atendimento documentada em [UC-11](./UC11-evaluate-attendance.md). |
 
 ---
 
@@ -373,9 +373,4 @@ export interface ManifestationAdministrationRepository {
 
 ## 20. Observação final
 
-Esta feature documenta o recorte mínimo de encerramento pelo manifestante. A avaliação do atendimento, prevista no UC-06 completo da Cockburn, deverá ser tratada em especificação complementar quando o escopo de avaliação entrar no roadmap, possivelmente com:
-
-- `EvaluateManifestationUseCase`;
-- entidade `ManifestationEvaluation`;
-- contrato de leitura para satisfação;
-- regras de unicidade e janela de avaliação.
+Esta feature documenta o recorte de encerramento pelo manifestante. A avaliação do atendimento — `EvaluateManifestationUseCase`, entidade `ManifestationEvaluation`, regras de unicidade — está especificada em [UC-11](./UC11-evaluate-attendance.md) e implementada de ponta a ponta.

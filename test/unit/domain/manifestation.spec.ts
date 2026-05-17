@@ -8,6 +8,7 @@ import {
   ManifestationStatusTransitionNotAllowedError,
   ManifestationType,
 } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import { AdministrativeUnitId } from '#src/domain/value-objects/administrative-unit-id.js'
 import { CampusId } from '#src/domain/value-objects/campus-id.js'
 import { ManifestationDescription } from '#src/domain/value-objects/manifestation-description.js'
@@ -37,6 +38,7 @@ describe('Manifestation', () => {
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         involvedPeople: null,
         authorUserId,
+        attendantUserId: null,
         accessCodeHash: normalizedAccessCodeHash,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
@@ -266,5 +268,34 @@ describe('Manifestation', () => {
         accessCodeHash: 'hashed-access-code',
       })
     }).toThrow(IdentifiedManifestationCannotHaveAccessCodeError)
+  })
+
+  it('assigns the attendant when none has been set and requester is ombudsman', () => {
+    const manifestation = buildManifestation()
+    manifestation.assignAttendant(new UniqueEntityId('ombudsman-1'), UserRole.OMBUDSMAN)
+
+    expect(manifestation.attendantUserId?.toValue()).toBe('ombudsman-1')
+  })
+
+  it('assigns the attendant when none has been set and requester is admin', () => {
+    const manifestation = buildManifestation()
+    manifestation.assignAttendant(new UniqueEntityId('admin-1'), UserRole.ADMIN)
+
+    expect(manifestation.attendantUserId?.toValue()).toBe('admin-1')
+  })
+
+  it('does not change the attendant once it has been assigned', () => {
+    const manifestation = buildManifestation()
+    manifestation.assignAttendant(new UniqueEntityId('ombudsman-1'), UserRole.OMBUDSMAN)
+    manifestation.assignAttendant(new UniqueEntityId('ombudsman-2'), UserRole.OMBUDSMAN)
+
+    expect(manifestation.attendantUserId?.toValue()).toBe('ombudsman-1')
+  })
+
+  it('does not assign the manifestant role as attendant', () => {
+    const manifestation = buildManifestation()
+    manifestation.assignAttendant(new UniqueEntityId('user-1'), UserRole.MANIFESTANT)
+
+    expect(manifestation.attendantUserId).toBeNull()
   })
 })
