@@ -1,4 +1,5 @@
 import type {
+  ManifestationAttachmentDTO,
   ManifestationHistoryEntryDTO,
   ManifestationMessageDTO,
 } from '#src/application/dto/manifestation-query-dtos.js'
@@ -31,6 +32,7 @@ interface GetAdminManifestationDetailsOutput {
     createdAt: Date
     history: ManifestationHistoryEntryDTO[]
     messages: ManifestationMessageDTO[]
+    attachments: ManifestationAttachmentDTO[]
   }
 }
 
@@ -74,6 +76,7 @@ export class GetAdminManifestationDetailsUseCase implements UseCase<
         createdAt: manifestation.createdAt,
         history: manifestation.history,
         messages: manifestation.messages,
+        attachments: manifestation.attachments,
       },
     }
   }
