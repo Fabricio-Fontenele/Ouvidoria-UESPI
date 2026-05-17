@@ -200,7 +200,7 @@ export interface AiGatewayChatResponse {
 }
 ```
 
-## Catálogos
+## Catálogos (Contratos)
 
 ```ts
 export interface CampusCatalogProvider {
@@ -211,6 +211,28 @@ export interface AdministrativeUnitCatalogProvider {
   list(): Promise<AiAdministrativeUnitCatalogItem[]>
 }
 ```
+
+## Catálogos (Implementação Concreta)
+
+### Tabelas no banco
+
+Dois models Prisma foram criados para servir como fonte oficial de referência:
+
+- **`Campus`** — `prisma/schema.prisma`, mapeado para tabela `campuses`
+- **`AdministrativeUnit`** — `prisma/schema.prisma`, mapeado para tabela `administrative_units`, com FK para `campuses`
+
+A migration correspondente está em `prisma/migrations/20260517130000_add_campus_and_administrative_units/`.
+
+**Decisão:** O model `Manifestation` _não_ recebeu FK para essas tabelas. A validação dos IDs é feita em memória pelo `SendAiMessageUseCase` contra os catálogos carregados, não via constraint de banco. Isso preserva compatibilidade com dados existentes.
+
+### Providers
+
+| Provider                                  | Localização                                                                             | Contrato                            |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------- |
+| `PrismaCampusCatalogProvider`             | `src/infra/database/prisma/repositories/prisma-campus-catalog-provider.ts`              | `CampusCatalogProvider`             |
+| `PrismaAdministrativeUnitCatalogProvider` | `src/infra/database/prisma/repositories/prisma-administrative-unit-catalog-provider.ts` | `AdministrativeUnitCatalogProvider` |
+
+Ambos consultam as respectivas tabelas via `PrismaClient.findMany()` e retornam os DTOs padronizados (`AiCatalogItem` / `AiAdministrativeUnitCatalogItem`). Estão registrados como singletons em `src/main/factories/infrastructure.ts`.
 
 ---
 
@@ -846,26 +868,31 @@ E passa a funcionar como:
 
 ## Implementado
 
-| Componente                                    | Caminho                                                                 |
-| --------------------------------------------- | ----------------------------------------------------------------------- |
-| Interface `AiGateway`                         | `src/application/ai/ai-gateway.ts`                                      |
-| Interface `CampusCatalogProvider`             | `src/application/ai/ai-catalog-providers.ts`                            |
-| Interface `AdministrativeUnitCatalogProvider` | `src/application/ai/ai-catalog-providers.ts`                            |
-| `SendAiMessageUseCase`                        | `src/application/use-cases/send-ai-message/send-ai-message-use-case.ts` |
-| `SendAiMessageController`                     | `src/presentation/controllers/ai/send-ai-message.controller.ts`         |
-| `ZodValidator`                                | `src/infra/http/fastify/validators/zod-validator.ts`                    |
-| Testes do use case (9 testes)                 | `test/unit/application/send-ai-message-use-case.spec.ts`                |
-| Testes do controller (3 testes)               | `test/unit/presentation/send-ai-message.controller.spec.ts`             |
+| Componente                                              | Caminho                                                                                 |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Model Prisma `Campus`                                   | `prisma/schema.prisma`                                                                  |
+| Model Prisma `AdministrativeUnit`                       | `prisma/schema.prisma`                                                                  |
+| Migration `add_campus_and_administrative_units`         | `prisma/migrations/20260517130000_add_campus_and_administrative_units/migration.sql`    |
+| Interface `AiGateway`                                   | `src/application/ai/ai-gateway.ts`                                                      |
+| Interface `CampusCatalogProvider`                       | `src/application/ai/ai-catalog-providers.ts`                                            |
+| Interface `AdministrativeUnitCatalogProvider`           | `src/application/ai/ai-catalog-providers.ts`                                            |
+| `PrismaCampusCatalogProvider`                           | `src/infra/database/prisma/repositories/prisma-campus-catalog-provider.ts`              |
+| `PrismaAdministrativeUnitCatalogProvider`               | `src/infra/database/prisma/repositories/prisma-administrative-unit-catalog-provider.ts` |
+| `SendAiMessageUseCase`                                  | `src/application/use-cases/send-ai-message/send-ai-message-use-case.ts`                 |
+| `SendAiMessageController`                               | `src/presentation/controllers/ai/send-ai-message.controller.ts`                         |
+| `ZodValidator`                                          | `src/infra/http/fastify/validators/zod-validator.ts`                                    |
+| DI Registration (campus + administrativeUnit providers) | `src/main/factories/infrastructure.ts`                                                  |
+| Testes do use case (9 testes)                           | `test/unit/application/send-ai-message-use-case.spec.ts`                                |
+| Testes do controller (3 testes)                         | `test/unit/presentation/send-ai-message.controller.spec.ts`                             |
 
 ## Pendente
 
-| Componente                                           | Observação                                                |
-| ---------------------------------------------------- | --------------------------------------------------------- |
-| Adapter concreto `AiGateway` (LangChain + Gemini)    | Deve implementar `AiGateway.chat()`                       |
-| Adapter concreto `CampusCatalogProvider`             | Consultar tabela de campi no banco                        |
-| Adapter concreto `AdministrativeUnitCatalogProvider` | Consultar tabela de unidades administrativas no banco     |
-| Factory `makeSendAiMessageController()`              | Em `src/main/factories/controllers/`                      |
-| Rota HTTP (`ai.routes.ts`)                           | Registrar no `server.ts`                                  |
-| Pipeline RAG (ingestão + busca vetorial)             | Ciclo de ingestão completo                                |
-| Dependências npm                                     | `langchain`, `@langchain/google-genai`, `@langchain/core` |
-| Env vars da IA                                       | `GEMINI_API_KEY` etc. no schema do `env.ts`               |
+| Componente                                        | Observação                                                |
+| ------------------------------------------------- | --------------------------------------------------------- |
+| Adapter concreto `AiGateway` (LangChain + Gemini) | Deve implementar `AiGateway.chat()`                       |
+| Seed de dados (Campus + AdministrativeUnit)       | Popular tabelas com dados oficiais da UESPI               |
+| Factory `makeSendAiMessageController()`           | Em `src/main/factories/controllers/`                      |
+| Rota HTTP (`ai.routes.ts`)                        | Registrar no `server.ts`                                  |
+| Pipeline RAG (ingestão + busca vetorial)          | Ciclo de ingestão completo                                |
+| Dependências npm                                  | `langchain`, `@langchain/google-genai`, `@langchain/core` |
+| Env vars da IA                                    | `GEMINI_API_KEY` etc. no schema do `env.ts`               |

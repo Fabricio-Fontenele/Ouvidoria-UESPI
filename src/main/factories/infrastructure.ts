@@ -1,6 +1,8 @@
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
 import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
+import { PrismaAdministrativeUnitCatalogProvider } from '#src/infra/database/prisma/repositories/prisma-administrative-unit-catalog-provider.js'
+import { PrismaCampusCatalogProvider } from '#src/infra/database/prisma/repositories/prisma-campus-catalog-provider.js'
 import { PrismaManifestationAdministrationRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-administration-repository.js'
 import { PrismaManifestationEvaluationsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-evaluations-repository.js'
 import { PrismaManifestationInteractionsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-interactions-repository.js'
@@ -25,6 +27,9 @@ const manifestationAdministrationRepository = new PrismaManifestationAdministrat
 const manifestationInteractionsRepository = new PrismaManifestationInteractionsRepository(prisma)
 const manifestationEvaluationsRepository = new PrismaManifestationEvaluationsRepository(prisma)
 
+const campusCatalogProvider = new PrismaCampusCatalogProvider(prisma)
+const administrativeUnitCatalogProvider = new PrismaAdministrativeUnitCatalogProvider(prisma)
+
 export const infrastructure = {
   passwordHasher,
   hashComparer: passwordHasher,
@@ -36,4 +41,6 @@ export const infrastructure = {
   manifestationAdministrationRepository,
   manifestationInteractionsRepository,
   manifestationEvaluationsRepository,
+  campusCatalogProvider,
+  administrativeUnitCatalogProvider,
 }
