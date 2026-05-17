@@ -5,7 +5,7 @@ interface ManifestationStatusStyle {
   accentClassName: string
   badgeClassName: string
   iconClassName: string
-  metricColorClassName?: string
+  textClassName: string
 }
 
 const manifestationStatusStyles: Record<ManifestationStatus, ManifestationStatusStyle> = {
@@ -13,23 +13,25 @@ const manifestationStatusStyles: Record<ManifestationStatus, ManifestationStatus
     accentClassName: 'border-l-home-blue',
     badgeClassName: 'bg-home-blue text-white',
     iconClassName: 'bg-home-blue text-white',
+    textClassName: 'text-home-blue',
   },
   canceled: {
     accentClassName: 'border-l-home-brown',
     badgeClassName: 'bg-home-brown text-white',
     iconClassName: 'bg-home-brown text-white',
+    textClassName: 'text-home-brown',
   },
   finalized: {
     accentClassName: 'border-l-home-success',
     badgeClassName: 'bg-home-success text-white',
     iconClassName: 'bg-home-success text-white',
-    metricColorClassName: 'text-home-success',
+    textClassName: 'text-home-success',
   },
   in_analysis: {
     accentClassName: 'border-l-home-warning',
     badgeClassName: 'bg-home-warning-strong text-home-text',
     iconClassName: 'bg-home-warning text-white',
-    metricColorClassName: 'text-home-warning',
+    textClassName: 'text-home-warning',
   },
 }
 
