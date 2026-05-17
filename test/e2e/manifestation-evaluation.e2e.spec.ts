@@ -48,8 +48,8 @@ async function openManifestation(token: string): Promise<{ id: string }> {
     payload: {
       isAnonymous: false,
       type: 'complaint',
-      campusId: 'campus-teresina',
-      administrativeUnitId: 'unit-secretaria',
+      campusId: 'campus-professor-antonio-giovanni-alves-de-sousa',
+      administrativeUnitId: 'unit-direcao-piripiri',
       description: 'Houve atraso no atendimento.',
     },
   })

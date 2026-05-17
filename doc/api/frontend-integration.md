@@ -11,7 +11,6 @@ Itens de requisito ainda não expostos por HTTP nesta fatia devem ser tratados c
 - recuperação de senha
 - anexos
 - relatórios
-- endpoints públicos de catálogo
 - criação administrativa de usuários
 - chatbot/IA
 
@@ -46,10 +45,10 @@ Os casos de uso internos mencionam campos como `userId`, `requesterId` e `reques
 
 ### Catálogos de campus e unidade administrativa
 
-- `campusId` e `administrativeUnitId` são referências de catálogo do MVP.
-- O backend atual não expõe endpoint HTTP público para listar esses catálogos nesta fatia.
-- Enquanto não houver endpoint de catálogo, o frontend deve usar uma lista estática alinhada às seeds ou aos IDs canônicos definidos para o MVP.
-- O frontend deve enviar sempre os IDs canônicos em `campusId` e `administrativeUnitId`, nunca labels livres.
+- `campusId` e `administrativeUnitId` são referências de catálogo institucional.
+- O frontend deve buscar os IDs canônicos em `GET /catalog`.
+- O frontend deve enviar sempre os IDs retornados por `GET /catalog` em `campusId` e `administrativeUnitId`, nunca labels livres.
+- O frontend não deve manter lista estática local desses IDs como fonte de verdade.
 
 ### Campos extras
 
@@ -176,7 +175,44 @@ Erros representativos:
 - `400 Bad Request` — `ValidationError`, `InvalidEmailError`
 - `401 Unauthorized` — `InvalidCredentialsError`
 
-## 4. Fluxos do manifestante
+## 4. Catálogo público
+
+### `GET /catalog`
+
+Lista o catálogo institucional público consumido pelo formulário de manifestação.
+
+Regras de retorno:
+
+- Retorna apenas campi ativos.
+- Cada campus retorna apenas unidades administrativas ativas.
+- Campi ativos sem nenhuma unidade administrativa ativa não aparecem na resposta.
+- `label` é o nome público de exibição; `name` interno de persistência não é exposto.
+- `city` é retornado como `string | null`.
+
+Response `200 OK`:
+
+```json
+{
+  "campuses": [
+    {
+      "id": "campus-parnaiba",
+      "label": "Campus Professor Alexandre Alves de Oliveira",
+      "city": "Parnaíba",
+      "administrativeUnits": [
+        {
+          "id": "coord-sistemas-parnaiba",
+          "label": "Coordenação do Curso de Sistemas de Computação"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Observação:
+os IDs e labels exatos dependem do catálogo seedado no ambiente, mas o shape do contrato HTTP é fixo e o frontend deve sempre consumir os IDs canônicos por esta rota.
+
+## 5. Fluxos do manifestante
 
 ### `POST /manifestations`
 
@@ -272,7 +308,7 @@ Response `201 Created`:
 
 Erros representativos:
 
-- `400 Bad Request` — `ValidationError`, `InvalidCampusIdError`, `InvalidAdministrativeUnitIdError`, `InvalidManifestationDescriptionError`, `InvalidManifestationInvolvedPeopleError`
+- `400 Bad Request` — `ValidationError`, `InvalidCampusIdError`, `InvalidAdministrativeUnitIdError`, `InvalidManifestationDescriptionError`, `InvalidManifestationInvolvedPeopleError`, `CampusNotFoundError`, `CampusInactiveError`, `AdministrativeUnitNotFoundError`, `AdministrativeUnitInactiveError`, `AdministrativeUnitDoesNotBelongToCampusError`
 - `401 Unauthorized` — `UnauthenticatedError`
 - `403 Forbidden` — `IdentifiedManifestationRequiresManifestantRoleError`
 
@@ -489,7 +525,7 @@ Erros representativos:
 Observação:
 `InvalidRatingError` existe como defesa de domínio, mas não é esperado no contrato HTTP atual porque o Zod já valida `rating` antes do use case e rejeita payload inválido com `400 ValidationError`.
 
-## 5. Rastreamento anônimo
+## 6. Rastreamento anônimo
 
 ### `POST /manifestations`
 
@@ -528,7 +564,7 @@ Erros representativos:
 - `400 Bad Request` — `ValidationError`
 - `404 Not Found` — `ManifestationTrackingNotFoundError`
 
-## 6. Administração
+## 7. Administração
 
 Todas as rotas administrativas exigem Bearer de usuário `ombudsman` ou `admin`.
 
@@ -716,7 +752,7 @@ Erros representativos:
 - `404 Not Found` — `ManifestationNotFoundError`
 - `409 Conflict` — `ManifestationStatusTransitionNotAllowedError`
 
-## 7. Integrações pendentes
+## 8. Integrações pendentes
 
 Os fluxos de chatbot/IA institucional ainda não estão expostos por HTTP neste backend.
 

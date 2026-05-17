@@ -18,6 +18,11 @@ execSync('pnpm prisma migrate deploy', {
   env: { ...process.env, DATABASE_URL: databaseUrl },
 })
 
+execSync('pnpm prisma db seed', {
+  stdio: 'ignore',
+  env: { ...process.env, DATABASE_URL: databaseUrl },
+})
+
 const { prisma } = await import('#src/infra/database/prisma/client.js')
 
 await assertSchemaIsolation()

@@ -42,8 +42,8 @@ describe('Identified manifestation (e2e)', () => {
       payload: {
         isAnonymous: false,
         type: 'report',
-        campusId: 'campus-teresina',
-        administrativeUnitId: 'unit-secretaria',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
+        administrativeUnitId: 'unit-direcao-parnaiba',
         description: 'Documento extraviado.',
       },
     })
@@ -82,8 +82,8 @@ describe('Identified manifestation (e2e)', () => {
       payload: {
         isAnonymous: false,
         type: 'complaint',
-        campusId: 'campus-teresina',
-        administrativeUnitId: 'unit-rh',
+        campusId: 'campus-poeta-torquato-neto',
+        administrativeUnitId: 'unit-prad-teresina',
         description: 'Sem auth.',
       },
     })
@@ -101,8 +101,8 @@ describe('Identified manifestation (e2e)', () => {
       payload: {
         isAnonymous: false,
         type: 'compliment',
-        campusId: 'campus-teresina',
-        administrativeUnitId: 'unit-rh',
+        campusId: 'campus-poeta-torquato-neto',
+        administrativeUnitId: 'unit-preg-teresina',
         description: 'Elogio.',
       },
     })
