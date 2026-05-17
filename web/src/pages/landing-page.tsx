@@ -58,10 +58,20 @@ const steps: Step[] = [
   },
 ]
 
-function SectionPill() {
+interface SectionPillProps {
+  label: string
+  variant: 'blue' | 'highlight'
+}
+
+function SectionPill({ label, variant }: SectionPillProps) {
   return (
-    <span className="inline-flex rounded-full bg-landing-blue px-2.5 py-1 text-[8px] leading-none font-black tracking-[0.08em] text-white uppercase md:px-3 md:py-1.5 md:text-[10px]">
-      Sobre o canal
+    <span
+      className={cx(
+        'inline-flex rounded-full px-2.5 py-1 text-[8px] leading-none font-black tracking-[0.08em] uppercase md:px-3 md:py-1.5 md:text-[10px]',
+        variant === 'highlight' ? 'bg-[#FFDEAC] text-landing-text' : 'bg-landing-blue text-white',
+      )}
+    >
+      {label}
     </span>
   )
 }
@@ -122,7 +132,7 @@ function LoginCallout() {
 function AboutSection() {
   return (
     <section className="px-[18px] pb-[28px] md:px-0 md:pb-0" id="o-que-e">
-      <SectionPill />
+      <SectionPill label="Sobre o canal" variant="highlight" />
       <h2 className="mt-3 text-[20px] leading-none font-black text-landing-text md:text-2xl md:leading-8">
         O que é a Ouvidoria?
       </h2>
@@ -138,7 +148,7 @@ function AboutSection() {
 function TypesSection() {
   return (
     <section className="px-[18px] pb-[30px] md:px-0 md:pb-0" id="tipos">
-      <SectionPill />
+      <SectionPill label="Manifestações" variant="blue" />
       <h2 className="mt-3 text-[20px] leading-none font-black text-landing-text md:text-2xl md:leading-8">
         Tipos de manifestação
       </h2>
