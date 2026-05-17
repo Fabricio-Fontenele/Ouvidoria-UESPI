@@ -20,7 +20,7 @@ export default defineConfig({
     include: ['test/e2e/**/*.spec.ts'],
     exclude: ['build/**', 'coverage/**', 'node_modules/**'],
     setupFiles: ['test/e2e/setup-e2e.ts'],
-    fileParallelism: false,
+    fileParallelism: true,
     hookTimeout: 60_000,
     testTimeout: 30_000,
   },
