@@ -93,6 +93,11 @@ Após operações bem-sucedidas:
 
 ## 8. Entradas
 
+As tabelas desta seção descrevem as entradas de aplicação dos casos de uso. No contrato HTTP atual, o frontend não envia `userId`: ele é derivado do JWT (`request.user.id`) pelos controllers.
+
+> Estes payloads são internos aos casos de uso e não devem ser copiados pelo frontend.
+> Para integração HTTP, use somente a seção `8.4 Contrato HTTP atual`.
+
 ### 8.1 Listagem das manifestações do usuário
 
 | Campo  | Tipo   | Obrigatório | Descrição                                       |
@@ -100,7 +105,7 @@ Após operações bem-sucedidas:
 | userId | string | Sim         | Identificador do usuário autenticado no fluxo.  |
 | page   | number | Sim         | Número da página da listagem, iniciando em `1`. |
 
-### Exemplo de entrada
+### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -116,7 +121,7 @@ Após operações bem-sucedidas:
 | manifestationId | string | Sim         | Identificador da manifestação consultada.      |
 | userId          | string | Sim         | Identificador do usuário autenticado no fluxo. |
 
-### Exemplo de entrada
+### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -133,7 +138,7 @@ Após operações bem-sucedidas:
 | userId          | string | Sim         | Identificador do manifestante autenticado.             |
 | content         | string | Sim         | Conteúdo textual da mensagem complementar.             |
 
-### Exemplo de entrada
+### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -142,6 +147,13 @@ Após operações bem-sucedidas:
   "content": "Poderiam compartilhar uma atualização do andamento?"
 }
 ```
+
+### 8.4 Contrato HTTP atual
+
+- `GET /manifestations?page=1` lista as manifestações do manifestante autenticado; `page` é opcional e defaulta para `1`.
+- `GET /manifestations/:manifestationId` consulta os detalhes; `manifestationId` vem da rota.
+- `POST /manifestations/:manifestationId/messages` envia `{ "content": "..." }` no body.
+- O frontend nunca envia `userId` no body, query ou path.
 
 ## 9. Regras de negócio
 
@@ -168,9 +180,11 @@ Após operações bem-sucedidas:
 
 O campo `page` deve:
 
-- ser obrigatório;
+- ser obrigatório na entrada do caso de uso;
 - ser numérico;
 - ser maior ou igual a `1`.
+
+No contrato HTTP, `page` é opcional e, quando ausente, o controller assume `1`.
 
 ### 10.2 Propriedade da manifestação
 
@@ -296,14 +310,34 @@ O sistema deve bloquear o envio de nova mensagem.
     "id": "manifestation-1",
     "protocol": "2026-0001",
     "type": "complaint",
-    "status": "in_analysis",
+    "status": "finalized",
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
     "description": "O serviço ficou indisponível durante toda a manhã.",
+    "involvedPeople": "Equipe da coordenação",
+    "attendantUserId": "ombudsman-1",
     "createdAt": "2026-05-10T12:00:00.000Z",
     "history": [
       {
+        "type": "registered",
         "description": "Manifestação registrada.",
+        "actorUserId": "user-1",
+        "actorType": "manifestant",
+        "fromStatus": null,
+        "toStatus": "in_analysis",
+        "rating": null,
+        "attendantUserId": null,
+        "createdAt": "2026-05-10T12:00:00.000Z"
+      },
+      {
+        "type": "evaluation_recorded",
+        "description": "Atendimento avaliado pelo autor (5/5).",
+        "actorUserId": "user-1",
+        "actorType": "manifestant",
+        "fromStatus": null,
+        "toStatus": null,
+        "rating": 5,
+        "attendantUserId": "ombudsman-1",
         "createdAt": "2026-05-10T12:00:00.000Z"
       }
     ],
@@ -311,6 +345,7 @@ O sistema deve bloquear o envio de nova mensagem.
       {
         "id": "message-1",
         "senderUserId": "ombudsman-1",
+        "senderType": "ombudsman",
         "content": "Estamos analisando o seu relato.",
         "createdAt": "2026-05-10T15:00:00.000Z"
       }
@@ -326,6 +361,7 @@ O sistema deve bloquear o envio de nova mensagem.
   "message": {
     "id": "message-2",
     "senderUserId": "user-1",
+    "senderType": "manifestant",
     "content": "Poderiam compartilhar uma atualização do andamento?",
     "createdAt": "2026-05-10T16:00:00.000Z"
   }
