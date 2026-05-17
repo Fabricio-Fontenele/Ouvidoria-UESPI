@@ -1,5 +1,5 @@
 import { getCurrentPath, routes } from './app/routes'
-import { GuarapiPage } from './pages/guarapi-page'
+import { GuaraPage } from './pages/guara-page'
 import { HomePage } from './pages/home-page'
 import { LandingPage } from './pages/landing-page'
 import { LoginPage } from './pages/login-page'
@@ -21,12 +21,12 @@ function App() {
     return <HomePage />
   }
 
-  if (normalizedPath === routes.guarapi) {
-    return <GuarapiPage />
+  if (normalizedPath === routes.guara) {
+    return <GuaraPage />
   }
 
   if (normalizedPath === routes.manifestation) {
-    return <GuarapiPage />
+    return <GuaraPage />
   }
 
   if (normalizedPath === routes.manifestationForm) {

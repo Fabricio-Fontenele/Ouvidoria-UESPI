@@ -1,26 +1,26 @@
-import type { GuarapiChatMode, GuarapiMessage } from './guarapi-chat-types'
+import type { GuaraChatMode, GuaraMessage } from './guara-chat-types'
 
-export interface GuarapiChatSuggestion {
+export interface GuaraChatSuggestion {
   id: string
   label: string
   message: string
 }
 
-type GuarapiChatContent = Record<
-  GuarapiChatMode,
+type GuaraChatContent = Record<
+  GuaraChatMode,
   {
-    initialMessages: GuarapiMessage[]
-    suggestions: GuarapiChatSuggestion[]
+    initialMessages: GuaraMessage[]
+    suggestions: GuaraChatSuggestion[]
   }
 >
 
-const guarapiChatContent: GuarapiChatContent = {
+const guaraChatContent: GuaraChatContent = {
   general: {
     initialMessages: [
       {
-        author: 'guarapi',
+        author: 'guara',
         id: 'general-welcome',
-        text: 'Olá, eu sou o Guarapi. Posso ajudar você a registrar uma manifestação, consultar orientações ou entender o andamento de um chamado.',
+        text: 'Olá, eu sou o Guará. Posso ajudar você a registrar uma manifestação, consultar orientações ou entender o andamento de um chamado.',
       },
     ],
     suggestions: [
@@ -44,7 +44,7 @@ const guarapiChatContent: GuarapiChatContent = {
   'manifestation-detail': {
     initialMessages: [
       {
-        author: 'guarapi',
+        author: 'guara',
         id: 'detail-welcome',
         text: 'Encontrei este chamado. Você pode me perguntar sobre o histórico, próximos passos ou pedir ajuda para escrever uma nova mensagem para a Ouvidoria.',
       },
@@ -54,7 +54,7 @@ const guarapiChatContent: GuarapiChatContent = {
         text: 'Quero entender o que ainda falta para a resposta final.',
       },
       {
-        author: 'guarapi',
+        author: 'guara',
         id: 'detail-answer-example',
         text: 'Pelo status atual, a manifestação ainda está em análise pela área responsável. Quando houver resposta, ela aparecerá no histórico do protocolo.',
       },
@@ -80,9 +80,9 @@ const guarapiChatContent: GuarapiChatContent = {
   'new-manifestation': {
     initialMessages: [
       {
-        author: 'guarapi',
+        author: 'guara',
         id: 'new-manifestation-welcome',
-        text: 'Olá, eu sou o Guarapi. Posso ajudar você a organizar as informações antes de registrar uma manifestação na Ouvidoria.',
+        text: 'Olá, eu sou o Guará. Posso ajudar você a organizar as informações antes de registrar uma manifestação na Ouvidoria.',
       },
     ],
     suggestions: [
@@ -105,10 +105,10 @@ const guarapiChatContent: GuarapiChatContent = {
   },
 }
 
-export function getGuarapiInitialMessages(mode: GuarapiChatMode) {
-  return guarapiChatContent[mode].initialMessages
+export function getGuaraInitialMessages(mode: GuaraChatMode) {
+  return guaraChatContent[mode].initialMessages
 }
 
-export function getGuarapiSuggestions(mode: GuarapiChatMode) {
-  return guarapiChatContent[mode].suggestions
+export function getGuaraSuggestions(mode: GuaraChatMode) {
+  return guaraChatContent[mode].suggestions
 }

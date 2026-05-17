@@ -2,17 +2,17 @@ import { useMemo } from 'react'
 import type { ReactNode } from 'react'
 
 import { AuthProvider } from '../contexts/auth-provider'
-import { GuarapiChatServiceProvider } from '../contexts/guarapi-chat-service-provider'
+import { GuaraChatServiceProvider } from '../contexts/guara-chat-service-provider'
 import { makeAuthService } from '../infrastructure/auth/auth-service-factory'
-import { makeGuarapiChatService } from '../infrastructure/guarapi-chat/guarapi-chat-service-factory'
+import { makeGuaraChatService } from '../infrastructure/guara-chat/guara-chat-service-factory'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const authService = useMemo(() => makeAuthService(), [])
-  const guarapiChatService = useMemo(() => makeGuarapiChatService(), [])
+  const guaraChatService = useMemo(() => makeGuaraChatService(), [])
 
   return (
     <AuthProvider service={authService}>
-      <GuarapiChatServiceProvider service={guarapiChatService}>{children}</GuarapiChatServiceProvider>
+      <GuaraChatServiceProvider service={guaraChatService}>{children}</GuaraChatServiceProvider>
     </AuthProvider>
   )
 }

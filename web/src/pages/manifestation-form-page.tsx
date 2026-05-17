@@ -4,7 +4,7 @@ import type { SubmitErrorHandler, SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
 import {
-  buildGuarapiNewManifestationHref,
+  buildGuaraNewManifestationHref,
   buildManifestationDetailsHref,
   getSearchParams,
   normalizeProtocol,
@@ -143,7 +143,7 @@ export function ManifestationFormPage() {
             cancelHref={
               isEditing && protocol !== null
                 ? buildManifestationDetailsHref(protocol)
-                : buildGuarapiNewManifestationHref()
+                : buildGuaraNewManifestationHref()
             }
             fields={manifestationFormFields}
             form={form}

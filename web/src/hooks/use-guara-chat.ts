@@ -1,26 +1,26 @@
 import { useMemo, useState } from 'react'
 
-import { SendGuarapiMessage } from '../application/guarapi-chat/send-guarapi-message'
-import type { GuarapiChatContext, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
-import { useGuarapiChatService } from './use-guarapi-chat-service'
+import { SendGuaraMessage } from '../application/guara-chat/send-guara-message'
+import type { GuaraChatContext, GuaraMessage } from '../application/guara-chat/guara-chat-types'
+import { useGuaraChatService } from './use-guara-chat-service'
 
-interface UseGuarapiChatParams {
-  context: GuarapiChatContext
-  initialMessages: GuarapiMessage[]
+interface UseGuaraChatParams {
+  context: GuaraChatContext
+  initialMessages: GuaraMessage[]
 }
 
-export function useGuarapiChat({ context, initialMessages }: UseGuarapiChatParams) {
-  const guarapiChatService = useGuarapiChatService()
+export function useGuaraChat({ context, initialMessages }: UseGuaraChatParams) {
+  const guaraChatService = useGuaraChatService()
   const [error, setError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
-  const [messages, setMessages] = useState<GuarapiMessage[]>(initialMessages)
+  const [messages, setMessages] = useState<GuaraMessage[]>(initialMessages)
 
-  const sendGuarapiMessage = useMemo(() => {
-    return new SendGuarapiMessage(guarapiChatService)
-  }, [guarapiChatService])
+  const sendGuaraMessage = useMemo(() => {
+    return new SendGuaraMessage(guaraChatService)
+  }, [guaraChatService])
 
   const sendMessage = async (message: string) => {
-    const userMessage: GuarapiMessage = {
+    const userMessage: GuaraMessage = {
       author: 'user',
       id: crypto.randomUUID(),
       text: message.trim(),
@@ -35,7 +35,7 @@ export function useGuarapiChat({ context, initialMessages }: UseGuarapiChatParam
     setMessages((currentMessages) => [...currentMessages, userMessage])
 
     try {
-      const output = await sendGuarapiMessage.execute({
+      const output = await sendGuaraMessage.execute({
         context,
         message: userMessage.text,
         previousMessages: [...messages, userMessage],
