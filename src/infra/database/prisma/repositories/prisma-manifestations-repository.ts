@@ -1,4 +1,5 @@
 import type {
+  ManifestationAttachment as PrismaManifestationAttachment,
   ManifestationMessage as PrismaManifestationMessage,
   ManifestationStatus as PrismaManifestationStatus,
   ManifestationType as PrismaManifestationType,
@@ -18,6 +19,7 @@ import type { PaginationParams } from '#src/application/repositories/pagination-
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { ManifestationStatus, type Manifestation, type ManifestationType } from '#src/domain/entities/manifestation.js'
 
+import { manifestationAttachmentMapper } from '../mappers/manifestation-attachment.mapper.js'
 import { manifestationMessageMapper } from '../mappers/manifestation-message.mapper.js'
 import { manifestationMapper } from '../mappers/manifestation.mapper.js'
 import { decodeSystemMessagePayload } from '../system-message-payload.js'
@@ -41,6 +43,9 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
     const record = await this.prisma.manifestation.findUnique({
       where: { id: manifestationId },
       include: {
+        attachments: {
+          orderBy: { createdAt: 'asc' },
+        },
         messages: {
           orderBy: { createdAt: 'asc' },
         },
@@ -51,7 +56,7 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
       return null
     }
 
-    return buildDetailsDTO(record, record.messages)
+    return buildDetailsDTO(record, record.messages, record.attachments)
   }
 
   async findManyByAuthorUserId(
@@ -162,6 +167,7 @@ interface ManifestationRow {
 function buildDetailsDTO(
   manifestation: ManifestationRow,
   messages: PrismaManifestationMessage[],
+  attachments: PrismaManifestationAttachment[],
 ): ManifestationDetailsDTO {
   const history: ManifestationHistoryEntryDTO[] = [
     {
@@ -237,5 +243,6 @@ function buildDetailsDTO(
     createdAt: manifestation.createdAt,
     history,
     messages: conversation,
+    attachments: attachments.map((attachment) => manifestationAttachmentMapper.toDTO(attachment)),
   }
 }

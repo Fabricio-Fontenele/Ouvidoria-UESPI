@@ -2,8 +2,8 @@ import type { HashComparer } from '#src/application/cryptography/hash-comparer.j
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
+import { AnonymousManifestationAccessService } from '../anonymous-manifestation-access/anonymous-manifestation-access-service.js'
 import type { UseCase } from '../use-case.js'
-import { ManifestationTrackingNotFoundError } from './errors/manifestation-tracking-not-found-error.js'
 
 interface TrackManifestationByProtocolInput {
   protocol: string
@@ -25,37 +25,23 @@ export class TrackManifestationByProtocolUseCase implements UseCase<
   TrackManifestationByProtocolInput,
   TrackManifestationByProtocolOutput
 > {
-  constructor(
-    private readonly manifestationsRepository: ManifestationsRepository,
-    private readonly hashComparer: HashComparer,
-  ) {}
+  private readonly anonymousManifestationAccessService: AnonymousManifestationAccessService
+
+  constructor(manifestationsRepository: ManifestationsRepository, hashComparer: HashComparer) {
+    this.anonymousManifestationAccessService = new AnonymousManifestationAccessService(
+      manifestationsRepository,
+      hashComparer,
+    )
+  }
 
   async execute({
     protocol,
     accessCode,
   }: TrackManifestationByProtocolInput): Promise<TrackManifestationByProtocolOutput> {
-    const normalizedProtocol = protocol.trim()
-    const normalizedAccessCode = accessCode.trim()
-
-    if (normalizedProtocol === '' || normalizedAccessCode === '') {
-      throw new ManifestationTrackingNotFoundError()
-    }
-
-    const manifestation = await this.manifestationsRepository.findByProtocol(normalizedProtocol)
-
-    if (manifestation === null) {
-      throw new ManifestationTrackingNotFoundError()
-    }
-
-    if (!manifestation.isAnonymous() || manifestation.accessCodeHash === null) {
-      throw new ManifestationTrackingNotFoundError()
-    }
-
-    const accessCodeMatches = await this.hashComparer.compare(normalizedAccessCode, manifestation.accessCodeHash)
-
-    if (!accessCodeMatches) {
-      throw new ManifestationTrackingNotFoundError()
-    }
+    const manifestation = await this.anonymousManifestationAccessService.getAuthorizedManifestation({
+      protocol,
+      accessCode,
+    })
 
     return {
       manifestation: {
