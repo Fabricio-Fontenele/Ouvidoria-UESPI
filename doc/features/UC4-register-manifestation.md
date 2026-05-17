@@ -104,7 +104,12 @@ Após um registro bem-sucedido:
 
 ## 8. Entrada
 
-A feature deve receber os seguintes dados:
+### 8.1 Entrada de aplicação
+
+No nível de caso de uso, a feature trabalha com os seguintes dados:
+
+> Este payload é interno ao caso de uso e não deve ser usado pelo frontend.
+> Para integração HTTP, use somente a seção `8.2 Contrato HTTP atual`.
 
 | Campo                | Tipo    | Obrigatório | Descrição                                                           |
 | -------------------- | ------- | ----------- | ------------------------------------------------------------------- |
@@ -113,10 +118,10 @@ A feature deve receber os seguintes dados:
 | administrativeUnitId | string  | Sim         | Identificador da unidade administrativa relacionada à manifestação. |
 | description          | string  | Sim         | Descrição textual da manifestação.                                  |
 | involvedPeople       | string  | Não         | Pessoas envolvidas, em texto livre, quando houver.                  |
-| requesterId          | string  | Não         | Identificador do usuário autenticado no contexto da requisição.     |
+| requesterId          | string  | Não         | Identificador do usuário autenticado no contexto da aplicação.      |
 | isAnonymous          | boolean | Sim         | Indica se o usuário deseja registrar a manifestação anonimamente.   |
 
-### Exemplo de entrada identificada
+### Exemplo de entrada identificada no caso de uso
 
 ```json
 {
@@ -130,11 +135,54 @@ A feature deve receber os seguintes dados:
 }
 ```
 
-### Exemplo de entrada anônima
+### Exemplo de entrada anônima no caso de uso
 
 ```json
 {
   "requesterId": null,
+  "isAnonymous": true,
+  "type": "report",
+  "campusId": "campus-2",
+  "administrativeUnitId": "unit-7",
+  "description": "Há indícios de irregularidade no processo informado.",
+  "involvedPeople": null
+}
+```
+
+### 8.2 Contrato HTTP atual
+
+No contrato HTTP público atual:
+
+- o frontend chama `POST /manifestations`;
+- o body **não** carrega `requesterId`;
+- a identidade autenticada é derivada do Bearer token quando houver;
+- em registro identificado (`isAnonymous=false`), a ausência de autenticação válida retorna `401`;
+- em registro anônimo (`isAnonymous=true`), o request pode seguir sem token.
+- campos extras não fazem parte do contrato e não devem ser enviados pelo frontend.
+
+Exemplo HTTP identificado:
+
+```http
+POST /manifestations
+Authorization: Bearer <token-do-manifestante>
+Content-Type: application/json
+```
+
+```json
+{
+  "isAnonymous": false,
+  "type": "complaint",
+  "campusId": "campus-1",
+  "administrativeUnitId": "unit-1",
+  "description": "O serviço ficou indisponível durante toda a manhã.",
+  "involvedPeople": "Equipe da coordenação"
+}
+```
+
+Exemplo HTTP anônimo:
+
+```json
+{
   "isAnonymous": true,
   "type": "report",
   "campusId": "campus-2",
@@ -225,7 +273,7 @@ O campo `involvedPeople`:
 
 O campo `requesterId`:
 
-- representa a identidade autenticada do solicitante;
+- representa a identidade autenticada do solicitante na entrada de aplicação;
 - não deve ser tratado como autoria arbitrária enviada pelo cliente;
 - deve estar presente quando `isAnonymous` for `false`;
 - pode ser `null` apenas quando `isAnonymous` for `true`.
@@ -236,7 +284,7 @@ O campo `isAnonymous`:
 - indica a escolha do usuário por registro identificado ou anônimo.
 
 Observação:
-No recorte atual do MVP, o caso de uso deriva `authorUserId` internamente a partir de `requesterId` e `isAnonymous`. Regras adicionais de sigilo institucional ainda não fazem parte da implementação.
+No recorte atual do MVP, o caso de uso deriva `authorUserId` internamente a partir de `requesterId` e `isAnonymous`. Na camada HTTP, `requesterId` vem do JWT e não do body da requisição. Regras adicionais de sigilo institucional ainda não fazem parte da implementação.
 
 ---
 
@@ -375,13 +423,8 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INVALID_INPUT",
-  "message": "Dados inválidos.",
-  "fields": {
-    "campusId": ["Campus obrigatório."],
-    "administrativeUnitId": ["Unidade administrativa obrigatória."],
-    "description": ["Descrição obrigatória."]
-  }
+  "error": "ValidationError",
+  "message": "description: Invalid input: expected string, received undefined"
 }
 ```
 
@@ -395,8 +438,8 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INTERNAL_ERROR",
-  "message": "Falha ao registrar manifestação."
+  "error": "ServerError",
+  "message": "Internal server error."
 }
 ```
 
@@ -410,7 +453,7 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "UNAUTHENTICATED",
+  "error": "UnauthenticatedError",
   "message": "Authentication required."
 }
 ```
