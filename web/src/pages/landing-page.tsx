@@ -1,7 +1,8 @@
+import { routes } from '../app/routes'
 import guarapiMascot from '../assets/guarapi-mascot.png'
-import { AppHeader } from '../components/app-header'
-import { Icon, type IconName } from '../components/icon'
-import { SiteFooter } from '../components/site-footer'
+import { Icon, type IconName } from '../components/icons/icon'
+import { AppHeader } from '../components/layout/app-header'
+import { SiteFooter } from '../components/layout/site-footer'
 import { cx } from '../utils/cx'
 
 interface ManifestationType {
@@ -91,7 +92,7 @@ function LoginCallout() {
       </p>
       <a
         className="mx-auto mt-[22px] inline-flex min-h-[28px] min-w-[132px] items-center justify-center rounded-[3px] bg-landing-blue px-4 text-[10px] leading-none font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-blue md:min-h-10 md:min-w-48 md:rounded-lg md:text-[15px]"
-        href="/login"
+        href={routes.login}
       >
         Entrar na sua conta
       </a>
@@ -99,7 +100,7 @@ function LoginCallout() {
         Não tem uma conta?{' '}
         <a
           className="text-landing-blue no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-blue"
-          href="/sign"
+          href={routes.sign}
         >
           Cadastre-se aqui.
         </a>
@@ -200,7 +201,7 @@ function GuarapiSection() {
         </p>
         <a
           className="mx-auto mt-5 inline-flex min-h-[32px] min-w-[132px] items-center justify-center rounded-[4px] bg-landing-blue px-4 text-[10px] leading-none font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-blue md:mx-0 md:min-h-10 md:min-w-40 md:rounded-lg md:text-[15px]"
-          href="/guarapi"
+          href={routes.guarapi}
         >
           Fale com o Guarapi
         </a>
@@ -214,7 +215,7 @@ function GuarapiFloatingButton() {
     <a
       aria-label="Abrir chat com o Guarapi"
       className="fixed right-3 bottom-7 z-30 grid size-20 place-items-center rounded-full drop-shadow-landing-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-blue sm:right-6 sm:bottom-8 sm:size-24 lg:right-8 lg:bottom-9 lg:size-28"
-      href="/guarapi"
+      href={routes.guarapi}
     >
       <img alt="" className="size-full rounded-full object-contain p-1.5" src={guarapiMascot} />
     </a>

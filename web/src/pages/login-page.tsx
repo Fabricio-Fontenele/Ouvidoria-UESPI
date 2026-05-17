@@ -1,6 +1,7 @@
-import { AuthField } from '../components/auth-field'
-import { AuthPageShell } from '../components/auth-page-shell'
-import { Icon } from '../components/icon'
+import { routes } from '../app/routes'
+import { AuthField } from '../components/auth/auth-field'
+import { Icon } from '../components/icons/icon'
+import { AuthPageShell } from '../components/layout/auth-page-shell'
 import { cx } from '../utils/cx'
 
 export function LoginPage() {
@@ -61,7 +62,7 @@ export function LoginPage() {
 
       <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">
         Não tem uma conta?{' '}
-        <a className={cx('text-login-blue no-underline', linkFocusClasses)} href="/sign">
+        <a className={cx('text-login-blue no-underline', linkFocusClasses)} href={routes.sign}>
           Cadastre-se aqui.
         </a>
       </p>

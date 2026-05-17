@@ -1,7 +1,7 @@
 import { useState, type ComponentProps } from 'react'
 
-import { cx } from '../utils/cx'
-import { Icon, type IconName } from './icon'
+import { cx } from '../../utils/cx'
+import { Icon, type IconName } from '../icons/icon'
 
 interface AuthFieldProps extends Omit<ComponentProps<'input'>, 'className' | 'type'> {
   containerClassName?: string
