@@ -10,6 +10,7 @@ import {
 
 import {
   makeAddManifestationMessageController,
+  makeEvaluateManifestationController,
   makeFinalizeManifestationController,
   makeGetManifestationDetailsController,
   makeListUserManifestationsController,
@@ -49,5 +50,11 @@ export async function registerManifestationRoutes(app: FastifyInstance): Promise
     '/manifestations/:manifestationId/finalize',
     { preHandler: [...authenticatedManifestant] },
     adaptRoute(makeFinalizeManifestationController()),
+  )
+
+  app.post(
+    '/manifestations/:manifestationId/evaluation',
+    { preHandler: [...authenticatedManifestant] },
+    adaptRoute(makeEvaluateManifestationController()),
   )
 }

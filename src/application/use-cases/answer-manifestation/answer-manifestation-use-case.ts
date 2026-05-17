@@ -56,6 +56,7 @@ export class AnswerManifestationUseCase implements UseCase<AnswerManifestationIn
 
     const previousStatus = manifestation.status
     manifestation.recordAdministrativeAnswer()
+    manifestation.assignAttendant(senderUserId, requester.role)
 
     const message = await this.manifestationAdministrationRepository.recordAnswer({
       manifestation,
