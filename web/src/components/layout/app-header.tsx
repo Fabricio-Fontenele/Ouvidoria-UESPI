@@ -1,37 +1,40 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
-import uespiLogo from '../assets/brasao.png'
-import { cx } from '../utils/cx'
-import { Icon, type IconName } from './icon'
+import { buildGuarapiNewManifestationHref, navigateTo, routes } from '../../app/routes'
+import uespiLogo from '../../assets/brasao.png'
+import { useAuth } from '../../hooks/use-auth'
+import { cx } from '../../utils/cx'
+import { Icon, type IconName } from '../icons/icon'
 
 interface AppHeaderProps {
   isAuthenticated?: boolean
 }
 
 interface MenuItem {
+  action?: 'sign-out'
   href: string
   icon: IconName
   label: string
 }
 
 const authenticatedMenuItems: MenuItem[] = [
-  { href: '/home', icon: 'home', label: 'Início' },
+  { href: routes.home, icon: 'home', label: 'Início' },
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
-  { href: '/guarapi?mode=new', icon: 'plus-circle', label: 'Novo registro' },
+  { href: buildGuarapiNewManifestationHref(), icon: 'plus-circle', label: 'Novo registro' },
   { href: '#notificacoes', icon: 'bell', label: 'Notificações' },
   { href: '#perfil', icon: 'user', label: 'Perfil' },
   { href: '#suporte', icon: 'help', label: 'Suporte' },
   { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
-  { href: '/', icon: 'log-out', label: 'Sair' },
+  { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
 ]
 
 const publicMenuItems: MenuItem[] = [
-  { href: '/', icon: 'home', label: 'Início' },
+  { href: routes.landing, icon: 'home', label: 'Início' },
   { href: '#o-que-e', icon: 'info', label: 'O que é' },
   { href: '#tipos', icon: 'file-text', label: 'Tipos de manifestação' },
   { href: '#como-funciona', icon: 'braces', label: 'Como funciona' },
-  { href: '/guarapi', icon: 'message-circle', label: 'Fale com o Guarapi' },
-  { href: '/login', icon: 'user', label: 'Acessar sistema' },
+  { href: routes.guarapi, icon: 'message-circle', label: 'Fale com o Guarapi' },
+  { href: routes.login, icon: 'user', label: 'Acessar sistema' },
   { href: '#faq', icon: 'help', label: 'FAQ' },
 ]
 
@@ -40,12 +43,24 @@ const iconButtonClasses =
   'grid size-10 place-items-center rounded-full text-login-blue transition duration-150 hover:bg-login-blue/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
 function AppMenuLink({
+  action,
   href,
   icon,
   isActive = false,
   label,
   onNavigate,
-}: MenuItem & { isActive?: boolean; onNavigate: () => void }) {
+  onSignOut,
+}: MenuItem & { isActive?: boolean; onNavigate: () => void; onSignOut: () => Promise<void> }) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (action === 'sign-out') {
+      event.preventDefault()
+      void onSignOut()
+      return
+    }
+
+    onNavigate()
+  }
+
   return (
     <a
       aria-current={isActive ? 'page' : undefined}
@@ -54,7 +69,7 @@ function AppMenuLink({
         isActive ? 'bg-login-blue text-white' : 'text-login-brown hover:bg-login-field/40 active:bg-login-field',
       )}
       href={href}
-      onClick={onNavigate}
+      onClick={handleClick}
     >
       <Icon className="size-[18px]" name={icon} />
       <span>{label}</span>
@@ -67,10 +82,12 @@ function AppSideMenu({
   isOpen,
   onClose,
   openerRef,
+  onSignOut,
 }: {
   isAuthenticated: boolean
   isOpen: boolean
   onClose: () => void
+  onSignOut: () => Promise<void>
   openerRef: RefObject<HTMLButtonElement | null>
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -152,7 +169,7 @@ function AppSideMenu({
         <div className="flex items-center justify-between gap-4">
           <a
             className="flex min-w-0 items-center gap-2 text-login-blue no-underline"
-            href={isAuthenticated ? '/home' : '/'}
+            href={isAuthenticated ? routes.home : routes.landing}
             onClick={onClose}
           >
             <img alt="Brasão da UESPI" className="h-12 w-8 object-contain" src={uespiLogo} />
@@ -178,8 +195,9 @@ function AppSideMenu({
               <li key={`${item.label}-${item.href}`}>
                 <AppMenuLink
                   {...item}
-                  isActive={item.href === (isAuthenticated ? '/home' : '/')}
+                  isActive={item.href === (isAuthenticated ? routes.home : routes.landing)}
                   onNavigate={onClose}
+                  onSignOut={onSignOut}
                 />
               </li>
             ))}
@@ -191,14 +209,24 @@ function AppSideMenu({
 }
 
 export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
+  const { signOut } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const handleSignOut = async () => {
+    await signOut()
+    setIsMenuOpen(false)
+    navigateTo(routes.landing)
+  }
 
   return (
     <>
       <header className="relative z-40 h-22 w-full flex-none bg-login-surface shadow-login-header md:h-24">
         <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[52px_1fr_40px] items-center gap-3 px-5 min-[361px]:gap-6 min-[361px]:px-[34px] sm:px-8 md:h-22 md:grid-cols-[60px_1fr_52px] lg:px-12">
-          <a className="justify-self-start" href={isAuthenticated ? '/home' : '/'} aria-label="Página inicial">
+          <a
+            className="justify-self-start"
+            href={isAuthenticated ? routes.home : routes.landing}
+            aria-label="Página inicial"
+          >
             <img
               alt="Brasão da UESPI"
               className="h-[72px] w-[52px] object-contain md:h-20 md:w-[58px]"
@@ -227,6 +255,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
           isAuthenticated={isAuthenticated}
           isOpen={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
+          onSignOut={handleSignOut}
           openerRef={menuButtonRef}
         />
       </div>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { cx } from '../utils/cx'
+import { cx } from '../../utils/cx'
 import { AppHeader } from './app-header'
 import { SiteFooter } from './site-footer'
 

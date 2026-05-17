@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
-import { cx } from '../utils/cx'
-import { Icon } from './icon'
+import { cx } from '../../utils/cx'
+import { Icon } from '../icons/icon'
 
 type SiteFooterProps = ComponentProps<'footer'>
 
