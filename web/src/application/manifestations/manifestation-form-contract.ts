@@ -51,6 +51,7 @@ export const manifestationFormSchema = z.object({
     .refine((value) => manifestationIdentificationOptions.some((option) => option.value === value), {
       message: 'Selecione uma forma de identificação válida.',
     }),
+  involvedPeople: z.string().trim().max(250, 'Informe as pessoas envolvidas com no máximo 250 caracteres.'),
   manifestationType: z
     .string()
     .min(1, 'Selecione o tipo de manifestação.')
@@ -58,11 +59,6 @@ export const manifestationFormSchema = z.object({
       (value) => manifestationTypes.includes(value as (typeof manifestationTypes)[number]),
       'Selecione um tipo válido.',
     ),
-  title: z
-    .string()
-    .trim()
-    .min(5, 'Informe um título com pelo menos 5 caracteres.')
-    .max(120, 'O título deve ter no máximo 120 caracteres.'),
 })
 
 export type ManifestationFormData = z.infer<typeof manifestationFormSchema>
@@ -75,8 +71,8 @@ export function getManifestationFormDefaultValues(isEditing: boolean): Manifesta
       description:
         'Solicito a avaliação da possibilidade de ampliação dos horários de funcionamento da Biblioteca Central.',
       identification: 'identified',
+      involvedPeople: 'Biblioteca Central',
       manifestationType: 'Sugestão',
-      title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
     }
   }
 
@@ -85,7 +81,7 @@ export function getManifestationFormDefaultValues(isEditing: boolean): Manifesta
     attachments: undefined,
     description: '',
     identification: 'identified',
+    involvedPeople: '',
     manifestationType: '',
-    title: '',
   }
 }
