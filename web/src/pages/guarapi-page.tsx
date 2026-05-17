@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { buildManifestationFormHref, getSearchParams, normalizeProtocol, routes } from '../app/routes'
+import { buildManifestationFormHref, getSearchParams, normalizeProtocol, replaceWith, routes } from '../app/routes'
 import guarapiMascot from '../assets/guarapi-mascot.png'
 import { getGuarapiInitialMessages, getGuarapiSuggestions } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatSuggestion } from '../application/guarapi-chat/guarapi-chat-content'
@@ -11,6 +11,7 @@ import { Icon } from '../components/icons/icon'
 import { AppHeader } from '../components/layout/app-header'
 import { SiteFooter } from '../components/layout/site-footer'
 import { getManifestationStatusBadgeClassName } from '../components/manifestations/manifestation-status-style'
+import { useAuth } from '../hooks/use-auth'
 import { useGuarapiChat } from '../hooks/use-guarapi-chat'
 import { cx } from '../utils/cx'
 
@@ -287,12 +288,33 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
 
 export function GuarapiPage() {
   const { mode, protocol } = resolveMode()
+  const { isAuthenticated, isLoading } = useAuth()
   const copy = getPageCopy(mode, protocol)
-  const isAuthenticated = mode !== 'general'
+  const requiresAuthentication = mode !== 'general'
+
+  useEffect(() => {
+    if (requiresAuthentication && !isLoading && !isAuthenticated) {
+      replaceWith(routes.login)
+    }
+  }, [isAuthenticated, isLoading, requiresAuthentication])
+
+  if (requiresAuthentication && (isLoading || !isAuthenticated)) {
+    return (
+      <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
+        <AppHeader />
+
+        <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
+          <p className="text-base leading-7 text-landing-brown" role="status">
+            Redirecionando para o acesso ao sistema...
+          </p>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
-      <AppHeader isAuthenticated={isAuthenticated} />
+      <AppHeader isAuthenticated={requiresAuthentication} />
 
       <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
         <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">

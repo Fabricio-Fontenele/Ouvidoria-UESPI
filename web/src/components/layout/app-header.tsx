@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
-import { buildGuarapiNewManifestationHref, routes } from '../../app/routes'
+import { buildGuarapiNewManifestationHref, navigateTo, routes } from '../../app/routes'
 import uespiLogo from '../../assets/brasao.png'
+import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
 import { Icon, type IconName } from '../icons/icon'
 
@@ -10,6 +11,7 @@ interface AppHeaderProps {
 }
 
 interface MenuItem {
+  action?: 'sign-out'
   href: string
   icon: IconName
   label: string
@@ -23,7 +25,7 @@ const authenticatedMenuItems: MenuItem[] = [
   { href: '#perfil', icon: 'user', label: 'Perfil' },
   { href: '#suporte', icon: 'help', label: 'Suporte' },
   { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
-  { href: routes.landing, icon: 'log-out', label: 'Sair' },
+  { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
 ]
 
 const publicMenuItems: MenuItem[] = [
@@ -41,12 +43,24 @@ const iconButtonClasses =
   'grid size-10 place-items-center rounded-full text-login-blue transition duration-150 hover:bg-login-blue/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
 function AppMenuLink({
+  action,
   href,
   icon,
   isActive = false,
   label,
   onNavigate,
-}: MenuItem & { isActive?: boolean; onNavigate: () => void }) {
+  onSignOut,
+}: MenuItem & { isActive?: boolean; onNavigate: () => void; onSignOut: () => Promise<void> }) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (action === 'sign-out') {
+      event.preventDefault()
+      void onSignOut()
+      return
+    }
+
+    onNavigate()
+  }
+
   return (
     <a
       aria-current={isActive ? 'page' : undefined}
@@ -55,7 +69,7 @@ function AppMenuLink({
         isActive ? 'bg-login-blue text-white' : 'text-login-brown hover:bg-login-field/40 active:bg-login-field',
       )}
       href={href}
-      onClick={onNavigate}
+      onClick={handleClick}
     >
       <Icon className="size-[18px]" name={icon} />
       <span>{label}</span>
@@ -68,10 +82,12 @@ function AppSideMenu({
   isOpen,
   onClose,
   openerRef,
+  onSignOut,
 }: {
   isAuthenticated: boolean
   isOpen: boolean
   onClose: () => void
+  onSignOut: () => Promise<void>
   openerRef: RefObject<HTMLButtonElement | null>
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -181,6 +197,7 @@ function AppSideMenu({
                   {...item}
                   isActive={item.href === (isAuthenticated ? routes.home : routes.landing)}
                   onNavigate={onClose}
+                  onSignOut={onSignOut}
                 />
               </li>
             ))}
@@ -192,8 +209,14 @@ function AppSideMenu({
 }
 
 export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
+  const { signOut } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const handleSignOut = async () => {
+    await signOut()
+    setIsMenuOpen(false)
+    navigateTo(routes.landing)
+  }
 
   return (
     <>
@@ -232,6 +255,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
           isAuthenticated={isAuthenticated}
           isOpen={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
+          onSignOut={handleSignOut}
           openerRef={menuButtonRef}
         />
       </div>
