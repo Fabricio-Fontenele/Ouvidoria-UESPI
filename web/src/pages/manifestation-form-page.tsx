@@ -20,7 +20,7 @@ import {
 import type { ManifestationFormData } from '../application/manifestations/manifestation-form-contract'
 import { BaseForm } from '../components/forms/base-form'
 import type { BaseFormField } from '../components/forms/base-form'
-import { AppHeader } from '../components/layout/app-header'
+import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
 
 type ManifestationFormMode = 'create' | 'edit'
@@ -123,40 +123,40 @@ export function ManifestationFormPage() {
 
   return (
     <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
-      <AppHeader isAuthenticated />
+      <AuthenticatedAppShell>
+        <main className="mx-auto w-full max-w-5xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-10">
+          <div className="max-w-2xl">
+            <p className="text-sm leading-5 font-black tracking-[0.1em] text-landing-blue uppercase">
+              {isEditing ? 'Editar manifestação' : 'Nova manifestação'}
+            </p>
+            <h1 className="mt-3 text-[38px] leading-none font-black text-landing-text sm:text-5xl">
+              {isEditing ? protocol : 'Registrar manifestação'}
+            </h1>
+            <p className="mt-4 text-base leading-7 text-landing-brown">
+              {isEditing
+                ? 'Revise os campos da manifestação antes de enviar uma atualização para a Ouvidoria.'
+                : 'Preencha as informações principais para que a Ouvidoria possa entender e encaminhar sua manifestação.'}
+            </p>
+          </div>
 
-      <main className="mx-auto w-full max-w-5xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-10">
-        <div className="max-w-2xl">
-          <p className="text-sm leading-5 font-black tracking-[0.1em] text-landing-blue uppercase">
-            {isEditing ? 'Editar manifestação' : 'Nova manifestação'}
-          </p>
-          <h1 className="mt-3 text-[38px] leading-none font-black text-landing-text sm:text-5xl">
-            {isEditing ? protocol : 'Registrar manifestação'}
-          </h1>
-          <p className="mt-4 text-base leading-7 text-landing-brown">
-            {isEditing
-              ? 'Revise os campos da manifestação antes de enviar uma atualização para a Ouvidoria.'
-              : 'Preencha as informações principais para que a Ouvidoria possa entender e encaminhar sua manifestação.'}
-          </p>
-        </div>
+          <BaseForm
+            cancelHref={
+              isEditing && protocol !== null
+                ? buildManifestationDetailsHref(protocol)
+                : buildGuarapiNewManifestationHref()
+            }
+            fields={manifestationFormFields}
+            form={form}
+            onInvalid={handleInvalidSubmit}
+            onSubmit={handleSubmit}
+            status={status}
+            statusMessage={statusMessage}
+            submitLabel={isEditing ? 'Salvar alterações' : 'Enviar manifestação'}
+          />
+        </main>
 
-        <BaseForm
-          cancelHref={
-            isEditing && protocol !== null
-              ? buildManifestationDetailsHref(protocol)
-              : buildGuarapiNewManifestationHref()
-          }
-          fields={manifestationFormFields}
-          form={form}
-          onInvalid={handleInvalidSubmit}
-          onSubmit={handleSubmit}
-          status={status}
-          statusMessage={statusMessage}
-          submitLabel={isEditing ? 'Salvar alterações' : 'Enviar manifestação'}
-        />
-      </main>
-
-      <SiteFooter />
+        <SiteFooter />
+      </AuthenticatedAppShell>
     </div>
   )
 }

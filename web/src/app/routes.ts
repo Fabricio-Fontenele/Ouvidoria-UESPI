@@ -20,6 +20,14 @@ export function getSearchParams(search = window.location.search) {
   return new URLSearchParams(search)
 }
 
+export function navigateTo(href: string) {
+  window.location.assign(href)
+}
+
+export function replaceWith(href: string) {
+  window.location.replace(href)
+}
+
 export function normalizeProtocol(protocol: string) {
   return protocol.startsWith('#') ? protocol : `#${protocol}`
 }
