@@ -261,11 +261,8 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INVALID_INPUT",
-  "message": "Dados inválidos.",
-  "fields": {
-    "email": ["E-mail inválido."]
-  }
+  "error": "InvalidEmailError",
+  "message": "Invalid email"
 }
 ```
 
@@ -279,14 +276,14 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INVALID_CREDENTIALS",
-  "message": "Credenciais inválidas."
+  "error": "InvalidCredentialsError",
+  "message": "Invalid credentials"
 }
 ```
 
 ---
 
-## 15. Contrato sugerido da API
+## 15. Contrato HTTP atual
 
 Endpoint:
 
@@ -310,6 +307,9 @@ Response body:
   "token": "access-token"
 }
 ```
+
+Observação:
+O token retornado aqui deve ser enviado nos endpoints protegidos como `Authorization: Bearer <token>`.
 
 ---
 
