@@ -17,7 +17,7 @@ import { ManifestationDescription } from '#src/domain/value-objects/manifestatio
 import { Protocol } from '#src/domain/value-objects/protocol.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
-import { createPdfBuffer } from '../../utils/attachment-fixtures.js'
+import { createOversizedPdfBuffer, createPdfBuffer } from '../../utils/attachment-fixtures.js'
 
 describe('UploadManifestationAttachmentUseCase', () => {
   let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
@@ -222,6 +222,20 @@ describe('UploadManifestationAttachmentUseCase', () => {
         },
       }),
     ).rejects.toMatchObject({ name: 'AttachmentFileEmptyError' })
+  })
+
+  it('rejects files above the maximum allowed size', async () => {
+    await expect(
+      sut.execute({
+        manifestationId: 'manifestation-1',
+        requesterUserId: 'user-1',
+        file: {
+          ...file,
+          sizeInBytes: createOversizedPdfBuffer().byteLength,
+          content: createOversizedPdfBuffer(),
+        },
+      }),
+    ).rejects.toMatchObject({ name: 'AttachmentFileTooLargeError' })
   })
 
   it('persists the normalized MIME type instead of the raw multipart value', async () => {
