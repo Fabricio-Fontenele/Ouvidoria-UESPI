@@ -1,13 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useId, useState } from 'react'
-import type { FieldError, FieldErrors, Path, SubmitErrorHandler, SubmitHandler, UseFormRegisterReturn } from 'react-hook-form'
+import type {
+  FieldError,
+  FieldErrors,
+  Path,
+  SubmitErrorHandler,
+  SubmitHandler,
+  UseFormRegisterReturn,
+} from 'react-hook-form'
 import { useForm, useWatch } from 'react-hook-form'
 
-import {
-  getSearchParams,
-  normalizeProtocol,
-  routes,
-} from '../app/routes'
+import { getSearchParams, normalizeProtocol, routes } from '../app/routes'
 import {
   getManifestationFormDefaultValues,
   manifestationAreas,
@@ -76,10 +79,7 @@ function getFieldError(errors: FieldErrors<ManifestationFormData>, name: Path<Ma
 function FieldMessage({ children, id, variant }: FieldMessageProps) {
   return (
     <p
-      className={cx(
-        'mt-1 text-xs leading-5',
-        variant === 'error' ? 'font-bold text-[#ba1a1a]' : 'text-[#5b403d]',
-      )}
+      className={cx('mt-1 text-xs leading-5', variant === 'error' ? 'font-bold text-[#ba1a1a]' : 'text-[#5b403d]')}
       id={id}
     >
       {children}
@@ -381,7 +381,10 @@ export function ManifestationFormPage() {
                   ) : null}
 
                   {hasSubmitErrors ? (
-                    <div className="rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+                    <div
+                      className="rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800"
+                      role="alert"
+                    >
                       Revise os campos destacados antes de enviar a manifestação.
                     </div>
                   ) : null}
@@ -420,7 +423,10 @@ export function ManifestationFormPage() {
                 </div>
               </section>
 
-              <section className="rounded-lg border border-[#ebebeb] bg-[#f7f7f8] p-6" aria-labelledby="attachments-title">
+              <section
+                className="rounded-lg border border-[#ebebeb] bg-[#f7f7f8] p-6"
+                aria-labelledby="attachments-title"
+              >
                 <SectionHeading icon="upload-cloud" title="Anexos e provas" />
                 <label
                   className={cx(
@@ -431,7 +437,8 @@ export function ManifestationFormPage() {
                 >
                   <Icon className="size-9 text-[#72777f]" name="upload-cloud" />
                   <span className="mt-3 text-sm leading-5 text-[#43474e]">
-                    Arraste arquivos aqui ou <span className="font-bold text-[#0d47a1] underline">clique para subir</span>
+                    Arraste arquivos aqui ou{' '}
+                    <span className="font-bold text-[#0d47a1] underline">clique para subir</span>
                   </span>
                   <span className="mt-1 text-[10px] leading-[15px] tracking-[0.1em] text-[#72777f] uppercase">
                     PDF, JPG, PNG, DOC até 5MB
@@ -449,7 +456,10 @@ export function ManifestationFormPage() {
                 {files.length > 0 ? (
                   <ul className="mt-4 space-y-2">
                     {files.map((file) => (
-                      <li className="truncate rounded-lg bg-white px-3 py-2 text-sm leading-5 text-[#43474e]" key={file.name}>
+                      <li
+                        className="truncate rounded-lg bg-white px-3 py-2 text-sm leading-5 text-[#43474e]"
+                        key={file.name}
+                      >
                         {file.name}
                       </li>
                     ))}

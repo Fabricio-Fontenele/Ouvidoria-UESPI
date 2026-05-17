@@ -1,8 +1,5 @@
 import type { GuaraChatService } from '../../application/guara-chat/guara-chat-service'
-import type {
-  SendGuaraMessageInput,
-  SendGuaraMessageOutput,
-} from '../../application/guara-chat/guara-chat-types'
+import type { SendGuaraMessageInput, SendGuaraMessageOutput } from '../../application/guara-chat/guara-chat-types'
 
 export class DemoGuaraChatService implements GuaraChatService {
   async sendMessage(input: SendGuaraMessageInput): Promise<SendGuaraMessageOutput> {

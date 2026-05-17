@@ -20,14 +20,14 @@ interface ManifestationSubmissionSuccessProps {
 
 const infoCards: InfoCard[] = [
   {
-    description:
-      'Sua resposta será enviada em até 30 dias corridos, conforme previsto na Lei de Acesso à Informação.',
+    description: 'Sua resposta será enviada em até 30 dias corridos, conforme previsto na Lei de Acesso à Informação.',
     icon: 'clock',
     iconClassName: 'bg-[#ffdeac] text-[#5b403d]',
     title: 'Prazo de resposta',
   },
   {
-    description: 'Seus dados estão protegidos sob sigilo institucional. Apenas a equipe técnica da Ouvidoria terá acesso.',
+    description:
+      'Seus dados estão protegidos sob sigilo institucional. Apenas a equipe técnica da Ouvidoria terá acesso.',
     icon: 'shield',
     iconClassName: 'bg-[#d9e2ff] text-[#0d47a1]',
     title: 'Privacidade',
@@ -54,7 +54,10 @@ export function ManifestationSubmissionSuccess({ protocol }: ManifestationSubmis
     <div className="min-h-svh bg-white font-sans text-[#1a1c1d]">
       <AuthenticatedAppShell fixedHeader>
         <main className="mx-auto flex w-full max-w-5xl flex-col items-center px-5 pt-10 min-[390px]:px-7 sm:px-8 md:pt-14 lg:px-10">
-          <section aria-labelledby="submission-success-title" className="flex w-full max-w-[448px] flex-col items-center">
+          <section
+            aria-labelledby="submission-success-title"
+            className="flex w-full max-w-[448px] flex-col items-center"
+          >
             <div className="grid size-24 place-items-center rounded-full bg-[#d9e2ff]" aria-hidden="true">
               <span className="grid size-[50px] place-items-center rounded-full bg-[#0b2a63] text-white">
                 <Icon className="size-8" name="check-circle" />
@@ -112,7 +115,10 @@ export function ManifestationSubmissionSuccess({ protocol }: ManifestationSubmis
           >
             {infoCards.map((card) => (
               <article className="bg-[#f3f3f4] p-6 sm:rounded-xl" key={card.title}>
-                <span className={cx('grid size-10 place-items-center rounded-lg', card.iconClassName)} aria-hidden="true">
+                <span
+                  className={cx('grid size-10 place-items-center rounded-lg', card.iconClassName)}
+                  aria-hidden="true"
+                >
                   <Icon className="size-5" name={card.icon} />
                 </span>
                 <h2 className="mt-4 text-base leading-6 font-bold text-[#1a1c1d]">{card.title}</h2>
