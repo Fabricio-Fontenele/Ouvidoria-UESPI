@@ -1,3 +1,4 @@
+import { getCurrentPath, routes } from './app/routes'
 import { GuarapiPage } from './pages/guarapi-page'
 import { HomePage } from './pages/home-page'
 import { LandingPage } from './pages/landing-page'
@@ -6,33 +7,33 @@ import { ManifestationFormPage } from './pages/manifestation-form-page'
 import { SignPage } from './pages/sign-page'
 
 function App() {
-  const normalizedPath = window.location.pathname.replace(/\/$/, '')
+  const normalizedPath = getCurrentPath()
 
-  if (normalizedPath === '') {
+  if (normalizedPath === routes.landing) {
     return <LandingPage />
   }
 
-  if (normalizedPath === '/login') {
+  if (normalizedPath === routes.login) {
     return <LoginPage />
   }
 
-  if (normalizedPath === '/home') {
+  if (normalizedPath === routes.home) {
     return <HomePage />
   }
 
-  if (normalizedPath === '/guarapi') {
+  if (normalizedPath === routes.guarapi) {
     return <GuarapiPage />
   }
 
-  if (normalizedPath === '/manifestation') {
+  if (normalizedPath === routes.manifestation) {
     return <GuarapiPage />
   }
 
-  if (normalizedPath === '/manifestation-form') {
+  if (normalizedPath === routes.manifestationForm) {
     return <ManifestationFormPage />
   }
 
-  if (normalizedPath === '/sign') {
+  if (normalizedPath === routes.sign) {
     return <SignPage />
   }
 

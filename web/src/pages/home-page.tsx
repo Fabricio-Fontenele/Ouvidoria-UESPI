@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { buildGuarapiNewManifestationHref, buildManifestationDetailsHref } from '../app/routes'
 import {
   getManifestationStatusContract,
   manifestationStatusContracts,
@@ -8,9 +9,10 @@ import type { ManifestationStatus } from '../application/manifestations/manifest
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
 import guarapiMascot from '../assets/guarapi-mascot.png'
-import { AuthenticatedAppShell } from '../components/authenticated-app-shell'
-import { Icon } from '../components/icon'
-import { SiteFooter } from '../components/site-footer'
+import { Icon } from '../components/icons/icon'
+import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
+import { SiteFooter } from '../components/layout/site-footer'
+import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
 import { cx } from '../utils/cx'
 
 type ManifestationFilter = 'all' | ManifestationStatus
@@ -92,7 +94,7 @@ function NewRecordCard() {
         </p>
         <a
           className="mt-6 inline-flex min-h-12 w-full max-w-56 items-center justify-center rounded-lg bg-home-blue px-5 text-lg leading-7 font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href="/guarapi?mode=new"
+          href={buildGuarapiNewManifestationHref()}
         >
           Fale com o Guarapi
         </a>
@@ -106,7 +108,7 @@ function GuarapiChatTrigger() {
     <a
       aria-label="Abrir chat com o Guarapi"
       className="fixed right-2 bottom-5 z-30 block size-20 rounded-full drop-shadow-home-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-home-blue sm:right-5 sm:bottom-8 sm:size-28 lg:right-8 lg:bottom-10 lg:size-36"
-      href="/guarapi?mode=new"
+      href={buildGuarapiNewManifestationHref()}
     >
       <img alt="" className="size-full rounded-full object-contain" src={guarapiMascot} />
     </a>
@@ -119,7 +121,7 @@ function getMetrics(items: ManifestationSummary[]): Metric[] {
   return [
     { label: 'Totais.', value: String(total).padStart(2, '0') },
     ...manifestationStatusContracts.map((status) => ({
-      colorClassName: status.metricColorClassName,
+      colorClassName: getManifestationStatusStyle(status.value).metricColorClassName,
       label: status.metricLabel,
       value: String(items.filter((manifestation) => manifestation.status === status.value).length).padStart(2, '0'),
     })),
@@ -221,16 +223,17 @@ function SearchField({ onSearchChange, search }: { onSearchChange: (search: stri
 
 function ManifestationCard({ manifestation }: { manifestation: ManifestationSummary }) {
   const status = getManifestationStatusContract(manifestation.status)
+  const statusStyle = getManifestationStatusStyle(manifestation.status)
 
   return (
     <article
       className={cx(
         'rounded-lg border-l-4 bg-home-surface px-4 py-4 shadow-home-card sm:px-6 sm:py-5',
-        status.accentClassName,
+        statusStyle.accentClassName,
       )}
     >
       <div className="grid grid-cols-[32px_1fr] gap-4">
-        <span className={cx('grid size-8 place-items-center rounded-full', status.iconClassName)}>
+        <span className={cx('grid size-8 place-items-center rounded-full', statusStyle.iconClassName)}>
           <Icon className="size-4" name="info" />
         </span>
 
@@ -242,7 +245,7 @@ function ManifestationCard({ manifestation }: { manifestation: ManifestationSumm
               {manifestation.protocol}
             </p>
             <span
-              className={cx('rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase', status.badgeClassName)}
+              className={cx('rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase', statusStyle.badgeClassName)}
             >
               {status.viewLabel}
             </span>
@@ -263,7 +266,7 @@ function ManifestationCard({ manifestation }: { manifestation: ManifestationSumm
         <a
           aria-label={`Abrir manifestação ${manifestation.protocol}`}
           className="grid size-10 place-items-center rounded-lg bg-home-action text-home-text transition duration-150 hover:bg-home-chip active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href={`/manifestation?protocol=${manifestation.protocol.replace('#', '')}`}
+          href={buildManifestationDetailsHref(manifestation.protocol)}
         >
           <Icon className="size-4" name="chevron-right" />
         </a>

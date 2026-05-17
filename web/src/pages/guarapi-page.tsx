@@ -1,17 +1,23 @@
 import { useMemo, useState } from 'react'
 
+import {
+  buildManifestationFormHref,
+  getSearchParams,
+  normalizeProtocol,
+  routes,
+} from '../app/routes'
 import guarapiMascot from '../assets/guarapi-mascot.png'
 import { getGuarapiInitialMessages, getGuarapiSuggestions } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatSuggestion } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatMode, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
 import {
-  getManifestationStatusBadgeClassName,
   getManifestationStatusContract,
 } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
-import { AppHeader } from '../components/app-header'
-import { Icon } from '../components/icon'
-import { SiteFooter } from '../components/site-footer'
+import { Icon } from '../components/icons/icon'
+import { AppHeader } from '../components/layout/app-header'
+import { SiteFooter } from '../components/layout/site-footer'
+import { getManifestationStatusBadgeClassName } from '../components/manifestations/manifestation-status-style'
 import { useGuarapiChat } from '../hooks/use-guarapi-chat'
 import { cx } from '../utils/cx'
 
@@ -31,14 +37,14 @@ const manifestationDetails: DetailItem[] = [
 ]
 
 function resolveMode() {
-  const searchParams = new URLSearchParams(window.location.search)
+  const searchParams = getSearchParams()
   const protocol = searchParams.get('protocol')
   const mode = searchParams.get('mode')
 
   if (protocol !== null && protocol.trim() !== '') {
     return {
       mode: 'manifestation-detail' as const,
-      protocol: protocol.startsWith('#') ? protocol : `#${protocol}`,
+      protocol: normalizeProtocol(protocol),
     }
   }
 
@@ -98,7 +104,7 @@ function MessageBubble({ message }: { message: GuarapiMessage }) {
 }
 
 function DetailPanel({ protocol }: { protocol: string }) {
-  const formHref = `/manifestation-form?protocol=${protocol.replace('#', '')}`
+  const formHref = buildManifestationFormHref(protocol)
   const status = getManifestationStatusContract(manifestationDetailStatus)
 
   return (
@@ -136,7 +142,7 @@ function DetailPanel({ protocol }: { protocol: string }) {
 
       <a
         className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg border-2 border-landing-blue px-4 text-sm leading-5 font-bold text-landing-blue no-underline transition duration-150 hover:bg-landing-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
-        href="/home"
+        href={routes.home}
       >
         Voltar para manifestações
       </a>
@@ -176,8 +182,8 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
   const suggestions = useMemo(() => getGuarapiSuggestions(mode), [mode])
   const formHref =
     mode === 'manifestation-detail' && protocol !== null
-      ? `/manifestation-form?protocol=${protocol.replace('#', '')}`
-      : '/manifestation-form'
+      ? buildManifestationFormHref(protocol)
+      : routes.manifestationForm
   const formCta = mode === 'manifestation-detail' ? 'Editar manifestação' : 'Preencher manualmente'
   const { error, isSending, messages, sendMessage } = useGuarapiChat({
     context: {

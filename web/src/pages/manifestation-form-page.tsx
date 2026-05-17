@@ -2,12 +2,26 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import type { SubmitErrorHandler, SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
-import { AppHeader } from '../components/app-header'
-import { BaseForm } from '../components/base-form'
-import type { BaseFormField } from '../components/base-form'
-import { SiteFooter } from '../components/site-footer'
+import {
+  buildGuarapiNewManifestationHref,
+  buildManifestationDetailsHref,
+  getSearchParams,
+  normalizeProtocol,
+} from '../app/routes'
+import {
+  getManifestationFormDefaultValues,
+  manifestationAreas,
+  manifestationAttachmentLimits,
+  manifestationFormSchema,
+  manifestationIdentificationOptions,
+  manifestationTypes,
+} from '../application/manifestations/manifestation-form-contract'
+import type { ManifestationFormData } from '../application/manifestations/manifestation-form-contract'
+import { BaseForm } from '../components/forms/base-form'
+import type { BaseFormField } from '../components/forms/base-form'
+import { AppHeader } from '../components/layout/app-header'
+import { SiteFooter } from '../components/layout/site-footer'
 
 type ManifestationFormMode = 'create' | 'edit'
 
@@ -15,62 +29,6 @@ interface ManifestationFormState {
   protocol: string | null
   mode: ManifestationFormMode
 }
-
-const manifestationTypes = ['Denúncia', 'Reclamação', 'Solicitação', 'Sugestão', 'Elogio']
-const manifestationAreas = [
-  'Administração Superior',
-  'Coordenação de Curso',
-  'Biblioteca',
-  'Assistência Estudantil',
-  'Outro setor',
-]
-
-const identificationOptions = [
-  { label: 'Manifestação identificada', value: 'identified' },
-  { label: 'Manifestação anônima', value: 'anonymous' },
-]
-
-const MAX_ATTACHMENT_COUNT = 5
-const MAX_ATTACHMENT_SIZE_IN_BYTES = 5 * 1024 * 1024
-
-const manifestationFormSchema = z.object({
-  area: z
-    .string()
-    .min(1, 'Selecione a área responsável.')
-    .refine((value) => manifestationAreas.includes(value), 'Selecione uma área válida.'),
-  attachments: z
-    .custom<FileList>()
-    .optional()
-    .refine((files) => files === undefined || files.length <= MAX_ATTACHMENT_COUNT, {
-      message: `Envie no máximo ${MAX_ATTACHMENT_COUNT} arquivos.`,
-    })
-    .refine(
-      (files) => files === undefined || Array.from(files).every((file) => file.size <= MAX_ATTACHMENT_SIZE_IN_BYTES),
-      'Cada arquivo deve ter até 5 MB.',
-    ),
-  description: z
-    .string()
-    .trim()
-    .min(20, 'Descreva a manifestação com pelo menos 20 caracteres.')
-    .max(4000, 'A descrição deve ter no máximo 4000 caracteres.'),
-  identification: z
-    .string()
-    .min(1, 'Selecione a forma de identificação.')
-    .refine((value) => identificationOptions.some((option) => option.value === value), {
-      message: 'Selecione uma forma de identificação válida.',
-    }),
-  manifestationType: z
-    .string()
-    .min(1, 'Selecione o tipo de manifestação.')
-    .refine((value) => manifestationTypes.includes(value), 'Selecione um tipo válido.'),
-  title: z
-    .string()
-    .trim()
-    .min(5, 'Informe um título com pelo menos 5 caracteres.')
-    .max(120, 'O título deve ter no máximo 120 caracteres.'),
-})
-
-type ManifestationFormData = z.infer<typeof manifestationFormSchema>
 
 const manifestationFormFields: BaseFormField<ManifestationFormData>[] = [
   {
@@ -96,7 +54,7 @@ const manifestationFormFields: BaseFormField<ManifestationFormData>[] = [
     kind: 'select',
     label: 'Identificação',
     name: 'identification',
-    options: identificationOptions,
+    options: manifestationIdentificationOptions,
   },
   {
     helper: 'Inclua datas, locais, pessoas ou documentos relevantes quando houver.',
@@ -111,8 +69,8 @@ const manifestationFormFields: BaseFormField<ManifestationFormData>[] = [
     helper: 'Envie documentos ou imagens que ajudem na análise.',
     kind: 'file',
     label: 'Anexos',
-    maxFileSizeInBytes: MAX_ATTACHMENT_SIZE_IN_BYTES,
-    maxFiles: MAX_ATTACHMENT_COUNT,
+    maxFileSizeInBytes: manifestationAttachmentLimits.maxFileSizeInBytes,
+    maxFiles: manifestationAttachmentLimits.maxFiles,
     multiple: true,
     name: 'attachments',
     placeholder: 'Clique para anexar arquivos',
@@ -121,13 +79,13 @@ const manifestationFormFields: BaseFormField<ManifestationFormData>[] = [
 ]
 
 function resolveFormState(): ManifestationFormState {
-  const searchParams = new URLSearchParams(window.location.search)
+  const searchParams = getSearchParams()
   const protocol = searchParams.get('protocol')
 
   if (protocol !== null && protocol.trim() !== '') {
     return {
       mode: 'edit',
-      protocol: protocol.startsWith('#') ? protocol : `#${protocol}`,
+      protocol: normalizeProtocol(protocol),
     }
   }
 
@@ -137,36 +95,13 @@ function resolveFormState(): ManifestationFormState {
   }
 }
 
-function getDefaultValues(isEditing: boolean): ManifestationFormData {
-  if (isEditing) {
-    return {
-      area: 'Administração Superior',
-      attachments: undefined,
-      description:
-        'Solicito a avaliação da possibilidade de ampliação dos horários de funcionamento da Biblioteca Central.',
-      identification: 'identified',
-      manifestationType: 'Sugestão',
-      title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
-    }
-  }
-
-  return {
-    area: '',
-    attachments: undefined,
-    description: '',
-    identification: 'identified',
-    manifestationType: '',
-    title: '',
-  }
-}
-
 export function ManifestationFormPage() {
   const { mode, protocol } = resolveFormState()
   const isEditing = mode === 'edit'
   const [status, setStatus] = useState<'error' | 'success' | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | undefined>()
   const form = useForm<ManifestationFormData>({
-    defaultValues: getDefaultValues(isEditing),
+    defaultValues: getManifestationFormDefaultValues(isEditing),
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     resolver: zodResolver(manifestationFormSchema),
@@ -208,8 +143,8 @@ export function ManifestationFormPage() {
         <BaseForm
           cancelHref={
             isEditing && protocol !== null
-              ? `/manifestation?protocol=${protocol.replace('#', '')}`
-              : '/guarapi?mode=new'
+              ? buildManifestationDetailsHref(protocol)
+              : buildGuarapiNewManifestationHref()
           }
           fields={manifestationFormFields}
           form={form}
