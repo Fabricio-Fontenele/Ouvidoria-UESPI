@@ -115,6 +115,8 @@ function MessageBubble({ message }: { message: GuarapiMessage }) {
 }
 
 function DetailPanel({ protocol }: { protocol: string }) {
+  const formHref = `/manifestation-form?protocol=${protocol.replace('#', '')}`
+
   return (
     <aside className="rounded-lg border border-landing-chip bg-landing-surface p-5 shadow-landing-step lg:sticky lg:top-28">
       <div className="flex items-start justify-between gap-4">
@@ -141,7 +143,15 @@ function DetailPanel({ protocol }: { protocol: string }) {
       </dl>
 
       <a
-        className="mt-6 inline-flex min-h-10 w-full items-center justify-center rounded-lg border-2 border-landing-blue px-4 text-sm leading-5 font-bold text-landing-blue no-underline transition duration-150 hover:bg-landing-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
+        className="mt-6 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-landing-blue px-4 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
+        href={formHref}
+      >
+        Editar manifestação
+        <Icon className="size-4" name="file-text" />
+      </a>
+
+      <a
+        className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg border-2 border-landing-blue px-4 text-sm leading-5 font-bold text-landing-blue no-underline transition duration-150 hover:bg-landing-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
         href="/home"
       >
         Voltar para manifestações
@@ -175,6 +185,11 @@ function QuickActions({ mode, onSelect }: { mode: GuarapiChatMode; onSelect: (me
 function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string | null }) {
   const [draft, setDraft] = useState('')
   const initialMessages = useMemo(() => (mode === 'manifestation-detail' ? detailMessages : baseMessages), [mode])
+  const formHref =
+    mode === 'manifestation-detail' && protocol !== null
+      ? `/manifestation-form?protocol=${protocol.replace('#', '')}`
+      : '/manifestation-form'
+  const formCta = mode === 'manifestation-detail' ? 'Editar manifestação' : 'Preencher formulário'
   const { error, isSending, messages, sendMessage } = useGuarapiChat({
     context: {
       mode,
@@ -222,6 +237,14 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
 
       <div className="space-y-4 border-t border-landing-chip px-4 py-4 sm:px-5">
         <QuickActions mode={mode} onSelect={setDraft} />
+
+        <a
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-landing-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue sm:w-auto"
+          href={formHref}
+        >
+          {formCta}
+          <Icon className="size-4" name="file-text" />
+        </a>
 
         {error !== null ? (
           <p className="text-sm leading-5 font-bold text-landing-brown" role="alert">

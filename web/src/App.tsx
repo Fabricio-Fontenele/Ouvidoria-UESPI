@@ -2,6 +2,7 @@ import { GuarapiPage } from './pages/guarapi-page'
 import { HomePage } from './pages/home-page'
 import { LandingPage } from './pages/landing-page'
 import { LoginPage } from './pages/login-page'
+import { ManifestationFormPage } from './pages/manifestation-form-page'
 import { SignPage } from './pages/sign-page'
 
 function App() {
@@ -25,6 +26,10 @@ function App() {
 
   if (normalizedPath === '/manifestation') {
     return <GuarapiPage />
+  }
+
+  if (normalizedPath === '/manifestation-form') {
+    return <ManifestationFormPage />
   }
 
   if (normalizedPath === '/sign') {
