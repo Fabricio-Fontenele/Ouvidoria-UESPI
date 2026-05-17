@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { SendGuarapiMessage } from '../application/guarapi-chat/send-guarapi-message'
 import type { GuarapiChatContext, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
-import { makeGuarapiChatService } from '../infrastructure/guarapi-chat/guarapi-chat-service-factory'
+import { useGuarapiChatService } from './use-guarapi-chat-service'
 
 interface UseGuarapiChatParams {
   context: GuarapiChatContext
@@ -10,13 +10,14 @@ interface UseGuarapiChatParams {
 }
 
 export function useGuarapiChat({ context, initialMessages }: UseGuarapiChatParams) {
+  const guarapiChatService = useGuarapiChatService()
   const [error, setError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [messages, setMessages] = useState<GuarapiMessage[]>(initialMessages)
 
   const sendGuarapiMessage = useMemo(() => {
-    return new SendGuarapiMessage(makeGuarapiChatService())
-  }, [])
+    return new SendGuarapiMessage(guarapiChatService)
+  }, [guarapiChatService])
 
   const sendMessage = async (message: string) => {
     const userMessage: GuarapiMessage = {
