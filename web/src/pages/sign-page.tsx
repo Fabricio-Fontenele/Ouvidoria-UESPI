@@ -1,41 +1,116 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import type { SubmitHandler, UseFormRegisterReturn } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
+
 import { routes } from '../app/routes'
-import { AuthField } from '../components/auth/auth-field'
+import { getSignUpFormDefaultValues, signUpFormSchema } from '../application/auth/sign-up-form-contract'
+import type { SignUpFormData } from '../application/auth/sign-up-form-contract'
+import { AuthForm, AuthFormMessage } from '../components/auth/auth-form'
+import type { AuthFormField } from '../components/auth/auth-form'
 import { AuthPageShell } from '../components/layout/auth-page-shell'
 import { cx } from '../utils/cx'
 
-function TermsCheckbox() {
+const signUpFields: AuthFormField<SignUpFormData>[] = [
+  {
+    autoComplete: 'name',
+    icon: 'user',
+    inputType: 'text',
+    label: 'Nome completo',
+    name: 'fullName',
+    placeholder: 'Seu nome completo',
+  },
+  {
+    autoComplete: 'email',
+    icon: 'email',
+    inputType: 'email',
+    label: 'Email',
+    name: 'email',
+    placeholder: 'exemplo@uespi.br',
+  },
+  {
+    autoComplete: 'new-password',
+    icon: 'lock',
+    inputType: 'password',
+    label: 'Senha',
+    name: 'password',
+    placeholder: '••••••••',
+  },
+  {
+    autoComplete: 'new-password',
+    icon: 'lock',
+    inputType: 'password',
+    label: 'Confirmar senha',
+    name: 'confirmPassword',
+    placeholder: '••••••••',
+  },
+]
+
+function TermsCheckbox({ error, inputProps }: { error?: string; inputProps: UseFormRegisterReturn<'acceptedTerms'> }) {
   const linkFocusClasses =
     'rounded-sm transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
   return (
-    <label className="grid cursor-pointer grid-cols-[22px_1fr] items-start gap-2 text-sm leading-5 text-login-brown md:col-span-2 md:mx-auto md:max-w-[360px]">
-      <input className="peer sr-only" required type="checkbox" />
-      <span
-        aria-hidden="true"
-        className="mt-0.5 grid size-[22px] place-items-center rounded border border-login-blue text-login-on-blue transition-colors duration-150 peer-checked:bg-login-blue peer-checked:[&>svg]:opacity-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-login-blue"
-      >
-        <svg
-          className="size-3.5 opacity-0 transition-opacity duration-150 peer-checked:opacity-100"
-          fill="none"
-          viewBox="0 0 16 16"
+    <div className="md:mx-auto md:max-w-[360px]">
+      <label className="grid cursor-pointer grid-cols-[22px_1fr] items-start gap-2 text-sm leading-5 text-login-brown">
+        <input
+          aria-describedby={error === undefined ? undefined : 'accepted-terms-error'}
+          aria-invalid={error === undefined ? undefined : true}
+          className="peer sr-only"
+          type="checkbox"
+          {...inputProps}
+        />
+        <span
+          aria-hidden="true"
+          className="mt-0.5 grid size-[22px] place-items-center rounded border border-login-blue text-login-on-blue transition-colors duration-150 peer-checked:bg-login-blue peer-checked:[&>svg]:opacity-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-login-blue"
         >
-          <path d="m3.5 8 3 3 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        </svg>
-      </span>
-      <span>
-        Aceito os{' '}
-        <a className={cx('text-login-blue no-underline', linkFocusClasses)} href="#termos">
-          termos de uso
-        </a>{' '}
-        e política de privacidade.
-      </span>
-    </label>
+          <svg
+            className="size-3.5 opacity-0 transition-opacity duration-150 peer-checked:opacity-100"
+            fill="none"
+            viewBox="0 0 16 16"
+          >
+            <path
+              d="m3.5 8 3 3 6-6"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            />
+          </svg>
+        </span>
+        <span>
+          Aceito os{' '}
+          <a className={cx('text-login-blue no-underline', linkFocusClasses)} href="#termos">
+            termos de uso
+          </a>{' '}
+          e política de privacidade.
+        </span>
+      </label>
+      <AuthFormMessage id="accepted-terms-error" variant="error">
+        {error}
+      </AuthFormMessage>
+    </div>
   )
 }
 
 export function SignPage() {
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const form = useForm<SignUpFormData>({
+    defaultValues: getSignUpFormDefaultValues(),
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
+    resolver: zodResolver(signUpFormSchema),
+  })
   const linkFocusClasses =
     'transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
+  const acceptedTermsError = form.formState.errors.acceptedTerms?.message
+  const acceptedTermsInputProps = form.register('acceptedTerms', {
+    onChange: () => setSuccessMessage(null),
+  })
+
+  const handleSubmit: SubmitHandler<SignUpFormData> = () => {
+    setSuccessMessage('Cadastro validado com sucesso. A integração com o backend poderá criar a conta.')
+  }
 
   return (
     <AuthPageShell
@@ -53,58 +128,20 @@ export function SignPage() {
         Inicie seu diálogo com a Universidade de forma segura e transparente.
       </p>
 
-      <form
+      <AuthForm
         className="grid gap-y-[17px] md:grid-cols-2 md:gap-x-6 md:gap-y-5"
-        onSubmit={(event) => event.preventDefault()}
+        fields={signUpFields}
+        form={form}
+        onInvalid={() => setSuccessMessage(null)}
+        onSubmit={handleSubmit}
+        status={successMessage === null ? null : 'success'}
+        statusMessage={successMessage ?? undefined}
+        submitLabel="Cadastrar"
       >
-        <AuthField
-          autoComplete="name"
-          icon="user"
-          id="full-name"
-          label="Nome completo"
-          placeholder="Seu nome completo"
-          required
-          type="text"
-        />
-        <AuthField
-          autoComplete="email"
-          icon="email"
-          id="sign-email"
-          label="Email"
-          placeholder="exemplo@uespi.br"
-          required
-          type="email"
-        />
-        <AuthField
-          autoComplete="new-password"
-          icon="lock"
-          id="sign-password"
-          label="Senha"
-          placeholder="••••••••"
-          required
-          type="password"
-        />
-        <AuthField
-          autoComplete="new-password"
-          icon="lock"
-          id="confirm-password"
-          label="Confirmar senha"
-          placeholder="••••••••"
-          required
-          type="password"
-        />
-
         <div className="mt-[2px] md:col-span-2 md:mt-1">
-          <TermsCheckbox />
+          <TermsCheckbox error={acceptedTermsError} inputProps={acceptedTermsInputProps} />
         </div>
-
-        <button
-          className="mt-[22px] inline-flex min-h-[48px] w-56 cursor-pointer items-center justify-center justify-self-center rounded-lg bg-login-blue text-lg leading-7 font-bold text-login-on-blue transition duration-150 hover:opacity-85 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue md:col-span-2 md:mt-4 md:w-64"
-          type="submit"
-        >
-          Cadastrar
-        </button>
-      </form>
+      </AuthForm>
 
       <p className="mx-auto mt-[15px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-5 md:text-[15px]">
         Já tem uma conta?{' '}

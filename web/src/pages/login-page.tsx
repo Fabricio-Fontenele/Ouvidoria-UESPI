@@ -1,24 +1,50 @@
-import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect } from 'react'
+import type { SubmitHandler } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 
 import { navigateTo, routes } from '../app/routes'
-import { AuthField } from '../components/auth/auth-field'
-import { Icon } from '../components/icons/icon'
+import { getSignInFormDefaultValues, signInFormSchema } from '../application/auth/sign-in-form-contract'
+import type { SignInFormData } from '../application/auth/sign-in-form-contract'
+import { AuthForm } from '../components/auth/auth-form'
+import type { AuthFormField } from '../components/auth/auth-form'
 import { AuthPageShell } from '../components/layout/auth-page-shell'
 import { useAuth } from '../hooks/use-auth'
 import { cx } from '../utils/cx'
 
+const loginFields: AuthFormField<SignInFormData>[] = [
+  {
+    autoComplete: 'email',
+    icon: 'user',
+    inputType: 'email',
+    isLabelStrong: false,
+    label: 'Email',
+    name: 'email',
+    placeholder: 'exemplo@uespi.br',
+  },
+  {
+    autoComplete: 'current-password',
+    icon: 'lock',
+    inputType: 'password',
+    label: 'Senha',
+    name: 'password',
+    placeholder: '••••••••',
+  },
+]
+
 export function LoginPage() {
   const { error, isAuthenticated, isLoading, signIn } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const form = useForm<SignInFormData>({
+    defaultValues: getSignInFormDefaultValues(),
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
+    resolver: zodResolver(signInFormSchema),
+  })
   const linkFocusClasses =
     'transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    await signIn({ email, password })
+  const handleSubmit: SubmitHandler<SignInFormData> = async (formData) => {
+    await signIn(formData)
   }
 
   useEffect(() => {
@@ -42,31 +68,17 @@ export function LoginPage() {
         Acesse o portal da transparência acadêmica
       </p>
 
-      <form className="flex flex-col gap-[17px] sm:gap-5" onSubmit={(event) => void handleSubmit(event)}>
-        <AuthField
-          autoComplete="email"
-          icon="user"
-          id="email"
-          isLabelStrong={false}
-          label="Email"
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="exemplo@uespi.br"
-          required
-          type="email"
-          value={email}
-        />
-        <AuthField
-          autoComplete="current-password"
-          icon="lock"
-          id="password"
-          label="Senha"
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="••••••••"
-          required
-          type="password"
-          value={password}
-        />
-
+      <AuthForm
+        className="flex flex-col gap-[17px] sm:gap-5"
+        fields={loginFields}
+        form={form}
+        onSubmit={handleSubmit}
+        status={error === null ? null : 'error'}
+        statusMessage={error ?? undefined}
+        submitIcon="arrow-right"
+        submitLabel={isLoading ? 'Entrando...' : 'Entrar'}
+        submittingLabel="Entrando..."
+      >
         <a
           className={cx('self-end text-sm leading-5 text-login-blue no-underline md:text-[15px]', linkFocusClasses)}
           href="#recuperar-senha"
@@ -74,25 +86,10 @@ export function LoginPage() {
           Esqueci minha senha.
         </a>
 
-        <button
-          className="inline-flex min-h-[49px] w-56 cursor-pointer items-center justify-center gap-1 self-center rounded-lg bg-login-blue text-lg leading-7 font-bold text-login-on-blue transition duration-150 hover:opacity-85 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue disabled:cursor-not-allowed disabled:opacity-70 sm:w-60 md:mt-1 md:w-64"
-          disabled={isLoading}
-          type="submit"
-        >
-          {isLoading ? 'Entrando...' : 'Entrar'}
-          <Icon className="size-[18px]" name="arrow-right" />
-        </button>
-
-        {error !== null ? (
-          <p className="text-center text-sm leading-5 font-bold text-red-700" role="alert">
-            {error}
-          </p>
-        ) : null}
-
         <p className="text-center text-xs leading-5 text-login-brown">
           Acesso de teste: <strong>exemplo@uespi.br</strong> / <strong>123456</strong>
         </p>
-      </form>
+      </AuthForm>
 
       <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">
         Não tem uma conta?{' '}
