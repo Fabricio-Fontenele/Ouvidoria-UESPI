@@ -121,7 +121,7 @@ function getMetrics(items: ManifestationSummary[]): Metric[] {
   return [
     { label: 'Totais.', value: String(total).padStart(2, '0') },
     ...manifestationStatusContracts.map((status) => ({
-      colorClassName: getManifestationStatusStyle(status.value).metricColorClassName,
+      colorClassName: getManifestationStatusStyle(status.value).textClassName,
       label: status.metricLabel,
       value: String(items.filter((manifestation) => manifestation.status === status.value).length).padStart(2, '0'),
     })),
