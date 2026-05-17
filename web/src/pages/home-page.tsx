@@ -245,7 +245,10 @@ function ManifestationCard({ manifestation }: { manifestation: ManifestationSumm
               {manifestation.protocol}
             </p>
             <span
-              className={cx('rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase', statusStyle.badgeClassName)}
+              className={cx(
+                'rounded px-2 py-1 text-[10px] leading-[15px] font-black uppercase',
+                statusStyle.badgeClassName,
+              )}
             >
               {status.viewLabel}
             </span>

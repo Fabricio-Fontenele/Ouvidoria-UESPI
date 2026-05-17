@@ -1,18 +1,11 @@
 import { useMemo, useState } from 'react'
 
-import {
-  buildManifestationFormHref,
-  getSearchParams,
-  normalizeProtocol,
-  routes,
-} from '../app/routes'
+import { buildManifestationFormHref, getSearchParams, normalizeProtocol, routes } from '../app/routes'
 import guarapiMascot from '../assets/guarapi-mascot.png'
 import { getGuarapiInitialMessages, getGuarapiSuggestions } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatSuggestion } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatMode, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
-import {
-  getManifestationStatusContract,
-} from '../application/manifestations/manifestation-status-contract'
+import { getManifestationStatusContract } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
 import { Icon } from '../components/icons/icon'
 import { AppHeader } from '../components/layout/app-header'
