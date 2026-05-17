@@ -46,7 +46,7 @@ const manifestationFormSchema = z.object({
     })
     .refine(
       (files) => files === undefined || Array.from(files).every((file) => file.size <= MAX_ATTACHMENT_SIZE_IN_BYTES),
-      'Cada arquivo deve ter até 10 MB.',
+      'Cada arquivo deve ter até 5 MB.',
     ),
   description: z
     .string()
