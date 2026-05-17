@@ -1,9 +1,11 @@
 # Arquitetura de Implementação: Chatbot de Ouvidoria UESPI
 
+> **Status da implementação:** O núcleo da aplicação (camadas domain, application e presentation) está implementado. Os adapters concretos (`AiGateway`, `CampusCatalogProvider`, `AdministrativeUnitCatalogProvider`), o pipeline RAG e a integração com LangChain/Gemini estão **pendentes** — as seções 1, 2 e 4 representam a arquitetura planejada para esses adapters.
+
 A implementação do chatbot divide-se em dois ciclos fundamentais:
 
-1. **Ciclo de Ingestão** — preparação da base de conhecimento.
-2. **Ciclo de Inferência** — interação inteligente com o usuário utilizando RAG.
+1. **Ciclo de Ingestão** — preparação da base de conhecimento (pendente).
+2. **Ciclo de Inferência** — interação inteligente com o usuário utilizando RAG (pendente; atualmente o fluxo usa catálogos diretos via `CampusCatalogProvider` e `AdministrativeUnitCatalogProvider`).
 
 ---
 
@@ -156,160 +158,128 @@ O ponto mais crítico do projeto é o módulo de:
 
 ---
 
-# 3.1 Gerenciamento de Estado da Conversa
+# 3.1 Contratos da Camada de Aplicação
 
-A implementação utiliza:
+## AiGateway (interface)
 
-- Chain-of-Thought;
-- State Management;
-- memória contextual.
-
----
-
-# 3.2 Definição do Contrato de Dados
-
-## Ferramentas
-
-- Zod
-- LangChain
-
-### Objetivo
-
-Definir uma estrutura obrigatória para os dados da manifestação.
-
-### Exemplo
+A interface central que o adapter concreto (LangChain + Gemini) precisará implementar:
 
 ```ts
-const ComplaintSchema = z.object({
-  campus: z.string(),
-  complaintType: z.string(),
-  description: z.string(),
-})
+export interface AiGateway {
+  chat(input: AiGatewayChatInput): Promise<AiGatewayChatResponse>
+}
 ```
 
----
+### AiGatewayChatInput
 
-## Structured Output
-
-### Recurso Utilizado
-
-- `withStructuredOutput` do LangChain.
-
-### Função
-
-Força o Gemini a responder seguindo exatamente o schema definido.
-
-### Benefícios
-
-- padronização dos dados;
-- validação automática;
-- redução de inconsistências;
-- integração segura com backend.
-
----
-
-# 3.3 Loop de Preenchimento Assistido
-
-O chatbot funciona como um assistente inteligente de preenchimento.
-
----
-
-## Etapa 1 — Entrada do Usuário
-
-O usuário descreve o problema livremente.
-
-### Exemplo
-
-```text
-Estou tendo problemas no laboratório de informática do campus.
+```ts
+export interface AiGatewayChatInput {
+  history: AiChatMessage[]
+  message: string
+  campuses: AiCatalogItem[]
+  administrativeUnits: AiAdministrativeUnitCatalogItem[]
+}
 ```
 
----
+### AiGatewayChatResponse
 
-## Etapa 2 — Extração Silenciosa
+```ts
+export interface AiGatewayChatResponse {
+  answer: string
+  intent: string
+  shouldOpenManifestationDraft: boolean
+  draft: {
+    type: string | null
+    campusId: string | null
+    administrativeUnitId: string | null
+    description: string | null
+    involvedPeople: string | null
+  } | null
+  missingFields: string[]
+  confidence: number | null
+}
+```
 
-O Gemini analisa a mensagem e tenta preencher automaticamente o schema.
+## Catálogos
 
-### Resultado Esperado
+```ts
+export interface CampusCatalogProvider {
+  list(): Promise<AiCatalogItem[]>
+}
 
-```json
-{
-  "complaintType": "problema estrutural",
-  "campus": "",
-  "description": "Problemas no laboratório de informática"
+export interface AdministrativeUnitCatalogProvider {
+  list(): Promise<AiAdministrativeUnitCatalogItem[]>
 }
 ```
 
 ---
 
-## Etapa 3 — Lógica de Controle em TypeScript
+# 3.2 SendAiMessageUseCase
 
-O backend analisa os campos faltantes.
+### Localização
 
-### Exemplo
+`src/application/use-cases/send-ai-message/send-ai-message-use-case.ts`
 
-Se o campo `local` estiver vazio:
+### Fluxo
+
+1. recebe `history` e `message` do usuário;
+2. carrega catálogos de campi e unidades administrativas via `CampusCatalogProvider` e `AdministrativeUnitCatalogProvider`;
+3. invoca `AiGateway.chat()` com os dados carregados;
+4. normaliza o retorno: intent, draft, missing fields, confidence.
+
+### Intents Reconhecidas
+
+| Intent                      | Significado                            |
+| --------------------------- | -------------------------------------- |
+| `institutional_question`    | Pergunta institucional (FAQ)           |
+| `manifestation_candidate`   | Relato que pode virar manifestação     |
+| `manifestation_draft_ready` | Draft completo para abrir manifestação |
+| `out_of_scope`              | Fora do escopo da ouvidoria            |
+| `unknown`                   | Não foi possível classificar           |
+
+### Draft Payload
 
 ```ts
-if (!complaint.campus) {
-  // instrução ao modelo
+export interface AiDraftPayload {
+  type: ManifestationType | null // 'report' | 'complaint' | 'suggestion' | 'compliment'
+  campusId: string | null
+  administrativeUnitId: string | null
+  description: string | null
+  involvedPeople: string | null
 }
 ```
 
-O sistema então instrui o Gemini a perguntar de forma contextualizada:
+### Missing Fields Validados
 
-```text
-O usuário não informou o campus.
-Pergunte educadamente qual unidade da UESPI está relacionada ao problema.
-```
+O use case considera obrigatórios os campos: `type`, `campusId`, `administrativeUnitId`, `description`. O campo `involvedPeople` é opcional. Os valores de `campusId` e `administrativeUnitId` são validados contra os catálogos carregados.
 
 ---
 
-## Etapa 4 — Validação com RAG
+# 3.3 SendAiMessageController
 
-Quando o usuário informa um campus:
+### Localização
 
-```text
-Campus Poeta Torquato Neto
-```
+`src/presentation/controllers/ai/send-ai-message.controller.ts`
 
-O sistema:
-
-1. consulta a base vetorial;
-2. verifica se o campus realmente existe;
-3. valida os dados antes de continuar.
+Valida o body (`{ history: AiChatMessage[], message: string }`) via `Validator<SendAiMessageBody>` e delega ao use case. Composable com `ZodValidator`.
 
 ---
 
-# 3.4 Memória Conversacional
+# 3.4 Estratégia de Memória (Atual)
 
-## Ferramenta
+Atualmente o use case é **stateless** — o histórico da conversa (`history`) é enviado pelo cliente a cada requisição. O servidor não mantém sessão.
 
-- `BufferWindowMemory` do LangChain.
+### Planejado (Adapter Futuro)
 
-### Configuração
+A implementação do `AiGateway` adapter poderá utilizar `BufferWindowMemory` do LangChain (últimas 5 mensagens) quando for construída, mantendo o estado no servidor para reduzir tráfego.
 
-Mantém as últimas 5 mensagens da conversa.
-
-### Objetivo
-
-Permitir que o chatbot:
-
-- lembre informações recentes;
-- evite perguntas repetitivas;
-- mantenha continuidade contextual.
-
-### Benefícios
-
-Melhora significativamente:
-
-- experiência do usuário;
-- naturalidade da conversa;
-- eficiência do preenchimento assistido.
+---
 
 ---
 
 # 4. Fluxo Geral da Arquitetura
+
+## Fluxo Planejado (RAG completo)
 
 ```text
 Documentos UESPI
@@ -335,20 +305,39 @@ TypeScript gerencia estado
 Resposta final ao usuário
 ```
 
+## Fluxo Atual (sem RAG)
+
+```text
+History + Message do cliente
+        ↓
+SendAiMessageController (valida com Zod)
+        ↓
+SendAiMessageUseCase
+        ↓
+  Carrega catálogos (CampusCatalogProvider + AdministrativeUnitCatalogProvider)
+        ↓
+  Invoca AiGateway.chat() com history, message, campuses, administrativeUnits
+        ↓
+  Normaliza intent, draft, missingFields, confidence
+        ↓
+Resposta ao cliente
+```
+
 ---
 
 # 5. Tecnologias Principais
 
-| Tecnologia          | Função                 |
-| ------------------- | ---------------------- |
-| TypeScript          | Backend principal      |
-| LangChain           | Orquestração de IA     |
-| Gemini              | Modelo LLM             |
-| text-embedding-004  | Geração de embeddings  |
-| ChromaDB / Pinecone | Banco vetorial         |
-| Zod                 | Validação de schemas   |
-| BufferWindowMemory  | Memória conversacional |
-| RAG                 | Recuperação contextual |
+| Tecnologia          | Função                 | Status                                                                    |
+| ------------------- | ---------------------- | ------------------------------------------------------------------------- |
+| TypeScript          | Backend principal      | Implementado                                                              |
+| Zod                 | Validação de schemas   | Implementado (`^4.4.3` em `package.json`, `ZodValidator` em `src/infra/`) |
+| Fastify             | Servidor HTTP          | Implementado                                                              |
+| LangChain           | Orquestração de IA     | Pendente (adapter `AiGateway`)                                            |
+| Gemini              | Modelo LLM             | Pendente (via LangChain)                                                  |
+| text-embedding-004  | Geração de embeddings  | Pendente (ciclo de ingestão)                                              |
+| ChromaDB / Pinecone | Banco vetorial         | Pendente (ciclo de ingestão)                                              |
+| BufferWindowMemory  | Memória conversacional | Pendente (adapter `AiGateway`)                                            |
+| RAG                 | Recuperação contextual | Pendente (ciclo de inferência)                                            |
 
 ---
 
@@ -361,6 +350,14 @@ Esta seção aprofunda os componentes técnicos responsáveis pela extração es
 # 6.1 Ferramentas da Biblioteca Zod
 
 O Zod atua como o **contrato de verdade** da aplicação.
+
+### Uso Atual
+
+O `ZodValidator` (`src/infra/http/fastify/validators/zod-validator.ts`) adapta schemas Zod para a interface `Validator<T>` da camada de presentation, validando requisições HTTP nos controllers. Já é usado em todas as rotas e será usado também no controller do chatbot.
+
+### Uso Planejado (Adapter AiGateway)
+
+Quando o adapter concreto do `AiGateway` for implementado, o Zod será usado novamente via `.withStructuredOutput()` do LangChain para forçar o Gemini a retornar JSON estruturado conforme os schemas definidos.
 
 Seu principal objetivo é garantir que:
 
@@ -377,13 +374,15 @@ Seu principal objetivo é garantir que:
 
 Define a estrutura principal da manifestação.
 
-### Exemplo
+### Exemplo (Alinhado com o contrato `AiDraftPayload`)
 
 ```ts
-const ComplaintSchema = z.object({
-  complaintType: z.string(),
-  campus: z.string(),
-  description: z.string(),
+const DraftSchema = z.object({
+  type: z.enum(['report', 'complaint', 'suggestion', 'compliment']).nullable(),
+  campusId: z.string().nullable(),
+  administrativeUnitId: z.string().nullable(),
+  description: z.string().nullable(),
+  involvedPeople: z.string().nullable().optional(),
 })
 ```
 
@@ -401,13 +400,15 @@ Restringe os valores permitidos para determinados campos.
 
 ### Aplicação no Projeto
 
-O tipo de manifestação deve aceitar apenas as categorias oficiais da ouvidoria.
+O tipo de manifestação deve aceitar apenas os valores do enum `ManifestationType` da entidade de domínio.
 
 ### Exemplo
 
 ```ts
-const ComplaintCategory = z.enum(['Denúncia', 'Reclamação', 'Sugestão', 'Elogio'])
+const ManifestationTypeEnum = z.enum(['report', 'complaint', 'suggestion', 'compliment'])
 ```
+
+> Nota: No código real, o schema é construído dinamicamente com `z.enum(Object.values(ManifestationType) as [string, ...string[]])` para manter alinhamento com o domínio.
 
 ### Benefícios
 
@@ -434,10 +435,17 @@ O LangChain envia essas descrições ao Gemini para orientar a extração semân
 ### Exemplo
 
 ```ts
-const ComplaintSchema = z.object({
-  campus: z.string().describe('O campus da UESPI onde o fato ocorreu'),
+const DraftSchema = z.object({
+  type: z
+    .enum(['report', 'complaint', 'suggestion', 'compliment'])
+    .nullable()
+    .describe('O tipo da manifestação conforme classificação da ouvidoria'),
 
-  description: z.string().describe('Descrição detalhada do ocorrido'),
+  campusId: z.string().nullable().describe('O ID do campus da UESPI onde o fato ocorreu'),
+
+  administrativeUnitId: z.string().nullable().describe('O ID da unidade administrativa responsável'),
+
+  description: z.string().nullable().describe('Descrição detalhada do ocorrido'),
 })
 ```
 
@@ -451,18 +459,21 @@ O Gemini passa a compreender:
 
 ---
 
-## 6.1.4 `z.optional()`
+## 6.1.4 `z.nullable()` e `z.optional()`
 
 ### Função
 
-Permite preenchimentos parciais durante a conversa.
+Permitem preenchimentos parciais durante a conversa.
 
 ### Exemplo
 
 ```ts
-const ComplaintSchema = z.object({
-  campus: z.string().optional(),
-  description: z.string().optional(),
+const DraftSchema = z.object({
+  type: z.enum(['report', 'complaint', 'suggestion', 'compliment']).nullable(),
+  campusId: z.string().nullable(),
+  administrativeUnitId: z.string().nullable(),
+  description: z.string().nullable(),
+  involvedPeople: z.string().nullable().optional(),
 })
 ```
 
@@ -476,7 +487,7 @@ O sistema consegue:
 
 - aceitar respostas incompletas;
 - continuar o preenchimento posteriormente;
-- identificar quais informações ainda faltam.
+- identificar quais informações ainda faltam (`missingFields`).
 
 ---
 
@@ -648,7 +659,7 @@ Internamente, o backend manipula um objeto de estado estruturado.
 
 ---
 
-## Exemplo de Interação
+## Exemplo de Interação (Planejado)
 
 ### Entrada do Usuário
 
@@ -658,13 +669,15 @@ Quero reclamar de um professor em Parnaíba.
 
 ---
 
-## Extração Estruturada do Gemini
+## Extração Estruturada
 
 ```json
 {
-  "complaintType": "Reclamação",
-  "campus": "Parnaíba",
-  "description": null
+  "type": "complaint",
+  "campusId": null,
+  "administrativeUnitId": null,
+  "description": "Quero reclamar de um professor em Parnaíba.",
+  "involvedPeople": "Professor"
 }
 ```
 
@@ -672,20 +685,14 @@ Quero reclamar de um professor em Parnaíba.
 
 ## Análise do Backend
 
-O TypeScript identifica que:
+O `SendAiMessageUseCase` identifica que:
 
-- `complaintType` foi preenchido;
-- `campus` foi preenchido;
-- `description` continua ausente.
+- `type` foi preenchido (`complaint`);
+- `description` foi preenchido;
+- `involvedPeople` foi preenchido;
+- `campusId` e `administrativeUnitId` continuam ausentes.
 
----
-
-## Próxima Pergunta Gerada
-
-```text
-Você já informou o tipo e o campus.
-Agora, por favor, descreva detalhadamente o ocorrido para que possamos prosseguir.
-```
+**Resultado:** `missingFields = ['campusId', 'administrativeUnitId']` — o frontend (ou o fluxo de slot-filling) pergunta qual campus e unidade.
 
 ---
 
@@ -702,21 +709,21 @@ O usuário não precisa preencher um formulário rígido manualmente.
 
 ---
 
-# 6.3.2 Validação Semântica via RAG
+# 6.3.2 Validação Estrutural vs Validação Semântica
 
-Aqui está um dos diferenciais centrais da arquitetura.
-
----
-
-## Validação Estrutural vs Validação Semântica
-
-### Zod Valida:
+## Zod Valida (Já implementado):
 
 - tipos;
 - estrutura;
 - presença de campos.
 
-### RAG Valida:
+## Catálogos Validam (Já implementado no use case):
+
+- `campusId` é validado contra a lista retornada por `CampusCatalogProvider`;
+- `administrativeUnitId` é validado contra a lista de `AdministrativeUnitCatalogProvider`, incluindo vínculo com o campus informado;
+- IDs inválidos ou inexistentes são convertidos para `null` e entram em `missingFields`.
+
+## RAG Validará (Planejado — ciclo de inferência futuro):
 
 - significado;
 - existência real;
@@ -734,34 +741,25 @@ Campus Parnaíba
 
 ---
 
-## Validação Executada
+## Validação Executada (Atual)
 
 ### Passo 1
 
-O Zod confirma:
-
-- o campo é uma string válida.
+O `SendAiMessageUseCase` recebe o draft do `AiGateway` com `campusId` preenchido.
 
 ### Passo 2
 
-O RAG consulta:
-
-- documentos oficiais da UESPI;
-- lista de campi;
-- registros institucionais.
+O use case verifica se o `campusId` existe no catálogo carregado de `CampusCatalogProvider.list()`.
 
 ### Passo 3
 
-O sistema verifica:
-
-- se o campus realmente existe;
-- se o nome corresponde aos registros oficiais.
+Se o ID não for encontrado, `campusId` é normalizado para `null` e adicionado a `missingFields`.
 
 ---
 
-## Caso o Campus Não Exista
+## Caso o Campus Não Exista no Catálogo
 
-O Gemini pode responder:
+O frontend pode solicitar ao usuário um campus válido com base nos catálogos disponíveis. Futuramente, com RAG, o Gemini poderá responder:
 
 ```text
 Desculpe, mas não encontrei registro desse campus nos documentos oficiais da UESPI.
@@ -841,3 +839,33 @@ E passa a funcionar como:
 - um assistente institucional contextual;
 - um sistema de preenchimento assistido;
 - uma interface conversacional orientada por IA e RAG.
+
+---
+
+# Apêndice A — Status da Implementação
+
+## Implementado
+
+| Componente                                    | Caminho                                                                 |
+| --------------------------------------------- | ----------------------------------------------------------------------- |
+| Interface `AiGateway`                         | `src/application/ai/ai-gateway.ts`                                      |
+| Interface `CampusCatalogProvider`             | `src/application/ai/ai-catalog-providers.ts`                            |
+| Interface `AdministrativeUnitCatalogProvider` | `src/application/ai/ai-catalog-providers.ts`                            |
+| `SendAiMessageUseCase`                        | `src/application/use-cases/send-ai-message/send-ai-message-use-case.ts` |
+| `SendAiMessageController`                     | `src/presentation/controllers/ai/send-ai-message.controller.ts`         |
+| `ZodValidator`                                | `src/infra/http/fastify/validators/zod-validator.ts`                    |
+| Testes do use case (9 testes)                 | `test/unit/application/send-ai-message-use-case.spec.ts`                |
+| Testes do controller (3 testes)               | `test/unit/presentation/send-ai-message.controller.spec.ts`             |
+
+## Pendente
+
+| Componente                                           | Observação                                                |
+| ---------------------------------------------------- | --------------------------------------------------------- |
+| Adapter concreto `AiGateway` (LangChain + Gemini)    | Deve implementar `AiGateway.chat()`                       |
+| Adapter concreto `CampusCatalogProvider`             | Consultar tabela de campi no banco                        |
+| Adapter concreto `AdministrativeUnitCatalogProvider` | Consultar tabela de unidades administrativas no banco     |
+| Factory `makeSendAiMessageController()`              | Em `src/main/factories/controllers/`                      |
+| Rota HTTP (`ai.routes.ts`)                           | Registrar no `server.ts`                                  |
+| Pipeline RAG (ingestão + busca vetorial)             | Ciclo de ingestão completo                                |
+| Dependências npm                                     | `langchain`, `@langchain/google-genai`, `@langchain/core` |
+| Env vars da IA                                       | `GEMINI_API_KEY` etc. no schema do `env.ts`               |
