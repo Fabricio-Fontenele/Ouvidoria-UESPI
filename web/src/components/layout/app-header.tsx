@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
-import { buildGuarapiNewManifestationHref, navigateTo, routes } from '../../app/routes'
+import { buildGuaraNewManifestationHref, navigateTo, routes } from '../../app/routes'
 import uespiLogo from '../../assets/brasao.png'
 import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
@@ -20,7 +20,7 @@ interface MenuItem {
 const authenticatedMenuItems: MenuItem[] = [
   { href: routes.home, icon: 'home', label: 'Início' },
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
-  { href: buildGuarapiNewManifestationHref(), icon: 'plus-circle', label: 'Novo registro' },
+  { href: buildGuaraNewManifestationHref(), icon: 'plus-circle', label: 'Novo registro' },
   { href: '#notificacoes', icon: 'bell', label: 'Notificações' },
   { href: '#perfil', icon: 'user', label: 'Perfil' },
   { href: '#suporte', icon: 'help', label: 'Suporte' },
@@ -33,7 +33,7 @@ const publicMenuItems: MenuItem[] = [
   { href: '#o-que-e', icon: 'info', label: 'O que é' },
   { href: '#tipos', icon: 'file-text', label: 'Tipos de manifestação' },
   { href: '#como-funciona', icon: 'braces', label: 'Como funciona' },
-  { href: routes.guarapi, icon: 'message-circle', label: 'Fale com o Guarapi' },
+  { href: routes.guara, icon: 'message-circle', label: 'Fale com o Guará' },
   { href: routes.login, icon: 'user', label: 'Acessar sistema' },
   { href: '#faq', icon: 'help', label: 'FAQ' },
 ]

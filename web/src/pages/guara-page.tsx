@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { buildManifestationFormHref, getSearchParams, normalizeProtocol, replaceWith, routes } from '../app/routes'
-import guarapiMascot from '../assets/guarapi-mascot.png'
-import { getGuarapiInitialMessages, getGuarapiSuggestions } from '../application/guarapi-chat/guarapi-chat-content'
-import type { GuarapiChatSuggestion } from '../application/guarapi-chat/guarapi-chat-content'
-import type { GuarapiChatMode, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
+import guaraMascot from '../assets/guara-mascot.png'
+import { getGuaraInitialMessages, getGuaraSuggestions } from '../application/guara-chat/guara-chat-content'
+import type { GuaraChatSuggestion } from '../application/guara-chat/guara-chat-content'
+import type { GuaraChatMode, GuaraMessage } from '../application/guara-chat/guara-chat-types'
 import { getManifestationStatusContract } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
 import { Icon } from '../components/icons/icon'
@@ -12,7 +12,7 @@ import { AppHeader } from '../components/layout/app-header'
 import { SiteFooter } from '../components/layout/site-footer'
 import { getManifestationStatusBadgeClassName } from '../components/manifestations/manifestation-status-style'
 import { useAuth } from '../hooks/use-auth'
-import { useGuarapiChat } from '../hooks/use-guarapi-chat'
+import { useGuaraChat } from '../hooks/use-guara-chat'
 import { cx } from '../utils/cx'
 
 interface DetailItem {
@@ -55,40 +55,40 @@ function resolveMode() {
   }
 }
 
-function getPageCopy(mode: GuarapiChatMode, protocol: string | null) {
+function getPageCopy(mode: GuaraChatMode, protocol: string | null) {
   if (mode === 'manifestation-detail') {
     return {
       eyebrow: 'Detalhes do chamado',
       title: protocol ?? 'Chamado',
       description:
-        'Acompanhe o resumo da manifestação e converse com o Guarapi para entender o andamento ou preparar uma nova interação.',
+        'Acompanhe o resumo da manifestação e converse com o Guará para entender o andamento ou preparar uma nova interação.',
     }
   }
 
   if (mode === 'new-manifestation') {
     return {
       eyebrow: 'Novo registro',
-      title: 'Fale com o Guarapi',
-      description: 'O Guarapi ajuda você a organizar as informações antes de registrar uma manifestação na Ouvidoria.',
+      title: 'Fale com o Guará',
+      description: 'O Guará ajuda você a organizar as informações antes de registrar uma manifestação na Ouvidoria.',
     }
   }
 
   return {
     eyebrow: 'Atendimento assistido',
-    title: 'Fale com o Guarapi',
+    title: 'Fale com o Guará',
     description: 'Tire dúvidas sobre a Ouvidoria, entenda tipos de manifestação e receba apoio para usar o sistema.',
   }
 }
 
-function MessageBubble({ message }: { message: GuarapiMessage }) {
-  const isGuarapi = message.author === 'guarapi'
+function MessageBubble({ message }: { message: GuaraMessage }) {
+  const isGuara = message.author === 'guara'
 
   return (
-    <div className={cx('flex', isGuarapi ? 'justify-start' : 'justify-end')}>
+    <div className={cx('flex', isGuara ? 'justify-start' : 'justify-end')}>
       <div
         className={cx(
           'max-w-[88%] rounded-lg px-4 py-3 text-sm leading-6 shadow-landing-step',
-          isGuarapi ? 'bg-landing-footer text-landing-text' : 'bg-landing-blue text-white',
+          isGuara ? 'bg-landing-footer text-landing-text' : 'bg-landing-blue text-white',
         )}
       >
         {message.text}
@@ -150,8 +150,8 @@ function QuickActions({
   suggestions,
 }: {
   isSending: boolean
-  onSelect: (suggestion: GuarapiChatSuggestion) => void
-  suggestions: GuarapiChatSuggestion[]
+  onSelect: (suggestion: GuaraChatSuggestion) => void
+  suggestions: GuaraChatSuggestion[]
 }) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
@@ -170,16 +170,16 @@ function QuickActions({
   )
 }
 
-function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string | null }) {
+function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string | null }) {
   const [draft, setDraft] = useState('')
-  const initialMessages = useMemo(() => getGuarapiInitialMessages(mode), [mode])
-  const suggestions = useMemo(() => getGuarapiSuggestions(mode), [mode])
+  const initialMessages = useMemo(() => getGuaraInitialMessages(mode), [mode])
+  const suggestions = useMemo(() => getGuaraSuggestions(mode), [mode])
   const formHref =
     mode === 'manifestation-detail' && protocol !== null
       ? buildManifestationFormHref(protocol)
       : routes.manifestationForm
   const formCta = mode === 'manifestation-detail' ? 'Editar manifestação' : 'Preencher manualmente'
-  const { error, isSending, messages, sendMessage } = useGuarapiChat({
+  const { error, isSending, messages, sendMessage } = useGuaraChat({
     context: {
       mode,
       protocol,
@@ -198,7 +198,7 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
     await sendMessage(message)
   }
 
-  const handleSuggestionSelect = async (suggestion: GuarapiChatSuggestion) => {
+  const handleSuggestionSelect = async (suggestion: GuaraChatSuggestion) => {
     if (isSending) {
       return
     }
@@ -209,14 +209,14 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
 
   return (
     <section
-      aria-labelledby="guarapi-chat-title"
+      aria-labelledby="guara-chat-title"
       className="flex min-h-[620px] flex-col rounded-lg border border-landing-chip bg-landing-surface shadow-landing-step"
     >
       <div className="flex items-center gap-4 border-b border-landing-chip px-4 py-4 sm:px-5">
-        <img alt="" className="size-16 rounded-full object-contain" src={guarapiMascot} />
+        <img alt="" className="size-16 rounded-full object-contain" src={guaraMascot} />
         <div>
-          <h2 className="text-xl leading-7 font-black text-landing-text" id="guarapi-chat-title">
-            Guarapi
+          <h2 className="text-xl leading-7 font-black text-landing-text" id="guara-chat-title">
+            Guará
           </h2>
           <p className="text-sm leading-5 text-landing-brown">Assistente da Ouvidoria UESPI</p>
         </div>
@@ -228,7 +228,7 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
         ))}
         {isSending ? (
           <p className="text-sm leading-5 text-landing-menu" role="status">
-            Guarapi está respondendo...
+            Guará está respondendo...
           </p>
         ) : null}
       </div>
@@ -261,12 +261,12 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
             void handleSubmit()
           }}
         >
-          <label className="sr-only" htmlFor="guarapi-message">
-            Mensagem para o Guarapi
+          <label className="sr-only" htmlFor="guara-message">
+            Mensagem para o Guará
           </label>
           <textarea
             className="min-h-12 resize-none rounded-lg bg-landing-muted-surface px-4 py-3 text-sm leading-5 text-landing-text outline-landing-blue placeholder:text-landing-menu focus-visible:outline-2 focus-visible:outline-offset-2"
-            id="guarapi-message"
+            id="guara-message"
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Digite sua mensagem..."
             rows={1}
@@ -286,7 +286,7 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
   )
 }
 
-export function GuarapiPage() {
+export function GuaraPage() {
   const { mode, protocol } = resolveMode()
   const { isAuthenticated, isLoading } = useAuth()
   const copy = getPageCopy(mode, protocol)

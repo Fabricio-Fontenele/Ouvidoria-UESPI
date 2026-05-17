@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 
-import { buildGuarapiNewManifestationHref, buildManifestationDetailsHref } from '../app/routes'
+import { buildGuaraNewManifestationHref, buildManifestationDetailsHref } from '../app/routes'
 import {
   getManifestationStatusContract,
   manifestationStatusContracts,
@@ -8,7 +8,7 @@ import {
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
-import guarapiMascot from '../assets/guarapi-mascot.png'
+import guaraMascot from '../assets/guara-mascot.png'
 import { Icon } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
@@ -90,27 +90,27 @@ function NewRecordCard() {
           Novo Registro
         </h2>
         <p className="mt-5 text-sm leading-5 text-home-brown sm:text-base sm:leading-6">
-          Precisa registrar uma nova manifestação? Faça isso com a ajuda de nossa agente de IA Guarapi.
+          Precisa registrar uma nova manifestação? Faça isso com a ajuda de nossa agente de IA Guará.
         </p>
         <a
           className="mt-6 inline-flex min-h-12 w-full max-w-56 items-center justify-center rounded-lg bg-home-blue px-5 text-lg leading-7 font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href={buildGuarapiNewManifestationHref()}
+          href={buildGuaraNewManifestationHref()}
         >
-          Fale com o Guarapi
+          Fale com o Guará
         </a>
       </div>
     </section>
   )
 }
 
-function GuarapiChatTrigger() {
+function GuaraChatTrigger() {
   return (
     <a
-      aria-label="Abrir chat com o Guarapi"
+      aria-label="Abrir chat com o Guará"
       className="fixed right-2 bottom-5 z-30 block size-20 rounded-full drop-shadow-home-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-home-blue sm:right-5 sm:bottom-8 sm:size-28 lg:right-8 lg:bottom-10 lg:size-36"
-      href={buildGuarapiNewManifestationHref()}
+      href={buildGuaraNewManifestationHref()}
     >
-      <img alt="" className="size-full rounded-full object-contain" src={guarapiMascot} />
+      <img alt="" className="size-full rounded-full object-contain" src={guaraMascot} />
     </a>
   )
 }
@@ -333,7 +333,7 @@ export function HomePage() {
         </main>
 
         <SiteFooter />
-        <GuarapiChatTrigger />
+        <GuaraChatTrigger />
       </AuthenticatedAppShell>
     </div>
   )

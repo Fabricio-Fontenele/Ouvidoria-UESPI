@@ -1,11 +1,11 @@
-import type { GuarapiChatService } from '../../application/guarapi-chat/guarapi-chat-service'
+import type { GuaraChatService } from '../../application/guara-chat/guara-chat-service'
 import type {
-  SendGuarapiMessageInput,
-  SendGuarapiMessageOutput,
-} from '../../application/guarapi-chat/guarapi-chat-types'
+  SendGuaraMessageInput,
+  SendGuaraMessageOutput,
+} from '../../application/guara-chat/guara-chat-types'
 
-export class DemoGuarapiChatService implements GuarapiChatService {
-  async sendMessage(input: SendGuarapiMessageInput): Promise<SendGuarapiMessageOutput> {
+export class DemoGuaraChatService implements GuaraChatService {
+  async sendMessage(input: SendGuaraMessageInput): Promise<SendGuaraMessageOutput> {
     const protocolText = input.context.protocol !== null ? ` sobre o protocolo ${input.context.protocol}` : ''
     const modeText =
       input.context.mode === 'new-manifestation'
@@ -20,7 +20,7 @@ export class DemoGuarapiChatService implements GuarapiChatService {
 
     return {
       message: {
-        author: 'guarapi',
+        author: 'guara',
         id: crypto.randomUUID(),
         text: `Entendi${protocolText}. ${modeText}`,
       },

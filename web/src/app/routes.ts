@@ -1,5 +1,5 @@
 export const routes = {
-  guarapi: '/guarapi',
+  guara: '/guara',
   home: '/home',
   landing: '/',
   login: '/login',
@@ -36,8 +36,8 @@ export function protocolForQuery(protocol: string) {
   return protocol.replace('#', '')
 }
 
-export function buildGuarapiNewManifestationHref() {
-  return `${routes.guarapi}?mode=new`
+export function buildGuaraNewManifestationHref() {
+  return `${routes.guara}?mode=new`
 }
 
 export function buildManifestationDetailsHref(protocol: string) {
