@@ -20,8 +20,8 @@ describe('Anonymous manifestation (e2e)', () => {
       payload: {
         isAnonymous: true,
         type: 'complaint',
-        campusId: 'campus-teresina',
-        administrativeUnitId: 'unit-rh',
+        campusId: 'campus-poeta-torquato-neto',
+        administrativeUnitId: 'unit-prad-teresina',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
@@ -56,8 +56,8 @@ describe('Anonymous manifestation (e2e)', () => {
       payload: {
         isAnonymous: true,
         type: 'suggestion',
-        campusId: 'campus-teresina',
-        administrativeUnitId: 'unit-rh',
+        campusId: 'campus-poeta-torquato-neto',
+        administrativeUnitId: 'unit-preg-teresina',
         description: 'Sugestão genérica.',
       },
     })
