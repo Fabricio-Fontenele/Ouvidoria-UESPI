@@ -42,6 +42,15 @@ enum ManifestationMessageSenderType {
   @@map("manifestation_message_sender_type")
 }
 
+enum ManifestationAttachmentUploadedByType {
+  MANIFESTANT
+  ANONYMOUS_MANIFESTANT
+  OMBUDSMAN
+  ADMIN
+
+  @@map("manifestation_attachment_uploaded_by_type")
+}
+
 model User {
   id                     String                    @id @default(uuid()) @db.Uuid
   name                   String
@@ -55,6 +64,7 @@ model User {
   sentMessages           ManifestationMessage[]
   evaluationsAsAttendant ManifestationEvaluation[] @relation("EvaluationAttendant")
   evaluationsAsAuthor    ManifestationEvaluation[] @relation("EvaluationAuthor")
+  uploadedAttachments    ManifestationAttachment[]
 
   @@index([role])
   @@map("users")
@@ -106,6 +116,7 @@ model Manifestation {
   attendant            User?                    @relation("ManifestationAttendant", fields: [attendantUserId], references: [id])
   messages             ManifestationMessage[]
   evaluation           ManifestationEvaluation?
+  attachments          ManifestationAttachment[]
 
   @@index([authorUserId])
   @@index([attendantUserId])
@@ -151,4 +162,22 @@ model ManifestationMessage {
   @@index([manifestationId, createdAt])
   @@index([senderUserId])
   @@map("manifestation_messages")
+}
+
+model ManifestationAttachment {
+  id              String                                @id @default(uuid()) @db.Uuid
+  manifestationId String                                @map("manifestation_id") @db.Uuid
+  storageKey      String                                @unique @map("storage_key")
+  originalName    String                                @map("original_name")
+  mimeType        String                                @map("mime_type")
+  sizeInBytes     Int                                   @map("size_in_bytes")
+  uploadedByType  ManifestationAttachmentUploadedByType @map("uploaded_by_type")
+  uploadedByUserId String?                              @map("uploaded_by_user_id") @db.Uuid
+  createdAt       DateTime                              @default(now()) @map("created_at") @db.Timestamptz(6)
+  manifestation   Manifestation                         @relation(fields: [manifestationId], references: [id])
+  uploadedByUser  User?                                 @relation(fields: [uploadedByUserId], references: [id])
+
+  @@index([manifestationId, createdAt])
+  @@index([uploadedByUserId])
+  @@map("manifestation_attachments")
 }

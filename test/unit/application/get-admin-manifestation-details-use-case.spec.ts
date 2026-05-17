@@ -78,6 +78,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         createdAt: new Date('2026-05-10T15:00:00.000Z'),
       },
     ],
+    attachments: [],
   })
 
   beforeEach(() => {
@@ -117,6 +118,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         createdAt: details.createdAt,
         history: details.history,
         messages: details.messages,
+        attachments: details.attachments,
       },
     })
   })
