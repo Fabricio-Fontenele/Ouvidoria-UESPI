@@ -1,7 +1,5 @@
 import { routes } from '../app/routes'
-import guaraMascot from '../assets/guara-mascot.png'
 
-import guaraPoses from '../assets/poses-guara.webp'
 import uespiImageBg from '../assets/uespi-img-bg.webp'
 import { Icon, type IconName } from '../components/icons/icon'
 import { AppHeader } from '../components/layout/app-header'
@@ -200,48 +198,6 @@ function StepsSection() {
   )
 }
 
-function GuaraSection() {
-  return (
-    <section
-      className="px-5 pb-[32px] text-center md:grid md:grid-cols-[220px_minmax(0,1fr)] md:items-center md:gap-8 md:px-0 md:pb-16 md:text-left"
-      id="guara"
-    >
-      <img
-        alt="Guará segurando um celular"
-        className="mx-auto mt-5 h-[164px] w-[188px] object-contain md:order-first md:mt-0 md:h-72 md:w-80"
-        src={guaraPoses}
-      />
-      <div>
-        <h2 className="text-[20px] leading-none font-black text-landing-text md:text-3xl md:leading-none">
-          Fale com o Guará
-        </h2>
-        <p className="mx-auto mt-5 max-w-[220px] text-[12px] leading-[1.6] text-landing-text md:mx-0 md:max-w-md md:text-[15px] md:leading-6">
-          Sinta-se à vontade para pedir ajuda ao Guará, o nosso agente de IA. Ele te ajuda a entender como funciona o
-          serviço e facilita o registro da sua manifestação.
-        </p>
-        <a
-          className="mx-auto mt-5 inline-flex min-h-[32px] min-w-[132px] items-center justify-center rounded-[4px] bg-landing-blue px-4 text-[10px] leading-none font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-blue md:mx-0 md:min-h-10 md:min-w-40 md:rounded-lg md:text-[15px]"
-          href={routes.guara}
-        >
-          Fale com o Guará
-        </a>
-      </div>
-    </section>
-  )
-}
-
-function GuaraFloatingButton() {
-  return (
-    <a
-      aria-label="Abrir chat com o Guará"
-      className="fixed right-3 bottom-7 z-30 grid size-20 place-items-center rounded-full drop-shadow-landing-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-landing-blue sm:right-6 sm:bottom-8 sm:size-24 lg:right-8 lg:bottom-9 lg:size-28"
-      href={routes.guara}
-    >
-      <img alt="" className="size-full rounded-full object-contain p-1.5" src={guaraMascot} />
-    </a>
-  )
-}
-
 export function LandingPage() {
   return (
     <div className="min-h-svh overflow-x-hidden bg-landing-surface font-sans text-landing-text">
@@ -254,10 +210,8 @@ export function LandingPage() {
           <TypesSection />
         </div>
         <StepsSection />
-        <GuaraSection />
       </main>
       <SiteFooter />
-      <GuaraFloatingButton />
     </div>
   )
 }
