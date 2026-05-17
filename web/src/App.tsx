@@ -3,6 +3,7 @@ import { GuaraPage } from './pages/guara-page'
 import { HomePage } from './pages/home-page'
 import { LandingPage } from './pages/landing-page'
 import { LoginPage } from './pages/login-page'
+import { EvaluationPage } from './pages/evaluation-page'
 import { ManifestationFormPage } from './pages/manifestation-form-page'
 import { SignPage } from './pages/sign-page'
 
@@ -15,6 +16,10 @@ function App() {
 
   if (normalizedPath === routes.login) {
     return <LoginPage />
+  }
+
+  if (normalizedPath === routes.evaluation) {
+    return <EvaluationPage />
   }
 
   if (normalizedPath === routes.home) {

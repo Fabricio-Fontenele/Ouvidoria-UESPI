@@ -28,6 +28,7 @@ export type IconName =
   | 'settings'
   | 'shield'
   | 'share'
+  | 'star'
   | 'upload-cloud'
   | 'user'
   | 'x'
@@ -278,6 +279,13 @@ export function Icon({ className, name, ...props }: IconProps) {
           <circle cx="18" cy="19" r="3" />
           <path d="m8.6 10.5 6.8-4" />
           <path d="m8.6 13.5 6.8 4" />
+        </svg>
+      )
+
+    case 'star':
+      return (
+        <svg {...sharedProps} fill="currentColor" stroke="none">
+          <path d="m12 2.5 2.9 6 6.6.9-4.8 4.7 1.2 6.5-5.9-3.1-5.9 3.1 1.2-6.5-4.8-4.7 6.6-.9Z" />
         </svg>
       )
 

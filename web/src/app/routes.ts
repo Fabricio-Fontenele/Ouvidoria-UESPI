@@ -1,4 +1,5 @@
 export const routes = {
+  evaluation: '/evaluation',
   guara: '/guara',
   home: '/home',
   landing: '/',
@@ -50,4 +51,12 @@ export function buildManifestationFormHref(protocol?: string | null) {
   }
 
   return `${routes.manifestationForm}?protocol=${protocolForQuery(protocol)}`
+}
+
+export function buildEvaluationHref(protocol?: string | null) {
+  if (protocol === undefined || protocol === null) {
+    return routes.evaluation
+  }
+
+  return `${routes.evaluation}?protocol=${protocolForQuery(protocol)}`
 }
