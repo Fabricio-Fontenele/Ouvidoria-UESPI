@@ -28,6 +28,7 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
+    "db:seed": "prisma db seed",
     "prisma:format": "prisma format",
     "prisma:validate": "prisma validate",
     "check": "pnpm format:check && pnpm lint && pnpm type:check && pnpm test",
