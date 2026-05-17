@@ -115,6 +115,7 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
         status: data.status,
         description: data.description,
         involvedPeople: data.involvedPeople,
+        attendantUserId: data.attendantUserId,
       },
     })
   }
@@ -154,6 +155,7 @@ interface ManifestationRow {
   description: string
   involvedPeople: string | null
   authorUserId: string | null
+  attendantUserId: string | null
   createdAt: Date
 }
 
@@ -172,6 +174,8 @@ function buildDetailsDTO(
           : ManifestationMessageSenderType.MANIFESTANT,
       fromStatus: null,
       toStatus: ManifestationStatus.IN_ANALYSIS,
+      rating: null,
+      attendantUserId: null,
       createdAt: manifestation.createdAt,
     },
   ]
@@ -191,6 +195,8 @@ function buildDetailsDTO(
           actorType: payload.actorType,
           fromStatus: payload.fromStatus,
           toStatus: payload.toStatus,
+          rating: payload.rating ?? null,
+          attendantUserId: payload.attendantUserId ?? null,
           createdAt: message.createdAt,
         })
       }
@@ -208,6 +214,8 @@ function buildDetailsDTO(
         actorType: senderType,
         fromStatus: null,
         toStatus: null,
+        rating: null,
+        attendantUserId: null,
         createdAt: message.createdAt,
       })
     }
@@ -225,6 +233,7 @@ function buildDetailsDTO(
     description: manifestation.description,
     involvedPeople: manifestation.involvedPeople,
     authorUserId: manifestation.authorUserId,
+    attendantUserId: manifestation.attendantUserId,
     createdAt: manifestation.createdAt,
     history,
     messages: conversation,

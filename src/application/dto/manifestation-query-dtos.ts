@@ -6,6 +6,7 @@ export type ManifestationHistoryEntryType =
   | 'administrative_answered'
   | 'status_changed'
   | 'finalized_by_author'
+  | 'evaluation_recorded'
 
 export interface ManifestationListItemDTO {
   id: string
@@ -26,6 +27,8 @@ export interface ManifestationHistoryEntryDTO {
   actorType: ManifestationMessageSenderType
   fromStatus: ManifestationStatus | null
   toStatus: ManifestationStatus | null
+  rating: number | null
+  attendantUserId: string | null
   createdAt: Date
 }
 
@@ -47,6 +50,7 @@ export interface ManifestationDetailsDTO {
   description: string
   involvedPeople: string | null
   authorUserId: string | null
+  attendantUserId: string | null
   createdAt: Date
   history: ManifestationHistoryEntryDTO[]
   messages: ManifestationMessageDTO[]

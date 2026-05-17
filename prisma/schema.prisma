@@ -43,37 +43,44 @@ enum ManifestationMessageSenderType {
 }
 
 model User {
-  id                     String                 @id @default(uuid()) @db.Uuid
+  id                     String                    @id @default(uuid()) @db.Uuid
   name                   String
-  email                  String                 @unique
-  passwordHash           String                 @map("password_hash")
+  email                  String                    @unique
+  passwordHash           String                    @map("password_hash")
   role                   UserRole
-  createdAt              DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt              DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
-  authoredManifestations Manifestation[]
+  createdAt              DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  authoredManifestations Manifestation[]           @relation("ManifestationAuthor")
+  attendedManifestations Manifestation[]           @relation("ManifestationAttendant")
   sentMessages           ManifestationMessage[]
+  evaluationsAsAttendant ManifestationEvaluation[] @relation("EvaluationAttendant")
+  evaluationsAsAuthor    ManifestationEvaluation[] @relation("EvaluationAuthor")
 
   @@index([role])
   @@map("users")
 }
 
 model Manifestation {
-  id                   String                 @id @default(uuid()) @db.Uuid
-  protocol             String                 @unique
+  id                   String                   @id @default(uuid()) @db.Uuid
+  protocol             String                   @unique
   type                 ManifestationType
-  status               ManifestationStatus    @default(in_analysis)
-  campusId             String                 @map("campus_id")
-  administrativeUnitId String                 @map("administrative_unit_id")
-  description          String                 @db.Text
-  involvedPeople       String?                @map("involved_people") @db.Text
-  authorUserId         String?                @map("author_user_id") @db.Uuid
-  accessCodeHash       String?                @map("access_code_hash")
-  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
-  author               User?                  @relation(fields: [authorUserId], references: [id])
+  status               ManifestationStatus      @default(in_analysis)
+  campusId             String                   @map("campus_id")
+  administrativeUnitId String                   @map("administrative_unit_id")
+  description          String                   @db.Text
+  involvedPeople       String?                  @map("involved_people") @db.Text
+  authorUserId         String?                  @map("author_user_id") @db.Uuid
+  attendantUserId      String?                  @map("attendant_user_id") @db.Uuid
+  accessCodeHash       String?                  @map("access_code_hash")
+  createdAt            DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  author               User?                    @relation("ManifestationAuthor", fields: [authorUserId], references: [id])
+  attendant            User?                    @relation("ManifestationAttendant", fields: [attendantUserId], references: [id])
   messages             ManifestationMessage[]
+  evaluation           ManifestationEvaluation?
 
   @@index([authorUserId])
+  @@index([attendantUserId])
   @@index([status])
   @@index([type])
   @@index([campusId])
@@ -83,6 +90,24 @@ model Manifestation {
   @@index([campusId, administrativeUnitId])
   @@index([status, campusId, administrativeUnitId, createdAt])
   @@map("manifestations")
+}
+
+model ManifestationEvaluation {
+  id                    String        @id @default(uuid()) @db.Uuid
+  manifestationId       String        @unique @map("manifestation_id") @db.Uuid
+  attendantUserId       String        @map("attendant_user_id") @db.Uuid
+  attendantRoleSnapshot UserRole      @map("attendant_role_snapshot")
+  authorUserId          String        @map("author_user_id") @db.Uuid
+  rating                Int
+  comment               String?       @db.Text
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  manifestation         Manifestation @relation(fields: [manifestationId], references: [id])
+  attendant             User          @relation("EvaluationAttendant", fields: [attendantUserId], references: [id])
+  author                User          @relation("EvaluationAuthor", fields: [authorUserId], references: [id])
+
+  @@index([attendantUserId])
+  @@index([authorUserId])
+  @@map("manifestation_evaluations")
 }
 
 model ManifestationMessage {

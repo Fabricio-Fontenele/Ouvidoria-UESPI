@@ -32,6 +32,7 @@ describe('AddManifestationMessageUseCase', () => {
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         involvedPeople: null,
         authorUserId: authorUserId === null ? null : new UniqueEntityId(authorUserId),
+        attendantUserId: null,
         accessCodeHash: authorUserId === null ? 'hashed-access-code' : null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },

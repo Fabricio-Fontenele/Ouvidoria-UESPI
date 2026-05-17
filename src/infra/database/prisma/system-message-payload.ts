@@ -11,9 +11,16 @@ export interface SystemMessagePayload {
   actorType: ManifestationMessageSenderType
   fromStatus: ManifestationStatus | null
   toStatus: ManifestationStatus | null
+  rating?: number
+  attendantUserId?: string
 }
 
-const HISTORY_TYPES: readonly SystemHistoryType[] = ['registered', 'status_changed', 'finalized_by_author']
+const HISTORY_TYPES: readonly SystemHistoryType[] = [
+  'registered',
+  'status_changed',
+  'finalized_by_author',
+  'evaluation_recorded',
+]
 const SENDER_TYPES: readonly ManifestationMessageSenderType[] = Object.values(ManifestationMessageSenderType)
 const STATUSES: readonly ManifestationStatus[] = Object.values(ManifestationStatus)
 
@@ -29,8 +36,26 @@ function isStatus(value: unknown): value is ManifestationStatus {
   return typeof value === 'string' && STATUSES.includes(value as ManifestationStatus)
 }
 
+function isValidRating(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5
+}
+
 export function encodeSystemMessagePayload(payload: SystemMessagePayload): string {
-  return JSON.stringify(payload)
+  const serializable: Record<string, unknown> = {
+    type: payload.type,
+    description: payload.description,
+    actorUserId: payload.actorUserId,
+    actorType: payload.actorType,
+    fromStatus: payload.fromStatus,
+    toStatus: payload.toStatus,
+  }
+  if (payload.rating !== undefined) {
+    serializable['rating'] = payload.rating
+  }
+  if (payload.attendantUserId !== undefined) {
+    serializable['attendantUserId'] = payload.attendantUserId
+  }
+  return JSON.stringify(serializable)
 }
 
 export function decodeSystemMessagePayload(raw: string): SystemMessagePayload | null {
@@ -69,12 +94,32 @@ export function decodeSystemMessagePayload(raw: string): SystemMessagePayload | 
     return null
   }
 
-  return {
-    type: candidate['type'],
+  const type = candidate['type']
+  const rawRating = candidate['rating']
+  const rawAttendantUserId = candidate['attendantUserId']
+
+  if (type === 'evaluation_recorded') {
+    if (!isValidRating(rawRating)) {
+      return null
+    }
+    if (typeof rawAttendantUserId !== 'string') {
+      return null
+    }
+  }
+
+  const payload: SystemMessagePayload = {
+    type,
     description: candidate['description'],
     actorType: candidate['actorType'],
     actorUserId,
     fromStatus,
     toStatus,
   }
+  if (isValidRating(rawRating)) {
+    payload.rating = rawRating
+  }
+  if (typeof rawAttendantUserId === 'string') {
+    payload.attendantUserId = rawAttendantUserId
+  }
+  return payload
 }

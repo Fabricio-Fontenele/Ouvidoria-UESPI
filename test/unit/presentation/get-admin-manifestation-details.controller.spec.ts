@@ -47,6 +47,7 @@ describe('GetAdminManifestationDetailsController', () => {
         description: 'desc',
         involvedPeople: null,
         authorUserId: 'user-1',
+        attendantUserId: null,
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
         history: [],
         messages: [],
