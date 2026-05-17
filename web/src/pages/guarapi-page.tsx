@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react'
 
 import guarapiMascot from '../assets/guarapi-mascot.png'
+import {
+  getGuarapiInitialMessages,
+  getGuarapiSuggestions,
+} from '../application/guarapi-chat/guarapi-chat-content'
+import type { GuarapiChatSuggestion } from '../application/guarapi-chat/guarapi-chat-content'
 import type { GuarapiChatMode, GuarapiMessage } from '../application/guarapi-chat/guarapi-chat-types'
 import { AppHeader } from '../components/app-header'
 import { Icon } from '../components/icon'
@@ -19,32 +24,6 @@ const manifestationDetails: DetailItem[] = [
   { label: 'Área', value: 'Administração Superior' },
   { label: 'Status', value: 'Aguardando análise' },
   { label: 'Última atualização', value: '02 Set, 2024' },
-]
-
-const baseMessages: GuarapiMessage[] = [
-  {
-    author: 'guarapi',
-    id: 'general-welcome',
-    text: 'Olá, eu sou o Guarapi. Posso ajudar você a registrar uma manifestação, consultar orientações ou entender o andamento de um chamado.',
-  },
-]
-
-const detailMessages: GuarapiMessage[] = [
-  {
-    author: 'guarapi',
-    id: 'detail-welcome',
-    text: 'Encontrei este chamado. Você pode me perguntar sobre o histórico, próximos passos ou pedir ajuda para escrever uma nova mensagem para a Ouvidoria.',
-  },
-  {
-    author: 'user',
-    id: 'detail-user-example',
-    text: 'Quero entender o que ainda falta para a resposta final.',
-  },
-  {
-    author: 'guarapi',
-    id: 'detail-answer-example',
-    text: 'Pelo status atual, a manifestação ainda está em análise pela área responsável. Quando houver resposta, ela aparecerá no histórico do protocolo.',
-  },
 ]
 
 function resolveMode() {
@@ -160,22 +139,26 @@ function DetailPanel({ protocol }: { protocol: string }) {
   )
 }
 
-function QuickActions({ mode, onSelect }: { mode: GuarapiChatMode; onSelect: (message: string) => void }) {
-  const actions =
-    mode === 'manifestation-detail'
-      ? ['Resumir andamento', 'Preparar mensagem', 'Explicar status']
-      : ['Registrar manifestação', 'Tipos de manifestação', 'Falar anonimamente']
-
+function QuickActions({
+  isSending,
+  onSelect,
+  suggestions,
+}: {
+  isSending: boolean
+  onSelect: (suggestion: GuarapiChatSuggestion) => void
+  suggestions: GuarapiChatSuggestion[]
+}) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
-      {actions.map((action) => (
+      {suggestions.map((suggestion) => (
         <button
-          className="min-h-9 shrink-0 rounded-full bg-landing-footer px-4 text-xs leading-5 font-bold text-landing-brown transition duration-150 hover:bg-landing-chip active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
-          key={action}
-          onClick={() => onSelect(action)}
+          className="min-h-9 shrink-0 rounded-full bg-landing-footer px-4 text-xs leading-5 font-bold text-landing-brown transition duration-150 hover:bg-landing-chip active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isSending}
+          key={suggestion.id}
+          onClick={() => onSelect(suggestion)}
           type="button"
         >
-          {action}
+          {suggestion.label}
         </button>
       ))}
     </div>
@@ -184,12 +167,13 @@ function QuickActions({ mode, onSelect }: { mode: GuarapiChatMode; onSelect: (me
 
 function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string | null }) {
   const [draft, setDraft] = useState('')
-  const initialMessages = useMemo(() => (mode === 'manifestation-detail' ? detailMessages : baseMessages), [mode])
+  const initialMessages = useMemo(() => getGuarapiInitialMessages(mode), [mode])
+  const suggestions = useMemo(() => getGuarapiSuggestions(mode), [mode])
   const formHref =
     mode === 'manifestation-detail' && protocol !== null
       ? `/manifestation-form?protocol=${protocol.replace('#', '')}`
       : '/manifestation-form'
-  const formCta = mode === 'manifestation-detail' ? 'Editar manifestação' : 'Preencher formulário'
+  const formCta = mode === 'manifestation-detail' ? 'Editar manifestação' : 'Preencher manualmente'
   const { error, isSending, messages, sendMessage } = useGuarapiChat({
     context: {
       mode,
@@ -207,6 +191,15 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
 
     setDraft('')
     await sendMessage(message)
+  }
+
+  const handleSuggestionSelect = async (suggestion: GuarapiChatSuggestion) => {
+    if (isSending) {
+      return
+    }
+
+    setDraft('')
+    await sendMessage(suggestion.message)
   }
 
   return (
@@ -236,7 +229,7 @@ function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string
       </div>
 
       <div className="space-y-4 border-t border-landing-chip px-4 py-4 sm:px-5">
-        <QuickActions mode={mode} onSelect={setDraft} />
+        <QuickActions isSending={isSending} onSelect={(suggestion) => void handleSuggestionSelect(suggestion)} suggestions={suggestions} />
 
         <a
           className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-landing-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue sm:w-auto"
