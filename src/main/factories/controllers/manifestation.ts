@@ -1,6 +1,7 @@
 import { z, type ZodType } from 'zod'
 
 import { AddManifestationMessageUseCase } from '#src/application/use-cases/add-manifestation-message/add-manifestation-message-use-case.js'
+import { EvaluateManifestationUseCase } from '#src/application/use-cases/evaluate-manifestation/evaluate-manifestation-use-case.js'
 import { FinalizeManifestationUseCase } from '#src/application/use-cases/finalize-manifestation/finalize-manifestation-use-case.js'
 import { GetManifestationDetailsUseCase } from '#src/application/use-cases/get-manifestation-details/get-manifestation-details-use-case.js'
 import { ListUserManifestationsUseCase } from '#src/application/use-cases/list-user-manifestations/list-user-manifestations-use-case.js'
@@ -9,6 +10,7 @@ import { TrackManifestationByProtocolUseCase } from '#src/application/use-cases/
 import { ManifestationType } from '#src/domain/entities/manifestation.js'
 import { ZodValidator } from '#src/infra/http/fastify/validators/zod-validator.js'
 import { AddManifestationMessageController } from '#src/presentation/controllers/manifestation/add-manifestation-message.controller.js'
+import { EvaluateManifestationController } from '#src/presentation/controllers/manifestation/evaluate-manifestation.controller.js'
 import { FinalizeManifestationController } from '#src/presentation/controllers/manifestation/finalize-manifestation.controller.js'
 import { GetManifestationDetailsController } from '#src/presentation/controllers/manifestation/get-manifestation-details.controller.js'
 import { ListUserManifestationsController } from '#src/presentation/controllers/manifestation/list-user-manifestations.controller.js'
@@ -40,6 +42,14 @@ const trackByProtocolSchema = z.object({
   accessCode: z.string(),
 })
 
+const evaluateManifestationSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().min(1).max(1000).nullable().optional(),
+}) as unknown as ZodType<{
+  rating: number
+  comment?: string | null
+}>
+
 export function makeRegisterManifestationController(): RegisterManifestationController {
   const useCase = new RegisterManifestationUseCase(
     infrastructure.manifestationsRepository,
@@ -64,6 +74,15 @@ export function makeFinalizeManifestationController(): FinalizeManifestationCont
     infrastructure.manifestationAdministrationRepository,
   )
   return new FinalizeManifestationController(useCase)
+}
+
+export function makeEvaluateManifestationController(): EvaluateManifestationController {
+  const useCase = new EvaluateManifestationUseCase(
+    infrastructure.manifestationsRepository,
+    infrastructure.usersRepository,
+    infrastructure.manifestationEvaluationsRepository,
+  )
+  return new EvaluateManifestationController(useCase, new ZodValidator(evaluateManifestationSchema))
 }
 
 export function makeGetManifestationDetailsController(): GetManifestationDetailsController {

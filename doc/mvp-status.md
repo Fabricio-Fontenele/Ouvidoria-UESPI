@@ -14,6 +14,7 @@ Funcionalidades cobertas de ponta a ponta (domínio → aplicação → presenta
 - Mensagens no chamado (UC-05) — `POST /manifestations/:id/messages`
 - Rastreamento anônimo por protocolo e código de acesso (UC-05b) — `POST /manifestations/track`
 - Finalização pelo manifestante (UC-06) — `POST /manifestations/:id/finalize`
+- Avaliação do atendimento pelo manifestante (UC-11) — `POST /manifestations/:id/evaluation` (rating 1–5 + comentário opcional, snapshot do papel do atendente em `attendant_role_snapshot`)
 - Listagem administrativa (UC-07) — `GET /admin/manifestations` (filtros: status, type, campusId, administrativeUnitId, from, to)
 - Detalhamento administrativo (UC-07) — `GET /admin/manifestations/:id`
 - Resposta administrativa (UC-07) — `POST /admin/manifestations/:id/answer`
@@ -29,8 +30,8 @@ Funcionalidades cobertas de ponta a ponta (domínio → aplicação → presenta
 
 ### Cobertura de testes
 
-- **Unit:** 216 testes em `test/unit/` (domínio, aplicação, presentation). `pnpm test`.
-- **E2E:** 23 testes em `test/e2e/` (5 specs) cobrindo fluxos HTTP reais contra Postgres com schema isolado por arquivo. `pnpm test:e2e` (requer `pnpm db:up`).
+- **Unit:** 261 testes em `test/unit/` (domínio, aplicação, presentation). `pnpm test`.
+- **E2E:** 34 testes em `test/e2e/` (6 specs) cobrindo fluxos HTTP reais contra Postgres com schema isolado por arquivo. `pnpm test:e2e` (requer `pnpm db:up`).
 
 ## Pendente por integração externa
 
@@ -44,7 +45,6 @@ Núcleo e controller já existem, mas os adapters concretos de integração aind
 Itens conscientemente adiados para versões futuras:
 
 - Anexos em manifestações e mensagens
-- Avaliação do atendimento (UC-06 completo da Cockburn — rating, comentário, entidade `ManifestationEvaluation`)
 - Relatórios gerenciais e dashboards
 - Notificações ao manifestante (e-mail, push, in-app)
 - Encaminhamento ou atribuição administrativa entre responsáveis (RF20)

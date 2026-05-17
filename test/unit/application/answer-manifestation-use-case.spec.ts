@@ -53,6 +53,7 @@ describe('AnswerManifestationUseCase', () => {
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         involvedPeople: null,
         authorUserId: authorUserId === null ? null : new UniqueEntityId(authorUserId),
+        attendantUserId: null,
         accessCodeHash: authorUserId === null ? 'hashed-access-code' : null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
@@ -219,6 +220,76 @@ describe('AnswerManifestationUseCase', () => {
 
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
     expect(manifestationAdministrationRepository.recordAnswer.mock.calls).toHaveLength(0)
+  })
+
+  it('assigns the first ombudsman responder as the attendant', async () => {
+    const manifestation = buildManifestation(ManifestationStatus.IN_ANALYSIS)
+    const message = buildMessage()
+
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
+    manifestationsRepository.findById.mockResolvedValue(manifestation)
+    manifestationAdministrationRepository.recordAnswer.mockResolvedValue(message)
+
+    await sut.execute({
+      requesterUserId: 'ombudsman-1',
+      manifestationId: 'manifestation-1',
+      content: 'We finished analyzing your report.',
+    })
+
+    expect(manifestation.attendantUserId?.toValue()).toBe('ombudsman-1')
+  })
+
+  it('assigns admin as attendant when admin is the first administrative responder', async () => {
+    const manifestation = buildManifestation(ManifestationStatus.IN_ANALYSIS)
+    const message = buildMessage()
+
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.ADMIN, 'admin-1'))
+    manifestationsRepository.findById.mockResolvedValue(manifestation)
+    manifestationAdministrationRepository.recordAnswer.mockResolvedValue(message)
+
+    await sut.execute({
+      requesterUserId: 'admin-1',
+      manifestationId: 'manifestation-1',
+      content: 'We finished analyzing your report.',
+    })
+
+    expect(manifestation.attendantUserId?.toValue()).toBe('admin-1')
+  })
+
+  it('does not override the attendant once a previous administrative responder is set', async () => {
+    const manifestation = buildManifestation(ManifestationStatus.ANSWERED)
+    manifestation.assignAttendant(new UniqueEntityId('ombudsman-1'), UserRole.OMBUDSMAN)
+
+    const message = buildMessage()
+
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN, 'ombudsman-2'))
+    manifestationsRepository.findById.mockResolvedValue(manifestation)
+    manifestationAdministrationRepository.recordAnswer.mockResolvedValue(message)
+
+    await sut.execute({
+      requesterUserId: 'ombudsman-2',
+      manifestationId: 'manifestation-1',
+      content: 'Following up on your report.',
+    })
+
+    expect(manifestation.attendantUserId?.toValue()).toBe('ombudsman-1')
+  })
+
+  it('does not mutate the aggregate when status transition fails', async () => {
+    const manifestation = buildManifestation(ManifestationStatus.FINALIZED)
+
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
+    manifestationsRepository.findById.mockResolvedValue(manifestation)
+
+    await expect(
+      sut.execute({
+        requesterUserId: 'ombudsman-1',
+        manifestationId: 'manifestation-1',
+        content: 'We finished analyzing your report.',
+      }),
+    ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
+
+    expect(manifestation.attendantUserId).toBeNull()
   })
 
   it('propagates atomic persistence failures without falling back to split saves', async () => {

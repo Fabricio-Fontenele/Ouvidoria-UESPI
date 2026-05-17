@@ -15,6 +15,7 @@ export async function getApp(): Promise<FastifyInstance> {
 
 export async function resetDatabase(): Promise<void> {
   await prisma.$transaction([
+    prisma.manifestationEvaluation.deleteMany(),
     prisma.manifestationMessage.deleteMany(),
     prisma.manifestation.deleteMany(),
     prisma.user.deleteMany(),
