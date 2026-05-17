@@ -307,12 +307,8 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INVALID_INPUT",
-  "message": "Dados inválidos.",
-  "fields": {
-    "email": ["E-mail inválido."],
-    "password": ["A senha deve possuir no mínimo 8 caracteres, 1 letra minúscula, 1 letra maiúscula e 1 número."]
-  }
+  "error": "InvalidEmailError",
+  "message": "Invalid email"
 }
 ```
 
@@ -326,8 +322,8 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "EMAIL_ALREADY_IN_USE",
-  "message": "Este e-mail já está cadastrado."
+  "error": "UserAlreadyExistsError",
+  "message": "User already exists"
 }
 ```
 
@@ -335,20 +331,14 @@ Exemplo de resposta:
 
 Status HTTP:
 
-`400 Bad Request`
+Não se aplica ao contrato HTTP público atual.
 
-Exemplo de resposta:
-
-```json
-{
-  "error": "INVALID_ROLE",
-  "message": "O perfil informado é inválido ou não pode ser usado neste tipo de cadastro."
-}
-```
+Observação:
+Na API pública atual, o body de `POST /users` aceita apenas `name`, `email` e `password`. O frontend não envia `role`, e o backend sempre cria a conta com papel `manifestant`.
 
 ---
 
-## 15. Contrato sugerido da API
+## 15. Contrato HTTP atual
 
 Endpoint:
 

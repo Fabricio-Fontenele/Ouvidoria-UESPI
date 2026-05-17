@@ -90,6 +90,11 @@ Após operação bem-sucedida:
 
 ## 8. Entradas
 
+As tabelas desta seção descrevem a entrada de aplicação do caso de uso. No contrato HTTP atual, o frontend não envia `userId`: a identidade é derivada do JWT.
+
+> Este payload é interno ao caso de uso e não deve ser usado pelo frontend.
+> Para integração HTTP, use somente a seção `8.2 Contrato HTTP atual`.
+
 ### 8.1 Encerramento pelo manifestante
 
 | Campo           | Tipo   | Obrigatório | Descrição                                         |
@@ -97,7 +102,7 @@ Após operação bem-sucedida:
 | userId          | string | Sim         | Identificador do manifestante autenticado.        |
 | manifestationId | string | Sim         | Identificador da manifestação que será encerrada. |
 
-#### Exemplo de entrada
+#### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -105,6 +110,13 @@ Após operação bem-sucedida:
   "manifestationId": "manifestation-1"
 }
 ```
+
+### 8.2 Contrato HTTP atual
+
+- rota: `POST /manifestations/:manifestationId/finalize`
+- `manifestationId` vem da rota
+- não existe body obrigatório
+- o frontend não envia `userId`
 
 ---
 

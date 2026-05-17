@@ -81,12 +81,17 @@ Usuário autenticado, autor identificado da manifestação, que deseja registrar
 
 ### 8.1 Avaliação
 
-| Campo           | Tipo          | Obrigatório | Descrição                                                                               |
-| --------------- | ------------- | ----------- | --------------------------------------------------------------------------------------- |
-| userId          | string        | Sim         | Identificador do manifestante autenticado.                                              |
-| manifestationId | string        | Sim         | Identificador da manifestação avaliada.                                                 |
-| rating          | integer (1–5) | Sim         | Nota inteira do atendimento.                                                            |
-| comment         | string ≤ 1000 | Não         | Comentário livre. Aceita `null` ou ausência; whitespace puro é normalizado para `null`. |
+Os campos abaixo representam a entrada de aplicação do caso de uso. No contrato HTTP atual, o frontend envia apenas `rating` e `comment` no body; `userId` é derivado do JWT e `manifestationId` vem da rota `POST /manifestations/:manifestationId/evaluation`.
+
+> Este payload é interno ao caso de uso e não deve ser usado pelo frontend.
+> Para integração HTTP, use apenas o exemplo da requisição na rota pública.
+
+| Campo           | Tipo          | Obrigatório | Descrição                                                                                                                                                  |
+| --------------- | ------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| userId          | string        | Sim         | Identificador do manifestante autenticado.                                                                                                                 |
+| manifestationId | string        | Sim         | Identificador da manifestação avaliada.                                                                                                                    |
+| rating          | integer (1–5) | Sim         | Nota inteira do atendimento.                                                                                                                               |
+| comment         | string ≤ 1000 | Não         | Comentário livre. Aceita `null` ou ausência. Quando enviado como string, deve conter ao menos 1 caractere não vazio após trim e no máximo 1000 caracteres. |
 
 #### Exemplo de entrada (HTTP)
 
@@ -114,7 +119,7 @@ Content-Type: application/json
 | RN-UC11-05 | O atendente avaliado é aquele que registrou a primeira resposta administrativa formal (`OMBUDSMAN` ou `ADMIN`). Respostas administrativas posteriores não alteram o atendente. |
 | RN-UC11-06 | O papel do atendente é gravado como snapshot no momento da avaliação (`attendant_role_snapshot`) para suportar métricas futuras sem retroatividade.                            |
 | RN-UC11-07 | `rating` deve ser inteiro entre 1 e 5 inclusive — validado em duas camadas (Zod no controller + VO `Rating` no domínio + CHECK constraint no banco).                           |
-| RN-UC11-08 | Comentário com apenas whitespace é normalizado para `null` na entidade `ManifestationEvaluation`.                                                                              |
+| RN-UC11-08 | No contrato HTTP atual, comentário enviado como string deve conter conteúdo não vazio após trim. Ausência ou `null` continuam válidos e são persistidos como `null`.           |
 | RN-UC11-09 | A avaliação não altera o status da manifestação (continua `finalized`).                                                                                                        |
 
 ---
@@ -124,6 +129,8 @@ Content-Type: application/json
 ### 10.1 Propriedade
 
 `manifestationId` + `userId` devem localizar uma manifestação identificada cujo `authorUserId` corresponda ao usuário autenticado (`manifestation.belongsTo(userId)`).
+
+No HTTP, isso significa: o frontend fornece apenas `:manifestationId` na rota, e o controller preenche `userId` a partir do token Bearer.
 
 ### 10.2 Status
 
@@ -143,7 +150,7 @@ Validado no controller (Zod `z.number().int().min(1).max(5)`), reforçado no dom
 
 ### 10.6 Comentário
 
-Validado no controller (Zod `z.string().trim().min(1).max(1000).nullable().optional()`). A entidade normaliza whitespace-only para `null`.
+Validado no controller (Zod `z.string().trim().min(1).max(1000).nullable().optional()`). No contrato HTTP, strings com apenas whitespace são rejeitadas com `400 ValidationError`. A entidade ainda normaliza whitespace-only para `null` como defesa para chamadas internas fora da borda HTTP.
 
 ---
 
@@ -153,7 +160,7 @@ Validado no controller (Zod `z.string().trim().min(1).max(1000).nullable().optio
 2. O Zod do controller valida o payload.
 3. O use case localiza a manifestação por `manifestationId`.
 4. O use case verifica `manifestation.belongsTo(userId)`.
-5. O use case verifica `manifestation.status === FINALIZED`.
+5. O use case verifica `manifestation.status === finalized`.
 6. O use case verifica `manifestation.attendantUserId !== null`.
 7. O use case verifica que não há avaliação prévia (`findByManifestationId`).
 8. O use case carrega o atendente atual via `usersRepository.findById(attendantUserId)` para obter o snapshot de papel.
@@ -195,7 +202,7 @@ A manifestação existe mas não pertence ao `userId`. `NotAllowedToAccessManife
 
 ### FA07 — Rating inválido
 
-Zod bloqueia em **400**; caso passe, o VO `Rating` lança `InvalidRatingError` que mapeia para **422**.
+No contrato HTTP atual, o Zod bloqueia em **400** antes de o use case ser chamado.
 
 ### FA08 — Comentário > 1000 caracteres
 
@@ -233,8 +240,7 @@ HTTP **201 Created**.
 | Status diferente de `finalized`                | `ManifestationNotFinalizedError`       | 409  |
 | Manifestação sem atendente                     | `ManifestationHasNoAttendantError`     | 409  |
 | Avaliação já registrada                        | `ManifestationAlreadyEvaluatedError`   | 409  |
-| Rating fora do intervalo (domínio)             | `InvalidRatingError`                   | 422  |
-| Payload Zod inválido (rating, comentário etc.) | erro de validação                      | 400  |
+| Payload Zod inválido (rating, comentário etc.) | `ValidationError`                      | 400  |
 | Sem autenticação                               | `UnauthenticatedError`                 | 401  |
 
 ---
@@ -254,9 +260,10 @@ HTTP **201 Created**.
 - Avaliar `answered` → 409 `ManifestationNotFinalizedError`.
 - Avaliar manifestação de outro autor → 403.
 - Avaliar duas vezes → 409 `ManifestationAlreadyEvaluatedError`.
-- Avaliar com rating fora do intervalo → 400 (Zod) ou 422 (domínio).
+- Avaliar com rating fora do intervalo → 400 (`ValidationError`).
 - Avaliar com comentário > 1000 caracteres → 400.
-- Comentário `null` ou whitespace puro → persistido como `null`.
+- Comentário `null` ou ausência → persistido como `null`.
+- Comentário com apenas whitespace no HTTP → 400 (`ValidationError`).
 - Primeira resposta administrativa (ouvidor ou admin) define `attendant_user_id`; respostas subsequentes não alteram.
 
 ---
@@ -318,7 +325,7 @@ export interface ManifestationEvaluationsRepository {
 - **Atomicidade:** `PrismaManifestationEvaluationsRepository.save` envolve a criação da avaliação e a `INSERT manifestation_messages` (system, `evaluation_recorded`) em um único `prisma.$transaction`, garantindo que histórico e avaliação nunca divirjam.
 - **Snapshot do papel:** `attendant_role_snapshot` é capturado **no momento da avaliação** (resolvido via `UsersRepository.findById(attendantUserId).role`). A escolha desacopla a avaliação de mudanças futuras de papel do atendente (ex: promoção de ouvidor a admin).
 - **Defesa em profundidade do rating:** Zod (controller) → VO `Rating` (domínio) → CHECK constraint (banco). Os três níveis previnem persistência de valores inválidos.
-- **Comentário:** trimming e normalização de whitespace puro para `null` ficam na entidade (`ManifestationEvaluation.record`). O controller aceita `null` explícito via `.nullable().optional()` no Zod.
+- **Comentário:** no contrato HTTP, o controller aceita `null` explícito via `.nullable().optional()` e rejeita string vazia após trim com `400 ValidationError`. A entidade `ManifestationEvaluation.record` mantém a normalização para `null` como defesa adicional para chamadas internas fora da borda HTTP.
 - **História derivada:** `decodeSystemMessagePayload` no Prisma manifestations repository decodifica o payload `evaluation_recorded` com `rating` e `attendantUserId`, populando entradas de `ManifestationHistoryEntryDTO` (que ganharam campos `rating: number | null` e `attendantUserId: string | null`).
 - **DTO de detalhes:** `ManifestationDetailsDTO` ganha `attendantUserId: string | null`. A exposição de um objeto `evaluation` completo (rating + comentário) foi deferida para um slice futuro de leitura.
 - **Rota:** `POST /manifestations/:manifestationId/evaluation` com `preHandler: [ensureAuthenticated, requireRoles(UserRole.MANIFESTANT)]`.
