@@ -86,16 +86,14 @@ function getPageCopy(mode: GuarapiChatMode, protocol: string | null) {
     return {
       eyebrow: 'Novo registro',
       title: 'Fale com o Guarapi',
-      description:
-        'O Guarapi ajuda você a organizar as informações antes de registrar uma manifestação na Ouvidoria.',
+      description: 'O Guarapi ajuda você a organizar as informações antes de registrar uma manifestação na Ouvidoria.',
     }
   }
 
   return {
     eyebrow: 'Atendimento assistido',
     title: 'Fale com o Guarapi',
-    description:
-      'Tire dúvidas sobre a Ouvidoria, entenda tipos de manifestação e receba apoio para usar o sistema.',
+    description: 'Tire dúvidas sobre a Ouvidoria, entenda tipos de manifestação e receba apoio para usar o sistema.',
   }
 }
 
@@ -174,13 +172,7 @@ function QuickActions({ mode, onSelect }: { mode: GuarapiChatMode; onSelect: (me
   )
 }
 
-function ChatPanel({
-  mode,
-  protocol,
-}: {
-  mode: GuarapiChatMode
-  protocol: string | null
-}) {
+function ChatPanel({ mode, protocol }: { mode: GuarapiChatMode; protocol: string | null }) {
   const [draft, setDraft] = useState('')
   const initialMessages = useMemo(() => (mode === 'manifestation-detail' ? detailMessages : baseMessages), [mode])
   const { error, isSending, messages, sendMessage } = useGuarapiChat({
@@ -281,9 +273,7 @@ export function GuarapiPage() {
       <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
         <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
           <div>
-            <p className="text-sm leading-5 font-black tracking-[0.1em] text-landing-blue uppercase">
-              {copy.eyebrow}
-            </p>
+            <p className="text-sm leading-5 font-black tracking-[0.1em] text-landing-blue uppercase">{copy.eyebrow}</p>
             <h1 className="mt-3 max-w-2xl text-[38px] leading-none font-black text-landing-text sm:text-5xl">
               {copy.title}
             </h1>
