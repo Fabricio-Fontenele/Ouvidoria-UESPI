@@ -53,6 +53,7 @@ const evaluateManifestationSchema = z.object({
 export function makeRegisterManifestationController(): RegisterManifestationController {
   const useCase = new RegisterManifestationUseCase(
     infrastructure.manifestationsRepository,
+    infrastructure.catalogRepository,
     infrastructure.protocolGenerator,
     infrastructure.accessCodeGenerator,
     infrastructure.passwordHasher,

@@ -1,6 +1,7 @@
 import type { PasswordHasher } from '#src/application/cryptography/password-hasher.js'
 import type { AccessCodeGenerator } from '#src/application/protocol/access-code-generator.js'
 import type { ProtocolGenerator } from '#src/application/protocol/protocol-generator.js'
+import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { Manifestation } from '#src/domain/entities/manifestation.js'
@@ -12,6 +13,11 @@ import { Protocol } from '#src/domain/value-objects/protocol.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 import type { UseCase } from '../use-case.js'
+import { AdministrativeUnitDoesNotBelongToCampusError } from './errors/administrative-unit-does-not-belong-to-campus-error.js'
+import { AdministrativeUnitInactiveError } from './errors/administrative-unit-inactive-error.js'
+import { AdministrativeUnitNotFoundError } from './errors/administrative-unit-not-found-error.js'
+import { CampusInactiveError } from './errors/campus-inactive-error.js'
+import { CampusNotFoundError } from './errors/campus-not-found-error.js'
 import { IdentifiedManifestationRequiresRequesterError } from './errors/identified-manifestation-requires-requester-error.js'
 
 interface RegisterManifestationInput {
@@ -44,6 +50,7 @@ interface RegisterManifestationOutput {
 export class RegisterManifestationUseCase implements UseCase<RegisterManifestationInput, RegisterManifestationOutput> {
   constructor(
     private readonly manifestationsRepository: ManifestationsRepository,
+    private readonly catalogRepository: CatalogRepository,
     private readonly protocolGenerator: ProtocolGenerator,
     private readonly accessCodeGenerator: AccessCodeGenerator,
     private readonly passwordHasher: PasswordHasher,
@@ -69,6 +76,32 @@ export class RegisterManifestationUseCase implements UseCase<RegisterManifestati
       involvedPeople === null || involvedPeople.trim() === ''
         ? null
         : ManifestationInvolvedPeople.create(involvedPeople)
+    const campusRecord = await this.catalogRepository.findCampusById(normalizedCampusId.getValue())
+
+    if (campusRecord === null) {
+      throw new CampusNotFoundError()
+    }
+
+    if (!campusRecord.isActive) {
+      throw new CampusInactiveError()
+    }
+
+    const administrativeUnitRecord = await this.catalogRepository.findAdministrativeUnitById(
+      normalizedAdministrativeUnitId.getValue(),
+    )
+
+    if (administrativeUnitRecord === null) {
+      throw new AdministrativeUnitNotFoundError()
+    }
+
+    if (!administrativeUnitRecord.isActive) {
+      throw new AdministrativeUnitInactiveError()
+    }
+
+    if (administrativeUnitRecord.campusId !== normalizedCampusId.getValue()) {
+      throw new AdministrativeUnitDoesNotBelongToCampusError()
+    }
+
     const generatedProtocol = await this.protocolGenerator.generate()
     const protocol = Protocol.create(generatedProtocol)
     let authorId: UniqueEntityId | null = null

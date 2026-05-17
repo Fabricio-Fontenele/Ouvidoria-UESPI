@@ -40,8 +40,8 @@ async function createIdentifiedManifestation(manifestantToken: string): Promise<
     payload: {
       isAnonymous: false,
       type: 'complaint',
-      campusId: 'campus-teresina',
-      administrativeUnitId: 'unit-secretaria',
+      campusId: 'campus-professor-alexandre-alves-de-oliveira',
+      administrativeUnitId: 'unit-direcao-parnaiba',
       description: 'Houve atraso no atendimento.',
     },
   })
@@ -174,8 +174,8 @@ describe('Manifestation administration with traceability (e2e)', () => {
       payload: {
         isAnonymous: false,
         type: 'complaint',
-        campusId: 'campus-teresina',
-        administrativeUnitId: 'unit-secretaria',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
+        administrativeUnitId: 'unit-direcao-parnaiba',
         description: 'Ouvidor abrindo em nome próprio.',
       },
     })

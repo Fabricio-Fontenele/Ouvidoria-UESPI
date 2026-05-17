@@ -1,6 +1,7 @@
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
 import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
+import { PrismaCatalogRepository } from '#src/infra/database/prisma/repositories/prisma-catalog-repository.js'
 import { PrismaManifestationAdministrationRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-administration-repository.js'
 import { PrismaManifestationEvaluationsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-evaluations-repository.js'
 import { PrismaManifestationInteractionsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-interactions-repository.js'
@@ -19,6 +20,7 @@ const tokenGenerator = new JwtTokenGenerator({
 const protocolGenerator = new UuidProtocolGenerator()
 const accessCodeGenerator = new RandomAccessCodeGenerator()
 
+const catalogRepository = new PrismaCatalogRepository(prisma)
 const usersRepository = new PrismaUsersRepository(prisma)
 const manifestationsRepository = new PrismaManifestationsRepository(prisma)
 const manifestationAdministrationRepository = new PrismaManifestationAdministrationRepository(prisma)
@@ -31,6 +33,7 @@ export const infrastructure = {
   tokenGenerator,
   protocolGenerator,
   accessCodeGenerator,
+  catalogRepository,
   usersRepository,
   manifestationsRepository,
   manifestationAdministrationRepository,

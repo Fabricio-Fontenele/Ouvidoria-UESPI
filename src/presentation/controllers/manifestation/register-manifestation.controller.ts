@@ -1,3 +1,8 @@
+import { AdministrativeUnitDoesNotBelongToCampusError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-does-not-belong-to-campus-error.js'
+import { AdministrativeUnitInactiveError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-inactive-error.js'
+import { AdministrativeUnitNotFoundError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-not-found-error.js'
+import { CampusInactiveError } from '#src/application/use-cases/register-manifestation/errors/campus-inactive-error.js'
+import { CampusNotFoundError } from '#src/application/use-cases/register-manifestation/errors/campus-not-found-error.js'
 import { IdentifiedManifestationRequiresManifestantRoleError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-manifestant-role-error.js'
 import { IdentifiedManifestationRequiresRequesterError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-requester-error.js'
 import type { RegisterManifestationUseCase } from '#src/application/use-cases/register-manifestation/register-manifestation.use-case.js'
@@ -64,6 +69,11 @@ export class RegisterManifestationController extends BaseController {
   protected override mapError(error: unknown): HttpResponse | null {
     if (
       error instanceof IdentifiedManifestationRequiresRequesterError ||
+      error instanceof CampusNotFoundError ||
+      error instanceof CampusInactiveError ||
+      error instanceof AdministrativeUnitNotFoundError ||
+      error instanceof AdministrativeUnitInactiveError ||
+      error instanceof AdministrativeUnitDoesNotBelongToCampusError ||
       error instanceof InvalidCampusIdError ||
       error instanceof InvalidAdministrativeUnitIdError ||
       error instanceof InvalidManifestationDescriptionError ||
