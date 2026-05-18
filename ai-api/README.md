@@ -67,6 +67,29 @@ AI_API_KEY=...
 > Confira o nome exato do `GOOGLE_CHAT_MODEL` que sua chave aceita com
 > `curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GOOGLE_API_KEY"`.
 
+## Base de conhecimento
+
+O diretório apontado por `KB_DIR` pode conter **múltiplos arquivos**. Não é necessário consolidar tudo em um único PDF.
+
+Formatos suportados hoje:
+
+- `.pdf`
+- `.md`
+- `.txt`
+
+O loader varre o diretório recursivamente, então é válido organizar a base em vários arquivos, por exemplo:
+
+- `regimento-geral.pdf`
+- `normas-da-ouvidoria.pdf`
+- `faq.md`
+- `procedimentos.txt`
+
+Notas operacionais:
+
+- Se você rodar `ingest` mais de uma vez sem reset, os chunks serão duplicados.
+- Quando trocar ou reorganizar a base, o fluxo correto é `pnpm --filter @ouvidoria/ai-api ingest:reset`.
+- PDFs precisam ser **digitais**, com texto selecionável. O pipeline atual **não faz OCR**, então PDFs escaneados/imagem devem ser convertidos para texto antes da ingestão.
+
 ## Execução
 
 ```bash
