@@ -1,0 +1,26 @@
+import { z } from 'zod'
+
+const historyMessageSchema = z.object({
+  role: z.enum(['assistant', 'user']),
+  content: z.string().trim().min(1).max(4000),
+})
+
+const campusSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+})
+
+const administrativeUnitSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  campusId: z.string().min(1),
+})
+
+export const sendAiMessageBodySchema = z.object({
+  history: z.array(historyMessageSchema).max(20),
+  message: z.string().trim().min(1).max(4000),
+  campuses: z.array(campusSchema).max(200),
+  administrativeUnits: z.array(administrativeUnitSchema).max(2000),
+})
+
+export type SendAiMessageBody = z.infer<typeof sendAiMessageBodySchema>

@@ -468,6 +468,7 @@ Regras práticas para o frontend:
 - O arquivo deve ser enviado no campo `file`.
 - Não envie campos extras no multipart deste endpoint.
 - Para múltiplos anexos, repita a chamada uma vez por arquivo.
+- Observação para frontend web: ao usar `FormData`, **não** defina manualmente o header `Content-Type`. Deixe o navegador/cliente HTTP enviar `multipart/form-data` com o `boundary` correto.
 - Se uma chamada falhar, os anexos enviados com sucesso antes dela permanecem válidos.
 
 Exemplo:
@@ -737,6 +738,7 @@ Regras práticas para o frontend:
 - Os campos esperados são `protocol`, `accessCode` e `file`.
 - A ordem das partes no multipart não importa.
 - Para múltiplos anexos, repita a chamada uma vez por arquivo.
+- Observação para frontend web: ao usar `FormData`, **não** defina manualmente o header `Content-Type`. Deixe o navegador/cliente HTTP enviar `multipart/form-data` com o `boundary` correto.
 - O endpoint aplica os mesmos limites públicos de tamanho, MIME e quantidade dos anexos identificados.
 
 Exemplo:
@@ -1032,7 +1034,10 @@ Erros representativos:
 
 - Pública (sem autenticação).
 - Não persiste a conversa; o frontend é responsável por manter o histórico entre turnos.
-- Hoje atendida por `FakeAiGateway` (heurística por palavra-chave com normalização NFD). O adapter real de RAG/LLM substitui essa instância em `src/main/factories/infrastructure.ts` sem alterar o contrato HTTP.
+- O cliente envia apenas `history` e `message`. O catálogo institucional (`campuses` / `administrativeUnits`) é buscado internamente pelo backend principal antes de chamar o `ai-api`.
+- Por padrão, pode ser atendida por `FakeAiGateway` para desenvolvimento/MVP local.
+- Quando `AI_GATEWAY_PROVIDER=http`, o backend principal usa `HttpAiGateway` para chamar o `ai-api` real.
+- Essa troca é configuracional e não altera o contrato HTTP consumido pelo frontend.
 
 #### Request
 
@@ -1105,6 +1110,61 @@ Shape do `draft` (todos os campos podem ser `null`):
 - Para `manifestation_draft_ready` com `shouldOpenManifestationDraft === false`: trate como `manifestation_candidate` (faltam campos válidos).
 - Para `institutional_question`, `out_of_scope` e `unknown`: só exiba `answer`.
 - O frontend deve enviar o `history` reconstruído a cada turno (o backend é stateless nesta etapa).
+
+#### Memória da conversa
+
+Regra mental recomendada: trate a IA como uma função **sem memória própria**.
+
+Fluxo esperado:
+
+1. O frontend mantém o histórico local da conversa.
+2. A cada novo turno, o frontend envia:
+   - `history`: mensagens anteriores
+   - `message`: mensagem nova do usuário
+3. O backend principal consulta o catálogo oficial no Prisma.
+4. O backend principal repassa `history`, `message` e o catálogo para o `ai-api`.
+5. O `ai-api` usa:
+   - `history` como janela de contexto conversacional
+   - RAG para contexto institucional
+   - catálogo para sugerir/preencher o `draft`
+
+Exemplo de estratégia no frontend:
+
+```ts
+type ChatMessage = {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+const [messages, setMessages] = useState<ChatMessage[]>([])
+
+async function sendMessage(content: string) {
+  const history = messages.slice(-20)
+
+  const response = await api.post('/ai/messages', {
+    history,
+    message: content,
+  })
+
+  const assistantMessage = {
+    role: 'assistant',
+    content: response.data.answer,
+  } satisfies ChatMessage
+
+  setMessages((current) => [...current, { role: 'user', content }, assistantMessage])
+
+  if (response.data.shouldOpenManifestationDraft) {
+    openManifestationForm(response.data.draft)
+  }
+}
+```
+
+Notas práticas:
+
+- `history` deve conter apenas as mensagens anteriores; não duplique a mensagem nova em `history`.
+- O limite atual aceito pelo backend é de **20 mensagens** em `history`.
+- Para MVP, é aceitável manter o histórico apenas em memória da tela. Se for necessário sobreviver a refresh, prefira `sessionStorage` a `localStorage`, por causa da sensibilidade potencial do conteúdo.
+- Se o frontend optar por `localStorage`, deve usar expiração curta e oferecer uma ação visível de **“Limpar conversa”**, porque o conteúdo pode incluir dados sensíveis.
 
 #### Erros
 
