@@ -8,6 +8,13 @@ Backend for the Institutional Ombudsman System (UESPI). Implements the full clea
 
 `AGENTS.md` contains the canonical contributor handbook (architecture rules, naming, commit policy). Read it when in doubt — this file complements it with Claude-specific notes.
 
+## Workspaces
+
+This is a pnpm workspace with two packages:
+
+- **Root (`.`)** — `ouvidoria-backend-core`. The main backend (Fastify + Prisma).
+- **`ai-api/`** — `@ouvidoria/ai-api`. A standalone HTTP microservice that owns the AI/RAG concerns (LangChain v1 + Gemini + pgVector). It is consumed by the backend only through `src/infra/ai/http-ai-gateway.ts` via the `AiGateway` contract; the backend imports nothing from `ai-api/` at runtime. The `ai-api/` package has its own `package.json`, `tsconfig.json`, `docker-compose.yml` (pgVector on host port 5433) and `.env.sample`. Selection between the in-process `FakeAiGateway` and the real `HttpAiGateway` is driven by the `AI_GATEWAY_PROVIDER` env var.
+
 ## Commands
 
 Package manager is **pnpm 10** (Node 22).
