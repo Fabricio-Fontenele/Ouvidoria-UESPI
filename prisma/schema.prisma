@@ -149,28 +149,6 @@ model ManifestationEvaluation {
   @@map("manifestation_evaluations")
 }
 
-model Campus {
-  id        String               @id @default(uuid()) @db.Uuid
-  name      String
-  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  units     AdministrativeUnit[]
-
-  @@map("campuses")
-}
-
-model AdministrativeUnit {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  campusId  String   @map("campus_id") @db.Uuid
-  campus    Campus   @relation(fields: [campusId], references: [id])
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  @@index([campusId])
-  @@map("administrative_units")
-}
-
 model ManifestationMessage {
   id              String                         @id @default(uuid()) @db.Uuid
   manifestationId String                         @map("manifestation_id") @db.Uuid
