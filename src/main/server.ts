@@ -8,6 +8,7 @@ import { prisma } from '#src/infra/database/prisma/client.js'
 import './app-types.js'
 import { env } from './config/env.js'
 import { registerAdminRoutes } from './routes/admin.routes.js'
+import { registerAiRoutes } from './routes/ai.routes.js'
 import { registerAuthRoutes } from './routes/auth.routes.js'
 import { registerCatalogRoutes } from './routes/catalog.routes.js'
 import { registerManifestationRoutes } from './routes/manifestation.routes.js'
@@ -23,6 +24,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(registerAuthRoutes)
   await app.register(registerManifestationRoutes)
   await app.register(registerAdminRoutes)
+  await app.register(registerAiRoutes)
 
   app.addHook('onClose', async () => {
     await prisma.$disconnect()

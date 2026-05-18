@@ -45,7 +45,8 @@ Esta feature deve permitir:
 - listar manifestações disponíveis ao perfil administrativo, com paginação;
 - filtrar a listagem por status, tipo, campus, unidade administrativa e período;
 - consultar os detalhes de qualquer manifestação visível ao perfil, inclusive anônimas;
-- consultar os detalhes administrativos com `involvedPeople`, quando o campo existir;
+- consultar os detalhes administrativos com `involvedPeople` e `attachments[]`, quando existirem;
+- emitir `download-url` curta para anexos visíveis no detalhe administrativo;
 - registrar resposta administrativa em manifestação aberta para interação;
 - transitar o status da manifestação para `answered` ao responder;
 - atualizar o status da manifestação respeitando guardas do agregado;
@@ -57,6 +58,7 @@ Esta feature deve permitir:
 Esta feature não contempla:
 
 - atribuição ou encaminhamento da manifestação a responsáveis (RF20);
+- upload, remoção ou substituição administrativa de anexos;
 - materialização explícita do histórico de ações em entidade própria;
 - notificações ao manifestante;
 - relatórios gerenciais.
@@ -87,8 +89,9 @@ Para executar a gestão administrativa:
 Após operações bem-sucedidas:
 
 - a listagem retorna manifestações compatíveis com os filtros informados;
-- a consulta de detalhes retorna o estado atual com histórico e mensagens, inclusive para manifestações anônimas;
+- a consulta de detalhes retorna o estado atual com histórico, mensagens e anexos, inclusive para manifestações anônimas;
 - a consulta de detalhes pode expor `involvedPeople` quando o campo existir na manifestação;
+- o download do anexo administrativo ocorre por `download-url` temporária emitida pelo backend;
 - a resposta administrativa fica registrada como mensagem e o status passa a `answered`;
 - a resposta administrativa, a alteração de status e o encerramento administrativo ficam persistidos com ator e transição de status rastreáveis;
 - o histórico de tratamento permanece rastreável.
@@ -249,7 +252,8 @@ A guarda fica encapsulada na entidade `Manifestation` por meio dos métodos `rec
 ### 10.5 Contrato HTTP atual
 
 - `GET /admin/manifestations?page=1&status=in_analysis&type=complaint&campusId=campus-1&administrativeUnitId=unit-1&from=2026-05-01T00:00:00.000Z&to=2026-05-31T23:59:59.999Z`
-- `GET /admin/manifestations/:manifestationId`
+- `GET /admin/manifestations/:manifestationId` retorna `attachments[]`
+- `POST /admin/manifestations/:manifestationId/attachments/:attachmentId/download-url` emite URL curta de download
 - `POST /admin/manifestations/:manifestationId/answer` com body `{ "content": "..." }`
 - `PATCH /admin/manifestations/:manifestationId/status` com body `{ "status": "finalized" }`
 - o frontend nunca envia `requesterUserId`
