@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                                                                       |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| Caso de uso    | UC-09                                                                                                           |
-| Nome           | Consultar IA                                                                                                    |
-| Feature        | Consulta institucional com apoio de IA                                                                          |
-| Ator principal | Usuário                                                                                                         |
-| Prioridade     | Alta                                                                                                            |
-| Status         | Núcleo e controller implementados / adapters de IA (`AiGateway`, providers de catálogo) e wiring HTTP pendentes |
+| Campo          | Descrição                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-09                                                                                                                                       |
+| Nome           | Consultar IA                                                                                                                                |
+| Feature        | Consulta institucional com apoio de IA                                                                                                      |
+| Ator principal | Usuário                                                                                                                                     |
+| Prioridade     | Alta                                                                                                                                        |
+| Status         | Implementado de ponta a ponta via `POST /ai/messages` com `FakeAiGateway` (heurística por palavra-chave) — adapter real de RAG/LLM pendente |
 
 ---
 
@@ -51,7 +51,6 @@ Esta feature deve permitir:
 
 Esta feature não contempla:
 
-- endpoint HTTP;
 - adapter concreto de LLM, RAG, vector store ou framework de IA;
 - persistência de sessão ou histórico de chat;
 - streaming de resposta;
@@ -290,6 +289,7 @@ A falha deve ser propagada ao chamador para tratamento externo apropriado.
 - A dependência externa é expressa pela interface `AiGateway` e por contratos de catálogo injetados no caso de uso.
 - O caso de uso foi desenhado para receber histórico pronto; modelagem de sessão e persistência ficam fora deste recorte.
 - A abertura do formulário assistido depende do UC-10 e do fluxo regular de registro da manifestação.
-- A camada de apresentação fornece `SendAiMessageController` em `src/presentation/controllers/ai/`, que valida o body via `Validator<SendAiMessageBody>` agnóstico e repassa apenas `history` e `message` ao use case; o endpoint é público (sem checagem de `request.user`) e qualquer falha do `AiGateway` ou dos providers de catálogo cai no `500 ServerError` padrão do `BaseController` — o use case não lança erros de domínio específicos por ser resiliente a respostas malformadas da IA.
-- Diferente dos demais controllers, **o `SendAiMessageController` não tem factory nem rota registrados em `src/main/`** porque `AiGateway`, `CampusCatalogProvider` e `AdministrativeUnitCatalogProvider` ainda não possuem implementação concreta em `src/infra/`. Quando esses adapters forem materializados, basta adicionar `makeSendAiMessageController()` em `src/main/factories/controllers/` e registrar a rota em um novo `src/main/routes/ai.routes.ts`.
+- A camada de apresentação fornece `SendAiMessageController` em `src/presentation/controllers/ai/`, que valida o body via `Validator<SendAiMessageBody>` agnóstico e repassa apenas `history` e `message` ao use case; o endpoint é público (sem checagem de `request.user`) e qualquer falha do `AiGateway` ou do `CatalogRepository` cai no `500 ServerError` padrão do `BaseController` — o use case não lança erros de domínio específicos por ser resiliente a respostas malformadas da IA.
+- O `SendAiMessageController` está exposto via `POST /ai/messages`, com factory em `src/main/factories/controllers/ai.ts` e rota em `src/main/routes/ai.routes.ts`. O contrato HTTP (request/response, limites de tamanho e códigos de erro) está documentado em `doc/api/frontend-integration.md`.
+- O `AiGateway` é atendido por `FakeAiGateway` (`src/infra/ai/fake-ai-gateway.ts`), que usa heurística de palavras-chave com normalização NFD. Quando o adapter real de RAG/LLM for implementado, basta substituir a instância em `src/main/factories/infrastructure.ts` — o contrato e o wiring HTTP permanecem.
 - O aprofundamento técnico deste fluxo conversacional e da estratégia de IA fica documentado em `doc/architecture/ai-chatbot.md`.

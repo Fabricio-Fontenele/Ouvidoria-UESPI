@@ -57,7 +57,7 @@ Esta feature não contempla:
 
 - CRUD de campus;
 - CRUD de unidade administrativa;
-- anexos;
+- upload inline de anexos no mesmo `POST /manifestations`;
 - marcação de sigilo além da autoria anônima;
 - mensagens no chamado;
 - atualização de status após o registro inicial;
@@ -157,7 +157,8 @@ No contrato HTTP público atual:
 - o body **não** carrega `requesterId`;
 - a identidade autenticada é derivada do Bearer token quando houver;
 - em registro identificado (`isAnonymous=false`), a ausência de autenticação válida retorna `401`;
-- em registro anônimo (`isAnonymous=true`), o request pode seguir sem token.
+- em registro anônimo (`isAnonymous=true`), o request pode seguir sem token;
+- anexos não entram neste body e devem usar os recursos dedicados documentados em `doc/api/frontend-integration.md` e `doc/features/UC5c-manifestation-attachments.md`.
 - campos extras não fazem parte do contrato e não devem ser enviados pelo frontend.
 
 Exemplo HTTP identificado:
@@ -671,7 +672,8 @@ interface PasswordHasher {
 - O caso de uso não deve depender diretamente de banco de dados ou biblioteca concreta de geração de protocolo.
 - O campo `involvedPeople` já faz parte do recorte atual e deve permanecer alinhado com o draft assistido por IA.
 - A camada de apresentação deve retornar `401 Unauthorized` quando o registro for identificado e não houver usuário autenticado no contexto da requisição.
-- O fluxo de anexos, sigilo administrativo e IA deve ser especificado em features próprias ou em evoluções posteriores desta feature.
+- O registro continua sem anexos inline; o fluxo de anexos foi separado em recurso próprio e está documentado em `doc/features/UC5c-manifestation-attachments.md`.
+- O sigilo administrativo e IA devem ser especificados em features próprias ou em evoluções posteriores desta feature.
 
 ---
 
