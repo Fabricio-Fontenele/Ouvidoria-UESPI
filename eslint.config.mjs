@@ -54,7 +54,15 @@ const sharedTypeScriptRules = {
 
 export default defineConfig([
   {
-    ignores: ['build/**', 'coverage/**', 'node_modules/**', '.eslintcache', '.extra/**', '**/*.tsbuildinfo'],
+    ignores: [
+      'build/**',
+      'coverage/**',
+      'node_modules/**',
+      '.eslintcache',
+      '.extra/**',
+      '**/*.tsbuildinfo',
+      'ai-api/**',
+    ],
   },
 
   js.configs.recommended,
