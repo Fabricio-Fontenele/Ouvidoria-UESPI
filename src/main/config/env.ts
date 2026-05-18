@@ -13,6 +13,10 @@ const envSchema = z.object({
     .positive()
     .default(60 * 60 * 8),
   PASSWORD_HASH_ROUNDS: z.coerce.number().int().min(4).max(15).default(10),
+  SUPABASE_URL: z.url(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+  SUPABASE_STORAGE_BUCKET: z.string().min(1, 'SUPABASE_STORAGE_BUCKET is required'),
+  SUPABASE_SIGNED_URL_EXPIRES_IN_SECONDS: z.coerce.number().int().positive().default(300),
 })
 
 const parsed = envSchema.safeParse(process.env)

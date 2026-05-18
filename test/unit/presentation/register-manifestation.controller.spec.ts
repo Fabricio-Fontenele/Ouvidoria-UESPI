@@ -1,13 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import { AdministrativeUnitDoesNotBelongToCampusError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-does-not-belong-to-campus-error.js'
+import { AdministrativeUnitInactiveError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-inactive-error.js'
+import { AdministrativeUnitNotFoundError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-not-found-error.js'
+import { CampusInactiveError } from '#src/application/use-cases/register-manifestation/errors/campus-inactive-error.js'
+import { CampusNotFoundError } from '#src/application/use-cases/register-manifestation/errors/campus-not-found-error.js'
 import { IdentifiedManifestationRequiresManifestantRoleError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-manifestant-role-error.js'
 import { IdentifiedManifestationRequiresRequesterError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-requester-error.js'
 import type { RegisterManifestationUseCase } from '#src/application/use-cases/register-manifestation/register-manifestation.use-case.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { UserRole } from '#src/domain/entities/user.js'
+import { InvalidAdministrativeUnitIdError } from '#src/domain/value-objects/administrative-unit-id.js'
 import { InvalidCampusIdError } from '#src/domain/value-objects/campus-id.js'
 import { InvalidManifestationDescriptionError } from '#src/domain/value-objects/manifestation-description.js'
+import { InvalidManifestationInvolvedPeopleError } from '#src/domain/value-objects/manifestation-involved-people.js'
 import {
   RegisterManifestationController,
   type RegisterManifestationBody,
@@ -201,9 +208,9 @@ describe('RegisterManifestationController', () => {
     expect(response.body).toBeInstanceOf(IdentifiedManifestationRequiresRequesterError)
   })
 
-  it('maps domain value-object errors to 400', async () => {
+  it('maps catalog and value-object errors to 400', async () => {
     validator.validate.mockReturnValue({ success: true, data: validBody })
-    useCase.execute.mockRejectedValueOnce(new InvalidCampusIdError())
+    useCase.execute.mockRejectedValueOnce(new CampusNotFoundError())
 
     const firstResponse = await sut.handle({
       ...baseRequest,
@@ -211,9 +218,9 @@ describe('RegisterManifestationController', () => {
     })
 
     expect(firstResponse.statusCode).toBe(400)
-    expect(firstResponse.body).toBeInstanceOf(InvalidCampusIdError)
+    expect(firstResponse.body).toBeInstanceOf(CampusNotFoundError)
 
-    useCase.execute.mockRejectedValueOnce(new InvalidManifestationDescriptionError())
+    useCase.execute.mockRejectedValueOnce(new CampusInactiveError())
 
     const secondResponse = await sut.handle({
       ...baseRequest,
@@ -221,7 +228,77 @@ describe('RegisterManifestationController', () => {
     })
 
     expect(secondResponse.statusCode).toBe(400)
-    expect(secondResponse.body).toBeInstanceOf(InvalidManifestationDescriptionError)
+    expect(secondResponse.body).toBeInstanceOf(CampusInactiveError)
+
+    useCase.execute.mockRejectedValueOnce(new AdministrativeUnitNotFoundError())
+
+    const thirdResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
+
+    expect(thirdResponse.statusCode).toBe(400)
+    expect(thirdResponse.body).toBeInstanceOf(AdministrativeUnitNotFoundError)
+
+    useCase.execute.mockRejectedValueOnce(new AdministrativeUnitInactiveError())
+
+    const fourthResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
+
+    expect(fourthResponse.statusCode).toBe(400)
+    expect(fourthResponse.body).toBeInstanceOf(AdministrativeUnitInactiveError)
+
+    useCase.execute.mockRejectedValueOnce(new AdministrativeUnitDoesNotBelongToCampusError())
+
+    const fifthResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
+
+    expect(fifthResponse.statusCode).toBe(400)
+    expect(fifthResponse.body).toBeInstanceOf(AdministrativeUnitDoesNotBelongToCampusError)
+
+    useCase.execute.mockRejectedValueOnce(new InvalidCampusIdError())
+
+    const sixthResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
+
+    expect(sixthResponse.statusCode).toBe(400)
+    expect(sixthResponse.body).toBeInstanceOf(InvalidCampusIdError)
+
+    useCase.execute.mockRejectedValueOnce(new InvalidAdministrativeUnitIdError())
+
+    const seventhResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
+
+    expect(seventhResponse.statusCode).toBe(400)
+    expect(seventhResponse.body).toBeInstanceOf(InvalidAdministrativeUnitIdError)
+
+    useCase.execute.mockRejectedValueOnce(new InvalidManifestationDescriptionError())
+
+    const eighthResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
+
+    expect(eighthResponse.statusCode).toBe(400)
+    expect(eighthResponse.body).toBeInstanceOf(InvalidManifestationDescriptionError)
+
+    useCase.execute.mockRejectedValueOnce(new InvalidManifestationInvolvedPeopleError())
+
+    const ninthResponse = await sut.handle({
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    })
+
+    expect(ninthResponse.statusCode).toBe(400)
+    expect(ninthResponse.body).toBeInstanceOf(InvalidManifestationInvolvedPeopleError)
   })
 
   it('returns 500 with a ServerError wrapping unknown failures', async () => {

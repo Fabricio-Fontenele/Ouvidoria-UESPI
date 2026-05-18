@@ -57,6 +57,7 @@ describe('GetManifestationDetailsUseCase', () => {
         createdAt: new Date('2026-05-10T15:00:00.000Z'),
       },
     ],
+    attachments: [],
   })
 
   beforeEach(() => {
@@ -92,6 +93,7 @@ describe('GetManifestationDetailsUseCase', () => {
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
         history: manifestationDetails.history,
         messages: manifestationDetails.messages,
+        attachments: manifestationDetails.attachments,
       },
     })
   })

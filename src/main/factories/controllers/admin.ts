@@ -3,14 +3,17 @@ import { z, type ZodType } from 'zod'
 import { AnswerManifestationUseCase } from '#src/application/use-cases/answer-manifestation/answer-manifestation-use-case.js'
 import { GetAdminManifestationDetailsUseCase } from '#src/application/use-cases/get-admin-manifestation-details/get-admin-manifestation-details-use-case.js'
 import { ListAdminManifestationsUseCase } from '#src/application/use-cases/list-admin-manifestations/list-admin-manifestations-use-case.js'
+import { GetAdminManifestationAttachmentDownloadUrlUseCase } from '#src/application/use-cases/manifestation-attachments/get-admin-manifestation-attachment-download-url-use-case.js'
 import { UpdateManifestationStatusUseCase } from '#src/application/use-cases/update-manifestation-status/update-manifestation-status-use-case.js'
 import { ManifestationStatus } from '#src/domain/entities/manifestation.js'
 import { ZodValidator } from '#src/infra/http/fastify/validators/zod-validator.js'
 import { AnswerManifestationController } from '#src/presentation/controllers/admin/answer-manifestation.controller.js'
+import { GetAdminManifestationAttachmentDownloadUrlController } from '#src/presentation/controllers/admin/get-admin-manifestation-attachment-download-url.controller.js'
 import { GetAdminManifestationDetailsController } from '#src/presentation/controllers/admin/get-admin-manifestation-details.controller.js'
 import { ListAdminManifestationsController } from '#src/presentation/controllers/admin/list-admin-manifestations.controller.js'
 import { UpdateManifestationStatusController } from '#src/presentation/controllers/admin/update-manifestation-status.controller.js'
 
+import { env } from '../../config/env.js'
 import { infrastructure } from '../infrastructure.js'
 
 const answerSchema = z.object({ content: z.string() })
@@ -50,4 +53,15 @@ export function makeListAdminManifestationsController(): ListAdminManifestations
     infrastructure.usersRepository,
   )
   return new ListAdminManifestationsController(useCase)
+}
+
+export function makeGetAdminManifestationAttachmentDownloadUrlController(): GetAdminManifestationAttachmentDownloadUrlController {
+  const useCase = new GetAdminManifestationAttachmentDownloadUrlUseCase(
+    infrastructure.usersRepository,
+    infrastructure.manifestationsRepository,
+    infrastructure.manifestationAttachmentsRepository,
+    infrastructure.attachmentStorage,
+    env.SUPABASE_SIGNED_URL_EXPIRES_IN_SECONDS,
+  )
+  return new GetAdminManifestationAttachmentDownloadUrlController(useCase)
 }
