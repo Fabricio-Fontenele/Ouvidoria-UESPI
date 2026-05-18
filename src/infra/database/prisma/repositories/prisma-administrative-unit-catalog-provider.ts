@@ -1,7 +1,8 @@
 import type { PrismaClient } from '@prisma/client'
 
-import type { AdministrativeUnitCatalogProvider } from '#src/application/ai/ai-catalog-providers.js'
 import type { AiAdministrativeUnitCatalogItem } from '#src/application/ai/ai-gateway.js'
+
+import type { AdministrativeUnitCatalogProvider } from '#src/application/ai/ai-catalog-providers.js'
 
 export class PrismaAdministrativeUnitCatalogProvider implements AdministrativeUnitCatalogProvider {
   constructor(private readonly prisma: PrismaClient) {}
