@@ -91,7 +91,10 @@ function NewRecordCard() {
           Atendimento com IA
         </span>
 
-        <h2 className="text-xl leading-7 font-black md:text-[22px] md:leading-7 lg:mt-4 lg:text-[34px] lg:leading-10" id="new-record-title">
+        <h2
+          className="text-xl leading-7 font-black md:text-[22px] md:leading-7 lg:mt-4 lg:text-[34px] lg:leading-10"
+          id="new-record-title"
+        >
           Novo Registro
         </h2>
         <p className="mt-2 text-xs leading-5 text-white/90 md:mt-3 md:max-w-[290px] md:text-sm md:leading-5 lg:max-w-2xl lg:text-base lg:leading-7">
