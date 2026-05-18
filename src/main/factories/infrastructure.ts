@@ -1,3 +1,4 @@
+import { FakeAiGateway } from '#src/infra/ai/fake-ai-gateway.js'
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
 import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
@@ -38,6 +39,7 @@ const attachmentStorage =
         serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
         bucket: env.SUPABASE_STORAGE_BUCKET,
       })
+const aiGateway = new FakeAiGateway()
 
 export const infrastructure = {
   passwordHasher,
@@ -53,4 +55,5 @@ export const infrastructure = {
   manifestationInteractionsRepository,
   manifestationEvaluationsRepository,
   attachmentStorage,
+  aiGateway,
 }
