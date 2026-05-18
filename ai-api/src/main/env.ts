@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 const PLACEHOLDER_API_KEY = 'change-me'
 
-const envSchema = z
+export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(4000),
@@ -41,12 +41,16 @@ const envSchema = z
     }
   })
 
-const parsed = envSchema.safeParse(process.env)
+export function parseEnv(input: NodeJS.ProcessEnv): z.infer<typeof envSchema> {
+  const parsed = envSchema.safeParse(input)
 
-if (!parsed.success) {
-  const issues = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('\n  ')
-  throw new Error(`Invalid environment configuration:\n  ${issues}`)
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('\n  ')
+    throw new Error(`Invalid environment configuration:\n  ${issues}`)
+  }
+
+  return parsed.data
 }
 
-export const env = parsed.data
+export const env = parseEnv(process.env)
 export type Env = typeof env
