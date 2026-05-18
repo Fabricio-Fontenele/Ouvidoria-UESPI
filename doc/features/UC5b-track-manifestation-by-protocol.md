@@ -41,6 +41,9 @@ Esta feature deve permitir:
 
 - consultar uma manifestação anônima por `protocol` e `accessCode`;
 - expor uma projeção pública mínima da manifestação (sem descrição, mensagens internas, autoria, histórico administrativo ou responsáveis);
+- retornar `attachments[]` públicos no endpoint detalhado de rastreio;
+- permitir upload de anexo anônimo por `protocol` + `accessCode` em recurso dedicado;
+- permitir geração de `download-url` curta para anexo público do rastreio;
 - bloquear o uso deste fluxo para manifestações identificadas;
 - retornar o mesmo erro genérico para protocolo inexistente, código inválido ou manifestação não anônima, evitando enumeração;
 - permitir consulta de manifestações em qualquer status, inclusive estados terminais (`finalized`, `canceled`), em modo apenas leitura.
@@ -52,6 +55,7 @@ Esta feature não contempla:
 - envio de mensagens por manifestante anônimo;
 - consulta de detalhes administrativos, histórico de transições ou mensagens internas;
 - exposição da descrição original ou de respostas administrativas em texto livre;
+- exposição de anexos administrativos internos no rastreio público;
 - reemissão ou rotação de `accessCode`;
 - rate limiting ou bloqueio por tentativa (responsabilidade da camada de transporte);
 - notificações ao manifestante anônimo.
@@ -82,6 +86,7 @@ Para executar o acompanhamento anônimo:
 Após operação bem-sucedida:
 
 - a projeção pública da manifestação é devolvida;
+- anexos públicos ficam visíveis em `track/details` e acessíveis por `download-url` temporária;
 - o estado do agregado permanece inalterado;
 - nenhum dado interno administrativo é exposto.
 
@@ -111,18 +116,19 @@ A operação é estritamente de leitura e não dispara persistência.
 
 ## 9. Regras de negócio
 
-| Código      | Regra                                                                                                                                                 |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RN-UC05b-01 | O sistema deve permitir acompanhamento de manifestação anônima por protocolo e código de acompanhamento.                                              |
-| RN-UC05b-02 | Manifestações identificadas não devem ser acompanhadas por este fluxo, mesmo quando o protocolo for conhecido.                                        |
-| RN-UC05b-03 | A consulta pública por protocolo não deve expor descrição, mensagens, autoria, histórico administrativo, responsáveis ou identificador interno.       |
-| RN-UC05b-04 | O `accessCode` deve ser comparado contra `accessCodeHash` por `HashComparer`, sem persistência de texto plano.                                        |
-| RN-UC05b-05 | O `accessCodeHash` deve ser gerado no momento do registro da manifestação anônima e retornado em texto plano apenas uma vez.                          |
-| RN-UC05b-06 | Protocolos e códigos vazios ou compostos apenas por espaços devem ser tratados como entrada inválida e gerar o erro genérico.                         |
-| RN-UC05b-07 | Os erros de protocolo inexistente, manifestação identificada e código inválido devem compartilhar o mesmo tipo de erro genérico, evitando enumeração. |
-| RN-UC05b-08 | Manifestações em estado terminal devem permanecer consultáveis por este fluxo, em modo apenas leitura.                                                |
-| RN-UC05b-09 | O caso de uso não deve persistir alterações no agregado (`save()` não deve ser chamado).                                                              |
-| RN-UC05b-10 | O controle de tentativas (rate limiting / brute force) é responsabilidade da camada de transporte e não do caso de uso.                               |
+| Código       | Regra                                                                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC05b-01  | O sistema deve permitir acompanhamento de manifestação anônima por protocolo e código de acompanhamento.                                              |
+| RN-UC05b-02  | Manifestações identificadas não devem ser acompanhadas por este fluxo, mesmo quando o protocolo for conhecido.                                        |
+| RN-UC05b-03  | A consulta pública por protocolo não deve expor descrição, mensagens, autoria, histórico administrativo, responsáveis ou identificador interno.       |
+| RN-UC05b-03a | O endpoint `track/details` pode expor `attachments[]`, desde que limitados aos anexos públicos do manifestante identificado ou anônimo.               |
+| RN-UC05b-04  | O `accessCode` deve ser comparado contra `accessCodeHash` por `HashComparer`, sem persistência de texto plano.                                        |
+| RN-UC05b-05  | O `accessCodeHash` deve ser gerado no momento do registro da manifestação anônima e retornado em texto plano apenas uma vez.                          |
+| RN-UC05b-06  | Protocolos e códigos vazios ou compostos apenas por espaços devem ser tratados como entrada inválida e gerar o erro genérico.                         |
+| RN-UC05b-07  | Os erros de protocolo inexistente, manifestação identificada e código inválido devem compartilhar o mesmo tipo de erro genérico, evitando enumeração. |
+| RN-UC05b-08  | Manifestações em estado terminal devem permanecer consultáveis por este fluxo, em modo apenas leitura.                                                |
+| RN-UC05b-09  | O caso de uso não deve persistir alterações no agregado (`save()` não deve ser chamado).                                                              |
+| RN-UC05b-10  | O controle de tentativas (rate limiting / brute force) é responsabilidade da camada de transporte e não do caso de uso.                               |
 
 ---
 
@@ -216,7 +222,17 @@ O sistema deve retornar a projeção pública normalmente, em modo apenas leitur
     "status": "in_analysis",
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
-    "createdAt": "2026-05-10T12:00:00.000Z"
+    "createdAt": "2026-05-10T12:00:00.000Z",
+    "attachments": [
+      {
+        "id": "attachment-1",
+        "originalName": "evidence.pdf",
+        "mimeType": "application/pdf",
+        "sizeInBytes": 1024,
+        "uploadedByType": "anonymous_manifestant",
+        "createdAt": "2026-05-10T12:30:00.000Z"
+      }
+    ]
   }
 }
 ```
@@ -257,6 +273,7 @@ A unificação intencional dos casos acima sob um mesmo erro evita que a respost
 - o sistema deve falhar com erro genérico para entradas em branco, sem consultar o repositório;
 - o sistema deve permitir consulta em estados terminais como leitura;
 - a saída não deve conter descrição, mensagens, autoria, histórico administrativo, responsáveis ou identificador interno;
+- `attachments[]`, quando presente, deve conter apenas anexos públicos e nunca anexos administrativos internos;
 - o caso de uso não deve chamar `save()` em nenhum fluxo.
 
 ---
