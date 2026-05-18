@@ -12,7 +12,7 @@ function isAuthenticatedUser(value: unknown): value is { id: string; role: UserR
   return typeof candidate['id'] === 'string' && typeof candidate['role'] === 'string'
 }
 
-function buildHttpRequest(request: FastifyRequest): HttpRequest {
+export function buildHttpRequest(request: FastifyRequest): HttpRequest {
   const httpRequest: HttpRequest = {
     body: request.body,
     params: (request.params ?? {}) as Record<string, string>,
@@ -29,21 +29,27 @@ function buildHttpRequest(request: FastifyRequest): HttpRequest {
 
 type AnyController = Controller<HttpRequest<never, never, never>>
 
+export async function sendHttpResponse(
+  reply: FastifyReply,
+  httpResponse: Awaited<ReturnType<AnyController['handle']>>,
+) {
+  const body = httpResponse.body
+
+  if (body instanceof Error) {
+    return reply.status(httpResponse.statusCode).send({ error: body.name, message: body.message })
+  }
+
+  if (body === null) {
+    return reply.status(httpResponse.statusCode).send()
+  }
+
+  return reply.status(httpResponse.statusCode).send(body)
+}
+
 export function adaptRoute(controller: Pick<AnyController, 'handle'>): RouteHandlerMethod {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> => {
     const httpRequest = buildHttpRequest(request) as HttpRequest<never, never, never>
     const httpResponse = await controller.handle(httpRequest)
-
-    const body = httpResponse.body
-
-    if (body instanceof Error) {
-      return reply.status(httpResponse.statusCode).send({ error: body.name, message: body.message })
-    }
-
-    if (body === null) {
-      return reply.status(httpResponse.statusCode).send()
-    }
-
-    return reply.status(httpResponse.statusCode).send(body)
+    return sendHttpResponse(reply, httpResponse)
   }
 }

@@ -12,8 +12,17 @@ const { connectionString: databaseUrl } = withDatabaseSchemaSearchPath(schemaDat
 process.env['DATABASE_URL'] = databaseUrl
 process.env['JWT_SECRET'] ??= 'e2e-jwt-secret-with-at-least-32-characters'
 process.env['NODE_ENV'] = 'test'
+process.env['SUPABASE_URL'] ??= 'https://example.supabase.co'
+process.env['SUPABASE_SERVICE_ROLE_KEY'] ??= 'supabase-service-role-key'
+process.env['SUPABASE_STORAGE_BUCKET'] ??= 'manifestation-attachments'
+process.env['SUPABASE_SIGNED_URL_EXPIRES_IN_SECONDS'] ??= '300'
 
 execSync('pnpm prisma migrate deploy', {
+  stdio: 'ignore',
+  env: { ...process.env, DATABASE_URL: databaseUrl },
+})
+
+execSync('pnpm prisma db seed', {
   stdio: 'ignore',
   env: { ...process.env, DATABASE_URL: databaseUrl },
 })

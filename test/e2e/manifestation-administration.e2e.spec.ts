@@ -5,6 +5,8 @@ import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
 
 import { getApp, resetDatabase } from './utils/app.js'
+import { buildMultipartPayload } from './utils/multipart.js'
+import { createPdfBuffer } from '../utils/attachment-fixtures.js'
 
 const hasher = new BcryptjsHasher(4)
 
@@ -40,8 +42,8 @@ async function createIdentifiedManifestation(manifestantToken: string): Promise<
     payload: {
       isAnonymous: false,
       type: 'complaint',
-      campusId: 'campus-teresina',
-      administrativeUnitId: 'unit-secretaria',
+      campusId: 'campus-professor-alexandre-alves-de-oliveira',
+      administrativeUnitId: 'unit-direcao-parnaiba',
       description: 'Houve atraso no atendimento.',
     },
   })
@@ -105,6 +107,64 @@ describe('Manifestation administration with traceability (e2e)', () => {
       where: { manifestationId: manifestation.id, senderType: 'system' },
     })
     expect(systemMessages).toBe(1)
+  })
+
+  it('shows attachments in admin details and emits signed download URLs for ombudsman/admin', async () => {
+    const app = await getApp()
+    await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+
+    const manifestantToken = await signIn('manifestant@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+    const manifestation = await createIdentifiedManifestation(manifestantToken)
+
+    const multipart = buildMultipartPayload({
+      file: {
+        filename: 'report.pdf',
+        contentType: 'application/pdf',
+        content: createPdfBuffer(),
+      },
+    })
+
+    const uploadResponse = await app.inject({
+      method: 'POST',
+      url: `/manifestations/${manifestation.id}/attachments`,
+      headers: {
+        authorization: `Bearer ${manifestantToken}`,
+        ...multipart.headers,
+      },
+      payload: multipart.body,
+    })
+
+    expect(uploadResponse.statusCode).toBe(201)
+    const uploaded = uploadResponse.json<{ attachment: { id: string; originalName: string } }>()
+
+    const detailsResponse = await app.inject({
+      method: 'GET',
+      url: `/admin/manifestations/${manifestation.id}`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+    })
+
+    expect(detailsResponse.statusCode).toBe(200)
+    const details = detailsResponse.json<{
+      manifestation: { attachments: Array<{ id: string; originalName: string }> }
+    }>()
+    expect(details.manifestation.attachments).toHaveLength(1)
+    expect(details.manifestation.attachments[0]).toMatchObject({
+      id: uploaded.attachment.id,
+      originalName: 'report.pdf',
+    })
+
+    const downloadUrlResponse = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/attachments/${uploaded.attachment.id}/download-url`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+    })
+
+    expect(downloadUrlResponse.statusCode).toBe(200)
+    expect(downloadUrlResponse.json()).toStrictEqual({
+      downloadUrl: 'https://storage.test/download/1?expiresIn=300',
+    })
   })
 
   it('updates manifestation status and writes a system audit row', async () => {
@@ -174,8 +234,8 @@ describe('Manifestation administration with traceability (e2e)', () => {
       payload: {
         isAnonymous: false,
         type: 'complaint',
-        campusId: 'campus-teresina',
-        administrativeUnitId: 'unit-secretaria',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
+        administrativeUnitId: 'unit-direcao-parnaiba',
         description: 'Ouvidor abrindo em nome próprio.',
       },
     })

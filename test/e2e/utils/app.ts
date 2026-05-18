@@ -28,11 +28,16 @@ export async function getApp(): Promise<FastifyInstance> {
 
 export async function resetDatabase(): Promise<void> {
   const prisma = await getPrisma()
+  const { infrastructure } = await import('#src/main/factories/infrastructure.js')
 
   await prisma.$transaction([
     prisma.manifestationEvaluation.deleteMany(),
+    prisma.manifestationAttachment.deleteMany(),
     prisma.manifestationMessage.deleteMany(),
     prisma.manifestation.deleteMany(),
     prisma.user.deleteMany(),
   ])
+
+  const attachmentStorage = infrastructure.attachmentStorage as { clear?: () => void }
+  attachmentStorage.clear?.()
 }

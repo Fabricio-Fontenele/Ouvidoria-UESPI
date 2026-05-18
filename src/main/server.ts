@@ -1,5 +1,6 @@
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
+import fastifyMultipart from '@fastify/multipart'
 import Fastify, { type FastifyInstance } from 'fastify'
 
 import { prisma } from '#src/infra/database/prisma/client.js'
@@ -8,6 +9,7 @@ import './app-types.js'
 import { env } from './config/env.js'
 import { registerAdminRoutes } from './routes/admin.routes.js'
 import { registerAuthRoutes } from './routes/auth.routes.js'
+import { registerCatalogRoutes } from './routes/catalog.routes.js'
 import { registerManifestationRoutes } from './routes/manifestation.routes.js'
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -15,7 +17,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(fastifyCors, { origin: true })
   await app.register(fastifyJwt, { secret: env.JWT_SECRET })
+  await app.register(fastifyMultipart)
 
+  await app.register(registerCatalogRoutes)
   await app.register(registerAuthRoutes)
   await app.register(registerManifestationRoutes)
   await app.register(registerAdminRoutes)

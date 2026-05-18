@@ -8,6 +8,8 @@ export type ManifestationHistoryEntryType =
   | 'finalized_by_author'
   | 'evaluation_recorded'
 
+export type ManifestationAttachmentUploadedByTypeDTO = 'manifestant' | 'anonymous_manifestant' | 'ombudsman' | 'admin'
+
 export interface ManifestationListItemDTO {
   id: string
   protocol: string
@@ -40,6 +42,15 @@ export interface ManifestationMessageDTO {
   createdAt: Date
 }
 
+export interface ManifestationAttachmentDTO {
+  id: string
+  originalName: string
+  mimeType: string
+  sizeInBytes: number
+  uploadedByType: ManifestationAttachmentUploadedByTypeDTO
+  createdAt: Date
+}
+
 export interface ManifestationDetailsDTO {
   id: string
   protocol: string
@@ -54,4 +65,5 @@ export interface ManifestationDetailsDTO {
   createdAt: Date
   history: ManifestationHistoryEntryDTO[]
   messages: ManifestationMessageDTO[]
+  attachments: ManifestationAttachmentDTO[]
 }
