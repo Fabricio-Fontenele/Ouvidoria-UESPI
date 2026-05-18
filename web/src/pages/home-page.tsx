@@ -9,6 +9,7 @@ import type { ManifestationStatus } from '../application/manifestations/manifest
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
 import guaraMascot from '../assets/guara-mascot.png'
+import guaraPoses from '../assets/poses-guara.webp'
 import { Icon } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
@@ -83,22 +84,61 @@ function NewRecordCard() {
   return (
     <section
       aria-labelledby="new-record-title"
-      className="rounded-lg border-2 border-home-blue bg-home-surface px-4 pt-6 pb-8 shadow-home-card sm:px-6 sm:pt-7 lg:min-h-[257px]"
+      className="relative grid min-h-[150px] grid-cols-[minmax(0,1fr)_112px] items-center gap-3 overflow-hidden rounded-lg bg-home-blue px-4 pt-5 pb-4 text-white shadow-home-card min-[390px]:grid-cols-[minmax(0,1fr)_128px] sm:px-6 md:min-h-[154px] md:grid-cols-[minmax(0,1fr)_140px] md:gap-4 md:px-7 md:py-5 lg:min-h-[260px] lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-8 lg:px-10 lg:py-8 xl:grid-cols-[minmax(0,1fr)_248px] xl:px-12"
     >
-      <div className="max-w-[310px] lg:max-w-[380px]">
-        <h2 className="text-xl leading-7 font-bold text-home-text" id="new-record-title">
+      <div className="relative z-10 min-w-0 md:max-w-none lg:flex lg:flex-col lg:justify-center">
+        <span className="hidden w-fit rounded-full bg-home-surface/15 px-3 py-1 text-xs leading-4 font-bold text-white/85 lg:inline-flex">
+          Atendimento com IA
+        </span>
+
+        <h2 className="text-xl leading-7 font-black md:text-[22px] md:leading-7 lg:mt-4 lg:text-[34px] lg:leading-10" id="new-record-title">
           Novo Registro
         </h2>
-        <p className="mt-5 text-sm leading-5 text-home-brown sm:text-base sm:leading-6">
+        <p className="mt-2 text-xs leading-5 text-white/90 md:mt-3 md:max-w-[290px] md:text-sm md:leading-5 lg:max-w-2xl lg:text-base lg:leading-7">
           Precisa registrar uma nova manifestação? Faça isso com a ajuda de nossa agente de IA Guará.
         </p>
+
+        <div className="mt-6 hidden max-w-3xl grid-cols-3 gap-4 lg:grid">
+          <div className="border-l border-white/25 pl-4">
+            <span className="grid size-8 place-items-center rounded-lg bg-home-surface/15 text-white">
+              <Icon className="size-4" name="message-circle" />
+            </span>
+            <p className="mt-3 text-sm leading-5 font-bold">Organize o relato</p>
+            <p className="mt-1 text-xs leading-5 text-white/75">Guará ajuda a estruturar as informações principais.</p>
+          </div>
+
+          <div className="border-l border-white/25 pl-4">
+            <span className="grid size-8 place-items-center rounded-lg bg-home-surface/15 text-white">
+              <Icon className="size-4" name="shield" />
+            </span>
+            <p className="mt-3 text-sm leading-5 font-bold">Dados protegidos</p>
+            <p className="mt-1 text-xs leading-5 text-white/75">O registro segue o fluxo seguro da Ouvidoria.</p>
+          </div>
+
+          <div className="border-l border-white/25 pl-4">
+            <span className="grid size-8 place-items-center rounded-lg bg-home-surface/15 text-white">
+              <Icon className="size-4" name="file-text" />
+            </span>
+            <p className="mt-3 text-sm leading-5 font-bold">Protocolo gerado</p>
+            <p className="mt-1 text-xs leading-5 text-white/75">Depois do envio, acompanhe tudo por aqui.</p>
+          </div>
+        </div>
+
         <a
-          className="mt-6 inline-flex min-h-12 w-full max-w-56 items-center justify-center rounded-lg bg-home-blue px-5 text-lg leading-7 font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+          className="mt-4 inline-flex min-h-9 min-w-32 items-center justify-center gap-2 rounded-[4px] bg-home-surface px-4 text-xs leading-none font-bold text-home-blue no-underline transition duration-150 hover:bg-home-action active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white md:mt-5 md:min-h-10 md:min-w-40 md:rounded-lg md:text-sm lg:mt-7 lg:min-h-11 lg:w-fit lg:px-5 lg:text-base"
           href={buildGuaraNewManifestationHref()}
         >
+          <Icon className="hidden size-5 lg:block" name="message-circle" />
           Fale com o Guará
         </a>
       </div>
+
+      <img
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none h-28 w-28 justify-self-center object-contain object-bottom select-none min-[390px]:h-[118px] min-[390px]:w-[118px] md:h-[142px] md:w-[140px] md:justify-self-end lg:h-[236px] lg:w-[220px] lg:self-end xl:h-[252px] xl:w-[248px]"
+        src={guaraPoses}
+      />
     </section>
   )
 }
@@ -107,7 +147,7 @@ function GuaraChatTrigger() {
   return (
     <a
       aria-label="Abrir chat com o Guará"
-      className="fixed right-2 bottom-5 z-30 block size-20 rounded-full drop-shadow-home-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-home-blue sm:right-5 sm:bottom-8 sm:size-28 lg:right-8 lg:bottom-10 lg:size-36"
+      className="fixed right-3 bottom-5 z-30 block size-24 rounded-full drop-shadow-home-mascot transition duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-home-blue sm:right-5 sm:bottom-8 sm:size-28 lg:right-8 lg:bottom-10 lg:size-36"
       href={buildGuaraNewManifestationHref()}
     >
       <img alt="" className="size-full rounded-full object-contain" src={guaraMascot} />
@@ -295,7 +335,7 @@ export function HomePage() {
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
       <AuthenticatedAppShell>
         <main className="mx-auto w-full max-w-6xl px-3 pt-8 min-[375px]:px-6 sm:px-8 md:pt-14 lg:px-12">
-          <section className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,480px)] lg:items-start lg:gap-12">
+          <section className="grid max-w-3xl gap-8 md:gap-10 lg:max-w-none">
             <div>
               <h1 className="max-w-[320px] text-[38px] leading-[0.98] font-black text-home-text min-[375px]:text-5xl sm:max-w-xl sm:text-6xl lg:text-7xl">
                 Minhas Manifestações
