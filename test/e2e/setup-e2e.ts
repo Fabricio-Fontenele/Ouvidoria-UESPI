@@ -16,6 +16,9 @@ process.env['SUPABASE_URL'] ??= 'https://example.supabase.co'
 process.env['SUPABASE_SERVICE_ROLE_KEY'] ??= 'supabase-service-role-key'
 process.env['SUPABASE_STORAGE_BUCKET'] ??= 'manifestation-attachments'
 process.env['SUPABASE_SIGNED_URL_EXPIRES_IN_SECONDS'] ??= '300'
+process.env['AI_GATEWAY_PROVIDER'] = 'fake'
+delete process.env['AI_SERVICE_BASE_URL']
+delete process.env['AI_SERVICE_API_KEY']
 
 execSync('pnpm prisma migrate deploy', {
   stdio: 'ignore',

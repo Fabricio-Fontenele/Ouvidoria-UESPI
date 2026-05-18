@@ -1,4 +1,6 @@
+import type { AiGateway } from '#src/application/ai/ai-gateway.js'
 import { FakeAiGateway } from '#src/infra/ai/fake-ai-gateway.js'
+import { HttpAiGateway } from '#src/infra/ai/http-ai-gateway.js'
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
 import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
@@ -39,7 +41,14 @@ const attachmentStorage =
         serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
         bucket: env.SUPABASE_STORAGE_BUCKET,
       })
-const aiGateway = new FakeAiGateway()
+const aiGateway: AiGateway =
+  env.AI_GATEWAY_PROVIDER === 'http' && env.AI_SERVICE_BASE_URL !== undefined && env.AI_SERVICE_API_KEY !== undefined
+    ? new HttpAiGateway({
+        baseUrl: env.AI_SERVICE_BASE_URL,
+        apiKey: env.AI_SERVICE_API_KEY,
+        timeoutMs: env.AI_SERVICE_TIMEOUT_MS,
+      })
+    : new FakeAiGateway()
 
 export const infrastructure = {
   passwordHasher,
