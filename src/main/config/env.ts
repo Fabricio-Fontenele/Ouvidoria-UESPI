@@ -21,7 +21,7 @@ const envSchema = z
     AI_GATEWAY_PROVIDER: z.enum(['fake', 'http']).default('fake'),
     AI_SERVICE_BASE_URL: z.url().optional(),
     AI_SERVICE_API_KEY: z.string().min(1).optional(),
-    AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(15000),
+    AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
   })
   .superRefine((data, ctx) => {
     if (data.AI_GATEWAY_PROVIDER !== 'http') {
