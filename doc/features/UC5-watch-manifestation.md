@@ -43,7 +43,9 @@ Esta feature deve permitir:
 - paginar a listagem por página;
 - consultar os detalhes de uma manifestação específica;
 - validar se a manifestação pertence ao `userId` solicitante;
-- exibir status atual, histórico e mensagens já registradas;
+- exibir status atual, histórico, mensagens e anexos já registrados;
+- permitir upload de anexo pelo manifestante autenticado em recurso dedicado;
+- permitir geração de `download-url` curta para anexo da própria manifestação;
 - registrar nova mensagem do manifestante como entidade de domínio em manifestação autorizada;
 - bloquear o envio de mensagem para manifestação finalizada ou cancelada.
 
@@ -53,6 +55,7 @@ Esta feature não contempla:
 
 - consulta de manifestação anônima por protocolo;
 - anexos em mensagens;
+- remoção ou substituição de anexos;
 - notificações;
 - resposta administrativa;
 - alteração de status;
@@ -85,7 +88,9 @@ Para executar o acompanhamento:
 Após operações bem-sucedidas:
 
 - a listagem retorna apenas manifestações do usuário solicitado;
-- a consulta de detalhes retorna o estado atual da manifestação com histórico e mensagens;
+- a consulta de detalhes retorna o estado atual da manifestação com histórico, mensagens e anexos;
+- o anexo enviado fica vinculado à manifestação com metadados públicos próprios;
+- o download do arquivo continua mediado por `download-url` temporária;
 - a mensagem enviada fica registrada com identidade própria, data e remetente;
 - o histórico de acompanhamento permanece rastreável.
 
@@ -151,26 +156,31 @@ As tabelas desta seção descrevem as entradas de aplicação dos casos de uso. 
 ### 8.4 Contrato HTTP atual
 
 - `GET /manifestations?page=1` lista as manifestações do manifestante autenticado; `page` é opcional e defaulta para `1`.
-- `GET /manifestations/:manifestationId` consulta os detalhes; `manifestationId` vem da rota.
+- `GET /manifestations/:manifestationId` consulta os detalhes e retorna `attachments[]`; `manifestationId` vem da rota.
+- `POST /manifestations/:manifestationId/attachments` envia `multipart/form-data` com campo `file`.
+- `POST /manifestations/:manifestationId/attachments/:attachmentId/download-url` emite URL curta de download.
 - `POST /manifestations/:manifestationId/messages` envia `{ "content": "..." }` no body.
 - O frontend nunca envia `userId` no body, query ou path.
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                                        |
-| ---------- | ------------------------------------------------------------------------------------------------------------ |
-| RN-UC05-01 | O sistema deve listar apenas manifestações pertencentes ao `userId` informado.                               |
-| RN-UC05-02 | A paginação da listagem deve aceitar somente páginas maiores ou iguais a `1`.                                |
-| RN-UC05-03 | A consulta detalhada deve falhar quando a manifestação não existir.                                          |
-| RN-UC05-04 | A consulta detalhada deve falhar quando a manifestação não pertencer ao `userId` autenticado.                |
-| RN-UC05-05 | Manifestações anônimas não devem ser consultadas por este fluxo identificado.                                |
-| RN-UC05-06 | O detalhamento deve retornar status atual, histórico e mensagens associadas à manifestação.                  |
-| RN-UC05-07 | O envio de mensagem deve exigir conteúdo textual não vazio.                                                  |
-| RN-UC05-08 | O envio de mensagem deve falhar quando a manifestação não pertencer ao `userId` autenticado.                 |
-| RN-UC05-09 | Apenas manifestações abertas para interação podem receber novas mensagens.                                   |
-| RN-UC05-10 | Manifestações `finalized` e `canceled` não podem receber novas mensagens.                                    |
-| RN-UC05-11 | Cada mensagem registrada deve manter rastreabilidade de remetente e data de criação.                         |
-| RN-UC05-12 | Regras de autoria, anonimato e abertura para interação devem ficar encapsuladas na entidade `Manifestation`. |
+| Código      | Regra                                                                                                                             |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC05-01  | O sistema deve listar apenas manifestações pertencentes ao `userId` informado.                                                    |
+| RN-UC05-02  | A paginação da listagem deve aceitar somente páginas maiores ou iguais a `1`.                                                     |
+| RN-UC05-03  | A consulta detalhada deve falhar quando a manifestação não existir.                                                               |
+| RN-UC05-04  | A consulta detalhada deve falhar quando a manifestação não pertencer ao `userId` autenticado.                                     |
+| RN-UC05-05  | Manifestações anônimas não devem ser consultadas por este fluxo identificado.                                                     |
+| RN-UC05-06  | O detalhamento deve retornar status atual, histórico e mensagens associadas à manifestação.                                       |
+| RN-UC05-06a | O detalhamento identificado deve retornar também `attachments[]` com metadados públicos do anexo.                                 |
+| RN-UC05-07  | O envio de mensagem deve exigir conteúdo textual não vazio.                                                                       |
+| RN-UC05-08  | O envio de mensagem deve falhar quando a manifestação não pertencer ao `userId` autenticado.                                      |
+| RN-UC05-09  | Apenas manifestações abertas para interação podem receber novas mensagens.                                                        |
+| RN-UC05-10  | Manifestações `finalized` e `canceled` não podem receber novas mensagens.                                                         |
+| RN-UC05-11  | Cada mensagem registrada deve manter rastreabilidade de remetente e data de criação.                                              |
+| RN-UC05-12  | Regras de autoria, anonimato e abertura para interação devem ficar encapsuladas na entidade `Manifestation`.                      |
+| RN-UC05-13  | O upload identificado de anexo deve aceitar exatamente `1` arquivo por request e respeitar limite de `5` anexos por manifestação. |
+| RN-UC05-14  | O download do arquivo deve ocorrer apenas via `download-url` temporária emitida pelo backend, sem expor chave de storage.         |
 
 ---
 
@@ -212,6 +222,17 @@ Para envio de mensagem:
 
 Observação:
 No recorte atual do núcleo, a regra foi modelada como permissão para `in_analysis` e `answered`, com bloqueio explícito para `finalized` e `canceled`.
+
+### 10.5 Anexos
+
+Para upload e visualização de anexos neste fluxo identificado:
+
+- o arquivo deve ser enviado no campo multipart `file`;
+- o endpoint aceita exatamente `1` arquivo por chamada;
+- o frontend deve repetir a chamada para múltiplos anexos;
+- o detalhamento identificado retorna `attachments[]`;
+- o backend expõe apenas metadados públicos e uma `download-url` temporária quando solicitada;
+- não há remoção, substituição ou anexos em mensagens nesta entrega.
 
 ---
 
@@ -573,4 +594,4 @@ export interface ManifestationInteractionsRepository {
 
 ## 20. Observação final
 
-Esta feature documenta o recorte atual de acompanhamento identificado da manifestação no núcleo da aplicação. Expansões futuras, como protocolo para anônimos, anexos em mensagens, notificações e regras mais granulares de abertura para interação, devem ser adicionadas em especificações complementares ou revisões desta mesma feature.
+Esta feature documenta o recorte atual de acompanhamento identificado da manifestação no núcleo da aplicação. O fluxo de anexos já implementado está detalhado em `doc/features/UC5c-manifestation-attachments.md`. Expansões futuras, como anexos em mensagens, notificações e regras mais granulares de abertura para interação, devem ser adicionadas em especificações complementares ou revisões desta mesma feature.

@@ -9,7 +9,6 @@ Este contrato cobre apenas as rotas implementadas no backend atual.
 Itens de requisito ainda não expostos por HTTP nesta fatia devem ser tratados como pendentes de integração, especialmente:
 
 - recuperação de senha
-- anexos
 - relatórios
 - criação administrativa de usuários
 - chatbot/IA
@@ -19,7 +18,7 @@ Itens de requisito ainda não expostos por HTTP nesta fatia devem ser tratados c
 ### Base path e conteúdo
 
 - Não existe prefixo global de API no backend atual. Todas as rotas públicas começam diretamente em `/`.
-- Requests e responses usam JSON.
+- Requests e responses usam JSON, exceto os endpoints de upload de anexo, que usam `multipart/form-data`.
 - Datas e timestamps são serializados em ISO-8601 UTC, por exemplo: `2026-05-17T13:42:00.000Z`.
 
 ### Autenticação
@@ -112,6 +111,39 @@ type ManifestationHistoryEntryType =
   | 'evaluation_recorded'
 
 type ManifestationMessageSenderType = 'manifestant' | 'anonymous_manifestant' | 'ombudsman' | 'admin' | 'system'
+
+type ManifestationAttachmentUploadedByType = 'manifestant' | 'anonymous_manifestant' | 'ombudsman' | 'admin'
+
+type ManifestationAttachment = {
+  id: string
+  originalName: string
+  mimeType: string
+  sizeInBytes: number
+  uploadedByType: ManifestationAttachmentUploadedByType
+  createdAt: string
+}
+```
+
+## 2.1 Política pública de anexos
+
+Regras consumíveis pelo frontend:
+
+- `POST /manifestations` continua estritamente `application/json` e não aceita `attachments[]`.
+- Upload de anexos usa recurso separado e aceita exatamente `1` arquivo por request.
+- Para enviar múltiplos anexos, o frontend deve repetir a chamada até o limite de `5` anexos por manifestação.
+- Tamanho máximo por arquivo: `10 MB`.
+- MIME types aceitos: `application/pdf`, `image/jpeg`, `image/png`, `image/webp`.
+- O backend valida autorização, estado da manifestação, limite de quantidade e tipo de arquivo antes de disponibilizar o anexo.
+- O frontend nunca recebe `storageKey`, bucket ou URL permanente do arquivo.
+- Download sempre é mediado por `POST .../download-url`, que retorna uma signed URL curta.
+- A signed URL expira conforme configuração do backend; no ambiente atual o default é `300` segundos.
+
+Contrato de resposta para `download-url`:
+
+```json
+{
+  "downloadUrl": "https://storage.example/signed-url"
+}
 ```
 
 ## 3. Autenticação
@@ -227,10 +259,11 @@ Observações:
 
 ### Anexos
 
-O contrato HTTP atual de `POST /manifestations` não aceita anexos.
+O contrato HTTP atual de `POST /manifestations` não aceita anexos inline.
 
 - A requisição deve ser `application/json`.
-- Não existe, nesta fatia do MVP, endpoint público para upload, listagem ou remoção de arquivos de manifestação.
+- O upload deve acontecer depois, por recurso dedicado de anexos.
+- Não existe remoção ou substituição de anexos nesta fatia do MVP.
 
 Request identificado:
 
@@ -396,6 +429,16 @@ Response `200 OK`:
         "createdAt": "2026-05-17T13:42:00.000Z"
       }
     ],
+    "attachments": [
+      {
+        "id": "attachment-1",
+        "originalName": "evidence.pdf",
+        "mimeType": "application/pdf",
+        "sizeInBytes": 1024,
+        "uploadedByType": "manifestant",
+        "createdAt": "2026-05-10T15:30:00.000Z"
+      }
+    ],
     "messages": [
       {
         "id": "message-1",
@@ -414,6 +457,77 @@ Erros representativos:
 - `401 Unauthorized` — `UnauthenticatedError`
 - `403 Forbidden` — `ForbiddenError`, `NotAllowedToAccessManifestationError`
 - `404 Not Found` — `ManifestationNotFoundError`
+
+### `POST /manifestations/:manifestationId/attachments`
+
+Envia `1` anexo para uma manifestação identificada do próprio manifestante.
+
+Regras práticas para o frontend:
+
+- Exige `Authorization: Bearer <token-do-manifestante>`.
+- O body deve ser `multipart/form-data`.
+- O arquivo deve ser enviado no campo `file`.
+- Não envie campos extras no multipart deste endpoint.
+- Para múltiplos anexos, repita a chamada uma vez por arquivo.
+- Se uma chamada falhar, os anexos enviados com sucesso antes dela permanecem válidos.
+
+Exemplo:
+
+```http
+POST /manifestations/manifestation-1/attachments
+Authorization: Bearer <token-do-manifestante>
+Content-Type: multipart/form-data
+```
+
+Campo multipart esperado:
+
+- `file`: arquivo binário
+
+Response `201 Created`:
+
+```json
+{
+  "attachment": {
+    "id": "attachment-1",
+    "originalName": "evidence.pdf",
+    "mimeType": "application/pdf",
+    "sizeInBytes": 1024,
+    "uploadedByType": "manifestant",
+    "createdAt": "2026-05-10T15:30:00.000Z"
+  }
+}
+```
+
+Erros representativos:
+
+- `400 Bad Request` — `InvalidParamError`, `MissingParamError`, `AttachmentFileEmptyError`, `AttachmentFileTooLargeError`, `AttachmentMimeTypeNotAllowedError`
+- `401 Unauthorized` — `UnauthenticatedError`
+- `403 Forbidden` — `ForbiddenError`, `NotAllowedToAccessManifestationError`
+- `404 Not Found` — `ManifestationNotFoundError`
+- `409 Conflict` — `ManifestationAttachmentsLimitExceededError`, `ManifestationCannotReceiveAttachmentsError`
+
+### `POST /manifestations/:manifestationId/attachments/:attachmentId/download-url`
+
+Emite uma signed URL curta para download de um anexo da própria manifestação identificada.
+
+Request:
+
+- sem body obrigatório
+
+Response `200 OK`:
+
+```json
+{
+  "downloadUrl": "https://storage.example/signed-url"
+}
+```
+
+Erros representativos:
+
+- `400 Bad Request` — `MissingParamError`
+- `401 Unauthorized` — `UnauthenticatedError`
+- `403 Forbidden` — `ForbiddenError`, `NotAllowedToAccessManifestationError`
+- `404 Not Found` — `ManifestationNotFoundError`, `AttachmentNotFoundError`
 
 ### `POST /manifestations/:manifestationId/messages`
 
@@ -564,6 +678,128 @@ Erros representativos:
 - `400 Bad Request` — `ValidationError`
 - `404 Not Found` — `ManifestationTrackingNotFoundError`
 
+### `POST /manifestations/track/details`
+
+Retorna a projeção pública de detalhe do rastreio anônimo com `attachments[]`.
+
+Observações:
+
+- Este endpoint não substitui `POST /manifestations/track`.
+- `POST /manifestations/track` permanece o contrato mínimo para resumo de status.
+- `POST /manifestations/track/details` continua sem expor descrição, mensagens, histórico administrativo ou `authorUserId`.
+- `attachments[]` aqui inclui apenas anexos públicos do manifestante identificado ou anônimo. Anexos administrativos internos não entram nesta resposta.
+
+Request:
+
+```json
+{
+  "protocol": "2026-0002",
+  "accessCode": "plain-access-code"
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "manifestation": {
+    "protocol": "2026-0002",
+    "type": "report",
+    "status": "in_analysis",
+    "campusId": "campus-2",
+    "administrativeUnitId": "unit-7",
+    "createdAt": "2026-05-10T15:00:00.000Z",
+    "attachments": [
+      {
+        "id": "attachment-1",
+        "originalName": "evidence.pdf",
+        "mimeType": "application/pdf",
+        "sizeInBytes": 1024,
+        "uploadedByType": "anonymous_manifestant",
+        "createdAt": "2026-05-10T15:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+Erros representativos:
+
+- `400 Bad Request` — `ValidationError`
+- `404 Not Found` — `ManifestationTrackingNotFoundError`
+
+### `POST /manifestations/track/attachments`
+
+Envia `1` anexo para uma manifestação anônima usando `protocol` + `accessCode`.
+
+Regras práticas para o frontend:
+
+- O body deve ser `multipart/form-data`.
+- Os campos esperados são `protocol`, `accessCode` e `file`.
+- A ordem das partes no multipart não importa.
+- Para múltiplos anexos, repita a chamada uma vez por arquivo.
+- O endpoint aplica os mesmos limites públicos de tamanho, MIME e quantidade dos anexos identificados.
+
+Exemplo:
+
+```http
+POST /manifestations/track/attachments
+Content-Type: multipart/form-data
+```
+
+Campos multipart esperados:
+
+- `protocol`: string
+- `accessCode`: string
+- `file`: arquivo binário
+
+Response `201 Created`:
+
+```json
+{
+  "attachment": {
+    "id": "attachment-1",
+    "originalName": "evidence.pdf",
+    "mimeType": "application/pdf",
+    "sizeInBytes": 1024,
+    "uploadedByType": "anonymous_manifestant",
+    "createdAt": "2026-05-10T15:30:00.000Z"
+  }
+}
+```
+
+Erros representativos:
+
+- `400 Bad Request` — `ValidationError`, `InvalidParamError`, `MissingParamError`, `AttachmentFileEmptyError`, `AttachmentFileTooLargeError`, `AttachmentMimeTypeNotAllowedError`
+- `404 Not Found` — `ManifestationTrackingNotFoundError`
+- `409 Conflict` — `ManifestationAttachmentsLimitExceededError`, `ManifestationCannotReceiveAttachmentsError`
+
+### `POST /manifestations/track/attachments/:attachmentId/download-url`
+
+Emite uma signed URL curta para download de um anexo público da manifestação anônima rastreada.
+
+Request:
+
+```json
+{
+  "protocol": "2026-0002",
+  "accessCode": "plain-access-code"
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "downloadUrl": "https://storage.example/signed-url"
+}
+```
+
+Erros representativos:
+
+- `400 Bad Request` — `ValidationError`, `MissingParamError`
+- `404 Not Found` — `ManifestationTrackingNotFoundError`
+
 ## 7. Administração
 
 Todas as rotas administrativas exigem Bearer de usuário `ombudsman` ou `admin`.
@@ -659,6 +895,16 @@ Response `200 OK`:
         "createdAt": "2026-05-17T13:42:00.000Z"
       }
     ],
+    "attachments": [
+      {
+        "id": "attachment-1",
+        "originalName": "evidence.pdf",
+        "mimeType": "application/pdf",
+        "sizeInBytes": 1024,
+        "uploadedByType": "manifestant",
+        "createdAt": "2026-05-10T15:30:00.000Z"
+      }
+    ],
     "messages": [
       {
         "id": "message-1",
@@ -678,6 +924,35 @@ Erros representativos:
 - `401 Unauthorized` — `UnauthenticatedError`
 - `403 Forbidden` — `ForbiddenError`, `NotAllowedToManageManifestationError`
 - `404 Not Found` — `ManifestationNotFoundError`
+
+### `POST /admin/manifestations/:manifestationId/attachments/:attachmentId/download-url`
+
+Emite uma signed URL curta para download administrativo de um anexo da manifestação.
+
+Observações:
+
+- Exige Bearer de `ombudsman` ou `admin`.
+- Nesta entrega não existe upload administrativo de anexos.
+- O detalhe administrativo pode listar anexos enviados por `manifestant`, `anonymous_manifestant`, `ombudsman` ou `admin`, embora hoje apenas os dois primeiros estejam ativos no produto.
+
+Request:
+
+- sem body obrigatório
+
+Response `200 OK`:
+
+```json
+{
+  "downloadUrl": "https://storage.example/signed-url"
+}
+```
+
+Erros representativos:
+
+- `400 Bad Request` — `MissingParamError`
+- `401 Unauthorized` — `UnauthenticatedError`
+- `403 Forbidden` — `ForbiddenError`, `NotAllowedToManageManifestationError`
+- `404 Not Found` — `ManifestationNotFoundError`, `AttachmentNotFoundError`
 
 ### `POST /admin/manifestations/:manifestationId/answer`
 
