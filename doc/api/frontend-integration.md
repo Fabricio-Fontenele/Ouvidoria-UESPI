@@ -9,10 +9,8 @@ Este contrato cobre apenas as rotas implementadas no backend atual.
 Itens de requisito ainda não expostos por HTTP nesta fatia devem ser tratados como pendentes de integração, especialmente:
 
 - recuperação de senha
-- anexos
 - relatórios
 - criação administrativa de usuários
-- chatbot/IA
 
 ## 1. Convenções gerais
 
@@ -752,15 +750,87 @@ Erros representativos:
 - `404 Not Found` — `ManifestationNotFoundError`
 - `409 Conflict` — `ManifestationStatusTransitionNotAllowedError`
 
-## 8. Integrações pendentes
+## 8. Chatbot institucional / IA
 
-Os fluxos de chatbot/IA institucional ainda não estão expostos por HTTP neste backend.
+### `POST /ai/messages`
 
-- `SendAiMessageController` existe em `src/presentation/controllers/ai/`.
-- Ainda não existe factory registrada em `src/main/factories/`.
-- Ainda não existe rota pública registrada em `src/main/routes/`.
+- Pública (sem autenticação).
+- Não persiste a conversa; o frontend é responsável por manter o histórico entre turnos.
+- Hoje atendida por `FakeAiGateway` (heurística por palavra-chave com normalização NFD). O adapter real de RAG/LLM substitui essa instância em `src/main/factories/infrastructure.ts` sem alterar o contrato HTTP.
 
-Isso afeta, por enquanto:
+#### Request
 
-- UC-09 — consulta à IA institucional
-- UC-10 — pré-preenchimento assistido por IA
+```json
+{
+  "history": [
+    {
+      "role": "user",
+      "content": "Quero reclamar do atendimento na coordenação."
+    },
+    {
+      "role": "assistant",
+      "content": "Entendi. Pode me dar mais detalhes?"
+    }
+  ],
+  "message": "Foi na coordenação de sistemas em Parnaíba."
+}
+```
+
+| Campo               | Tipo                    | Obrigatório | Regras                                                                 |
+| ------------------- | ----------------------- | ----------- | ---------------------------------------------------------------------- |
+| `history`           | array (máx. 20)         | Sim         | Ordenado do mais antigo ao mais novo. Pode ser `[]` no primeiro turno. |
+| `history[].role`    | `"assistant" \| "user"` | Sim         | `system` é interno do backend; o cliente não envia.                    |
+| `history[].content` | string                  | Sim         | Trim aplicado, 1..4000 caracteres.                                     |
+| `message`           | string                  | Sim         | Trim aplicado, 1..4000 caracteres.                                     |
+
+#### Response (`200 OK`)
+
+```json
+{
+  "answer": "Entendi. Posso te ajudar a abrir uma manifestação com base nas informações fornecidas.",
+  "intent": "manifestation_draft_ready",
+  "shouldOpenManifestationDraft": true,
+  "draft": {
+    "type": "complaint",
+    "campusId": "campus-poeta-torquato-neto",
+    "administrativeUnitId": "unit-prad-teresina",
+    "description": "Quero fazer uma reclamação sobre o atendimento.",
+    "involvedPeople": null
+  },
+  "missingFields": [],
+  "confidence": 0.8
+}
+```
+
+| Campo                          | Tipo                                                                                                                  | Descrição                                                                                                        |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `answer`                       | string                                                                                                                | Resposta textual normalizada (trim aplicado).                                                                    |
+| `intent`                       | `"institutional_question" \| "manifestation_candidate" \| "manifestation_draft_ready" \| "out_of_scope" \| "unknown"` | Intenção classificada pelo backend. Valores fora dessa lista são degradados para `"unknown"`.                    |
+| `shouldOpenManifestationDraft` | boolean                                                                                                               | Só pode ser `true` quando `intent === "manifestation_draft_ready"`, o draft existe e `missingFields` está vazio. |
+| `draft`                        | object \| null                                                                                                        | Presente apenas para `manifestation_candidate` ou `manifestation_draft_ready`. Shape detalhado abaixo.           |
+| `missingFields`                | array de `"type" \| "campusId" \| "administrativeUnitId" \| "description"`                                            | Campos mínimos ausentes para abertura do formulário; vazio fora de intenções de triagem.                         |
+| `confidence`                   | number \| null                                                                                                        | Quando presente, está entre `0` e `1`. Valores fora desse intervalo são degradados para `null`.                  |
+
+Shape do `draft` (todos os campos podem ser `null`):
+
+| Campo                  | Tipo                        | Descrição                                                                         |
+| ---------------------- | --------------------------- | --------------------------------------------------------------------------------- |
+| `type`                 | `ManifestationType \| null` | Apenas valores válidos do enum; outros viram `null`.                              |
+| `campusId`             | string \| null              | Validado contra o catálogo oficial; inválidos viram `null`.                       |
+| `administrativeUnitId` | string \| null              | Validado contra o catálogo oficial e contra pertencimento ao `campusId` sugerido. |
+| `description`          | string \| null              | Normalizado nas extremidades; entradas vazias viram `null`.                       |
+| `involvedPeople`       | string \| null              | Texto livre normalizado; opcional.                                                |
+
+#### Como o frontend deve consumir
+
+- Sempre renderize `answer` como mensagem do assistente, independente do `intent`.
+- Para `manifestation_candidate`: continue a conversa, opcionalmente exibindo `missingFields` ao usuário para guiar a próxima pergunta. **Não abra o formulário.**
+- Para `manifestation_draft_ready` com `shouldOpenManifestationDraft === true`: abra o formulário de `POST /manifestations` (seção 5) já preenchido com os campos do `draft`. O usuário ainda escolhe `isAnonymous` e revisa antes de submeter.
+- Para `manifestation_draft_ready` com `shouldOpenManifestationDraft === false`: trate como `manifestation_candidate` (faltam campos válidos).
+- Para `institutional_question`, `out_of_scope` e `unknown`: só exiba `answer`.
+- O frontend deve enviar o `history` reconstruído a cada turno (o backend é stateless nesta etapa).
+
+#### Erros
+
+- `400 Bad Request` — `ValidationError` (body fora do schema: campo ausente, vazio após trim, com mais de 4000 caracteres, `history` com mais de 20 mensagens, ou `role` fora de `"assistant"|"user"`).
+- `500 Internal Server Error` — `ServerError` (falha do gateway; o frontend deve permitir nova tentativa).
