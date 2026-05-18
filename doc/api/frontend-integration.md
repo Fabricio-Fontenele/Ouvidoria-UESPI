@@ -1030,6 +1030,8 @@ Erros representativos:
 
 ## 8. Chatbot institucional / IA
 
+O chatbot assume a persona do **Guará**, mascote da Ouvidoria UESPI — uma ave acolhedora que zela pelo diálogo entre a universidade e sua comunidade. As respostas seguem um tom caloroso, próximo e leve, sem perder o profissionalismo institucional.
+
 ### `POST /ai/messages`
 
 - Pública (sem autenticação).
@@ -1085,7 +1087,7 @@ Erros representativos:
 
 | Campo                          | Tipo                                                                                                                  | Descrição                                                                                                        |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `answer`                       | string                                                                                                                | Resposta textual normalizada (trim aplicado).                                                                    |
+| `answer`                       | string                                                                                                                | Resposta textual normalizada (trim aplicado) no tom acolhedor do **Guará**, mascote da Ouvidoria UESPI.          |
 | `intent`                       | `"institutional_question" \| "manifestation_candidate" \| "manifestation_draft_ready" \| "out_of_scope" \| "unknown"` | Intenção classificada pelo backend. Valores fora dessa lista são degradados para `"unknown"`.                    |
 | `shouldOpenManifestationDraft` | boolean                                                                                                               | Só pode ser `true` quando `intent === "manifestation_draft_ready"`, o draft existe e `missingFields` está vazio. |
 | `draft`                        | object \| null                                                                                                        | Presente apenas para `manifestation_candidate` ou `manifestation_draft_ready`. Shape detalhado abaixo.           |

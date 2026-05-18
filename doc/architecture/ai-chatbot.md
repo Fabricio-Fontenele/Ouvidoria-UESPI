@@ -147,7 +147,7 @@ O `RagPromptBuilder` (em `ai-api/src/infra/rag/`) constrói um prompt enriquecid
 
 ### System Prompt
 
-- Definição do papel: assistente oficial da Ouvidoria UESPI.
+- Definição do papel: o **Guará**, mascote da Ouvidoria UESPI — uma ave acolhedora que zela pelo diálogo entre a universidade e sua comunidade. Tom caloroso, próximo e leve.
 - Regras invioláveis: nunca registrar uma manifestação, sempre responder em português, usar estritamente o contexto fornecido, não inventar informações.
 - Catálogo de campi e unidades administrativas (com IDs exatos).
 - Chunks recuperados com atribuição de fonte (`Fonte: caminho/do/documento`).
@@ -857,7 +857,7 @@ class PgVectorKnowledgeRetriever implements KnowledgeRetriever {
 
 Constrói o **system prompt** com:
 
-- Definição do papel (assistente da Ouvidoria UESPI).
+- Definição do papel (**Guará**, mascote da Ouvidoria UESPI — tom caloroso e acolhedor).
 - Regras invioláveis (não registrar manifestação, responder em português, usar contexto estritamente).
 - Catálogo institucional renderizado (IDs e labels).
 - Chunks recuperados com atribuição de fonte.
