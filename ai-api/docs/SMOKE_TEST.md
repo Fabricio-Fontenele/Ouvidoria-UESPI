@@ -153,7 +153,7 @@ Com o `ai-api` rodando na porta 4000, no `.env` do backend principal:
 AI_GATEWAY_PROVIDER=http
 AI_SERVICE_BASE_URL=http://localhost:4000
 AI_SERVICE_API_KEY=<mesmo AI_API_KEY do ai-api>
-AI_SERVICE_TIMEOUT_MS=15000
+AI_SERVICE_TIMEOUT_MS=30000
 ```
 
 Sobe o backend principal (`pnpm db:up && pnpm build && node build/main/server.js`) e bate na rota dele:
