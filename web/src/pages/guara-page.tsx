@@ -337,15 +337,14 @@ export function GuaraPage() {
   const { mode, protocol } = resolveMode()
   const { isAuthenticated, isLoading } = useAuth()
   const copy = getPageCopy(mode, protocol)
-  const requiresAuthentication = mode !== 'general'
 
   useEffect(() => {
-    if (requiresAuthentication && !isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       replaceWith(routes.login)
     }
-  }, [isAuthenticated, isLoading, requiresAuthentication])
+  }, [isAuthenticated, isLoading])
 
-  if (requiresAuthentication && (isLoading || !isAuthenticated)) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
         <AppHeader />
@@ -361,7 +360,7 @@ export function GuaraPage() {
 
   return (
     <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
-      <AppHeader isAuthenticated={requiresAuthentication} />
+      <AppHeader isAuthenticated />
 
       <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
         <section>
