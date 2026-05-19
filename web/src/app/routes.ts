@@ -1,3 +1,5 @@
+import type { AuthenticatedUserRole } from '../application/auth/auth-types'
+
 export const routes = {
   evaluation: '/evaluation',
   guara: '/guara',
@@ -6,6 +8,8 @@ export const routes = {
   login: '/login',
   manifestation: '/manifestation',
   manifestationForm: '/manifestation-form',
+  ombudsmanManifestation: '/ombudsman/manifestation',
+  ombudsmanHome: '/ombudsman/home',
   sign: '/sign',
 } as const
 
@@ -29,6 +33,14 @@ export function replaceWith(href: string) {
   window.location.replace(href)
 }
 
+export function getAuthenticatedHomeRoute(role: AuthenticatedUserRole) {
+  if (role === 'manifestant') {
+    return routes.home
+  }
+
+  return routes.ombudsmanHome
+}
+
 export function normalizeProtocol(protocol: string) {
   return protocol.startsWith('#') ? protocol : `#${protocol}`
 }
@@ -43,6 +55,10 @@ export function buildGuaraNewManifestationHref() {
 
 export function buildManifestationDetailsHref(protocol: string) {
   return `${routes.manifestation}?protocol=${protocolForQuery(protocol)}`
+}
+
+export function buildOmbudsmanManifestationDetailsHref(protocol: string) {
+  return `${routes.ombudsmanManifestation}?protocol=${protocolForQuery(protocol)}`
 }
 
 export function buildManifestationFormHref(protocol?: string | null) {
