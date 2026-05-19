@@ -22,6 +22,8 @@ export const envSchema = z
     RAG_CHUNK_SIZE: z.coerce.number().int().positive().default(400),
     RAG_CHUNK_OVERLAP: z.coerce.number().int().min(0).default(0),
     RAG_TOP_K: z.coerce.number().int().positive().default(4),
+    RAG_EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(5),
+    RAG_EMBEDDING_MAX_RETRIES: z.coerce.number().int().min(0).default(6),
 
     AI_API_KEY: z.string().min(1, 'AI_API_KEY is required'),
 
