@@ -1,6 +1,7 @@
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
 import fastifyMultipart from '@fastify/multipart'
+import fastifyRateLimit from '@fastify/rate-limit'
 import Fastify, { type FastifyInstance } from 'fastify'
 
 import { prisma } from '#src/infra/database/prisma/client.js'
@@ -20,6 +21,14 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(fastifyCors, { origin: true })
   await app.register(fastifyJwt, { secret: env.JWT_SECRET })
   await app.register(fastifyMultipart)
+
+  if (env.NODE_ENV !== 'test') {
+    await app.register(fastifyRateLimit, {
+      global: false,
+      max: 120,
+      timeWindow: '1 minute',
+    })
+  }
 
   await app.register(registerHealthRoutes)
   await app.register(registerCatalogRoutes)
