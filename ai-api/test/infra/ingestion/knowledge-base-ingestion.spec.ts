@@ -51,7 +51,7 @@ describe('knowledge-base-ingestion', () => {
     }
 
     const createVectorStore = vi.fn(async () => ({
-      addDocuments: vi.fn(async (documents: Document[]) => {
+      addVectors: vi.fn(async (_vectors: number[][], documents: Document[]) => {
         storedDocuments.push(...documents)
       }),
       end: vi.fn(async () => {}),
@@ -65,7 +65,7 @@ describe('knowledge-base-ingestion', () => {
         splitDocuments: vi.fn(async (documents: Document[]) => documents),
       })),
       createEmbeddings: vi.fn(() => ({
-        embedDocuments: vi.fn(async () => []),
+        embedDocuments: vi.fn(async (texts: string[]) => texts.map(() => [0, 1, 2])),
         embedQuery: vi.fn(async () => [0, 1, 2]),
       })),
       createVectorStore,

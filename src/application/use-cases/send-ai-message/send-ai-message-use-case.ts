@@ -35,13 +35,16 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
   constructor(
     private readonly aiGateway: AiGateway,
     private readonly catalogRepository: CatalogRepository,
+    private readonly historyMaxChars: number = 12_000,
   ) {}
 
   async execute({ history, message }: SendAiMessageInput): Promise<SendAiMessageOutput> {
     const { campuses, administrativeUnits } = this.flattenCatalog(await this.catalogRepository.listPublic())
 
+    const truncatedHistory = this.truncateHistory(history, this.historyMaxChars)
+
     const response = await this.aiGateway.chat({
-      history,
+      history: truncatedHistory,
       message,
       campuses,
       administrativeUnits,
@@ -213,6 +216,27 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
     }
 
     return REQUIRED_DRAFT_FIELDS.filter((field) => draft[field] === null)
+  }
+
+  private truncateHistory(history: AiChatMessage[], maxChars: number): AiChatMessage[] {
+    if (history.length === 0) {
+      return history
+    }
+    const kept: AiChatMessage[] = []
+    let used = 0
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      const entry = history[i]
+      if (entry === undefined) {
+        continue
+      }
+      const entryCost = entry.content.length + entry.role.length + 4
+      if (used + entryCost > maxChars && kept.length > 0) {
+        break
+      }
+      kept.unshift(entry)
+      used += entryCost
+    }
+    return kept
   }
 
   private normalizeConfidence(confidence: number | null): number | null {

@@ -3,6 +3,7 @@ import { FakeAiGateway } from '#src/infra/ai/fake-ai-gateway.js'
 import { HttpAiGateway } from '#src/infra/ai/http-ai-gateway.js'
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
 import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
+import { CachedCatalogRepository } from '#src/infra/database/cached-catalog-repository.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
 import { PrismaCatalogRepository } from '#src/infra/database/prisma/repositories/prisma-catalog-repository.js'
 import { PrismaManifestationAdministrationRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-administration-repository.js'
@@ -26,7 +27,7 @@ const tokenGenerator = new JwtTokenGenerator({
 const protocolGenerator = new UuidProtocolGenerator()
 const accessCodeGenerator = new RandomAccessCodeGenerator()
 
-const catalogRepository = new PrismaCatalogRepository(prisma)
+const catalogRepository = new CachedCatalogRepository(new PrismaCatalogRepository(prisma), env.CATALOG_CACHE_TTL_MS)
 const usersRepository = new PrismaUsersRepository(prisma)
 const manifestationsRepository = new PrismaManifestationsRepository(prisma)
 const manifestationAttachmentsRepository = new PrismaManifestationAttachmentsRepository(prisma)
