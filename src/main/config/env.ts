@@ -22,6 +22,11 @@ const envSchema = z
     AI_SERVICE_BASE_URL: z.url().optional(),
     AI_SERVICE_API_KEY: z.string().min(1).optional(),
     AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
+    CATALOG_CACHE_TTL_MS: z.coerce
+      .number()
+      .int()
+      .nonnegative()
+      .default(5 * 60_000),
   })
   .superRefine((data, ctx) => {
     if (data.AI_GATEWAY_PROVIDER !== 'http') {
