@@ -11,6 +11,7 @@ import { registerAdminRoutes } from './routes/admin.routes.js'
 import { registerAiRoutes } from './routes/ai.routes.js'
 import { registerAuthRoutes } from './routes/auth.routes.js'
 import { registerCatalogRoutes } from './routes/catalog.routes.js'
+import { registerHealthRoutes } from './routes/health.routes.js'
 import { registerManifestationRoutes } from './routes/manifestation.routes.js'
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -20,6 +21,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(fastifyJwt, { secret: env.JWT_SECRET })
   await app.register(fastifyMultipart)
 
+  await app.register(registerHealthRoutes)
   await app.register(registerCatalogRoutes)
   await app.register(registerAuthRoutes)
   await app.register(registerManifestationRoutes)
