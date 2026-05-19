@@ -37,7 +37,11 @@ Single e2e spec: `pnpm vitest run --config ./vitest.config.e2e.mjs test/e2e/auth
 Override the e2e Postgres URL with `DATABASE_URL_E2E` (defaults to `postgresql://postgres:postgres@localhost:5432/ouvidoria`). The `?schema=...` suffix is appended automatically per spec.
 
 Run the HTTP server (after `pnpm db:up` + applying migrations + populating `.env`):
-`pnpm build && node build/main/server.js`. No `dev` script is wired yet — add one with `tsx`/`node --watch` as needed.
+
+- `pnpm dev` — `tsx watch --env-file=.env src/main/server.ts` (hot reload).
+- `pnpm start` — runs the compiled build under `--env-file=.env`. Requires `pnpm build` first.
+
+Both rely on Node 22's `--env-file` flag to load `.env` **before** any `import`, which avoids the Prisma/dotenv load-order race (`DATABASE_URL must be set before the Prisma client is created`).
 
 ## Architecture
 

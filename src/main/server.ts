@@ -1,6 +1,7 @@
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
 import fastifyMultipart from '@fastify/multipart'
+import fastifyRateLimit from '@fastify/rate-limit'
 import Fastify, { type FastifyInstance } from 'fastify'
 
 import { prisma } from '#src/infra/database/prisma/client.js'
@@ -11,6 +12,7 @@ import { registerAdminRoutes } from './routes/admin.routes.js'
 import { registerAiRoutes } from './routes/ai.routes.js'
 import { registerAuthRoutes } from './routes/auth.routes.js'
 import { registerCatalogRoutes } from './routes/catalog.routes.js'
+import { registerHealthRoutes } from './routes/health.routes.js'
 import { registerManifestationRoutes } from './routes/manifestation.routes.js'
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -20,6 +22,15 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(fastifyJwt, { secret: env.JWT_SECRET })
   await app.register(fastifyMultipart)
 
+  if (env.NODE_ENV !== 'test') {
+    await app.register(fastifyRateLimit, {
+      global: false,
+      max: 120,
+      timeWindow: '1 minute',
+    })
+  }
+
+  await app.register(registerHealthRoutes)
   await app.register(registerCatalogRoutes)
   await app.register(registerAuthRoutes)
   await app.register(registerManifestationRoutes)

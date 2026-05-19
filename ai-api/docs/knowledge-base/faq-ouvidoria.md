@@ -1,8 +1,12 @@
-# FAQ — Ouvidoria UESPI
+---
+titulo: 'FAQ — Ouvidoria UESPI'
+instituicao: 'Universidade Estadual do Piauí - UESPI'
+assunto: 'Perguntas frequentes sobre o funcionamento da Ouvidoria e do assistente Guará'
+fonte: 'Material institucional consolidado com base na Resolução CONSUN nº 005/2018 e na Lei nº 13.460/2017'
+observacao: 'Documento de apoio operacional. Em caso de divergência, prevalecem a Resolução CONSUN nº 005/2018 e a legislação federal e estadual aplicável.'
+---
 
-> Arquivo de exemplo para o MVP. Substitua antes de ir a produção pelos documentos institucionais
-> aprovados (regimento, normas da ouvidoria, política de manifestações, orientações ao manifestante,
-> canais oficiais de atendimento).
+# FAQ — Ouvidoria UESPI
 
 ## O que é a Ouvidoria da UESPI?
 
@@ -45,8 +49,11 @@ responder ao ombudsman.
 
 ## Quanto tempo a Ouvidoria leva para responder?
 
-O prazo padrão para a primeira resposta administrativa é de até 20 dias úteis. Esse prazo pode
-ser prorrogado em casos complexos, sempre com justificativa registrada na manifestação.
+Conforme o Art. 15, § 1º da Resolução CONSUN nº 005/2018, a Ouvidoria deve encaminhar a decisão
+administrativa final ao usuário no prazo de **30 dias**, prorrogável de forma justificada uma
+única vez, por igual período. Se a Ouvidoria precisar pedir esclarecimentos adicionais ao
+usuário, esse pedido deve ser feito em até 30 dias e respondido em até 20 dias, sob pena de
+arquivamento sem resposta conclusiva.
 
 ## A Ouvidoria pode resolver qualquer problema?
 

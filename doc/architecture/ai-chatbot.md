@@ -34,9 +34,11 @@ Cada documento é identificado pela metadata `source` (caminho relativo ao `KB_D
 
 Os documentos são divididos em blocos de texto chamados **chunks** usando `RecursiveCharacterTextSplitter` com:
 
-- `chunkSize`: 400 caracteres (configurável via `RAG_CHUNK_SIZE`).
+- `chunkSize`: 600 caracteres (configurável via `RAG_CHUNK_SIZE`).
 - `chunkOverlap`: 0 caracteres (configurável via `RAG_CHUNK_OVERLAP`).
 - Separadores: `['\n\n', '\n', ' ', '']`.
+
+> **Sweet spot empírico.** Tentamos `RAG_CHUNK_SIZE=1000` para favorecer textos jurídicos, mas o `gemini-embedding-001` rejeita silenciosamente ~96% dos chunks nesse tamanho (retorna vetor vazio). 600 manteve a base saudável (78 chunks persistidos sobre 178 gerados). Detalhes em `doc/plans/2026-05-19-ai-integration-refinements.md` §2.1. A pipeline já filtra vetores vazios antes do insert no `pgvector` (`addVectors` manual em `knowledge-base-ingestion.ts`), então a base nunca fica corrompida — apenas menor que o esperado.
 
 ### Objetivo
 
@@ -562,12 +564,14 @@ O `catalogRepository` (instância de `PrismaCatalogRepository`) também é regis
 
 Novas variáveis adicionadas ao schema `env.ts` do backend principal:
 
-| Variável                | Tipo               | Padrão   | Obrigatório        | Descrição                                |
-| ----------------------- | ------------------ | -------- | ------------------ | ---------------------------------------- |
-| `AI_GATEWAY_PROVIDER`   | `"fake" \| "http"` | `"fake"` | Não                | Seleciona a implementação do AiGateway   |
-| `AI_SERVICE_BASE_URL`   | URL                | —        | Se provider=`http` | URL base do microserviço `ai-api`        |
-| `AI_SERVICE_API_KEY`    | string             | —        | Se provider=`http` | Chave de API para autenticar no `ai-api` |
-| `AI_SERVICE_TIMEOUT_MS` | number             | `30000`  | Não                | Timeout das requisições HTTP ao `ai-api` |
+| Variável                | Tipo               | Padrão   | Obrigatório        | Descrição                                                            |
+| ----------------------- | ------------------ | -------- | ------------------ | -------------------------------------------------------------------- |
+| `AI_GATEWAY_PROVIDER`   | `"fake" \| "http"` | `"fake"` | Não                | Seleciona a implementação do AiGateway                               |
+| `AI_SERVICE_BASE_URL`   | URL                | —        | Se provider=`http` | URL base do microserviço `ai-api`                                    |
+| `AI_SERVICE_API_KEY`    | string             | —        | Se provider=`http` | Chave de API para autenticar no `ai-api`                             |
+| `AI_SERVICE_TIMEOUT_MS` | number             | `30000`  | Não                | Timeout das requisições HTTP ao `ai-api`                             |
+| `AI_HISTORY_MAX_CHARS`  | number             | `12000`  | Não                | Orçamento de caracteres do histórico enviado ao gateway              |
+| `CATALOG_CACHE_TTL_MS`  | number             | `300000` | Não                | TTL do cache em memória do `CachedCatalogRepository` (default 5 min) |
 
 O `superRefine` do Zod valida que `AI_SERVICE_BASE_URL` e `AI_SERVICE_API_KEY` estão presentes quando `AI_GATEWAY_PROVIDER=http`.
 
@@ -664,7 +668,7 @@ KB_DIR (./docs/knowledge-base)
 DocumentLoader (recursivo, com metadata source)
     │
     ▼
-RecursiveCharacterTextSplitter (chunkSize=400, overlap=0)
+RecursiveCharacterTextSplitter (chunkSize=600, overlap=0)
     │
     ▼
 GoogleGenerativeAIEmbeddings (text-embedding-001, 3072 dims)
@@ -888,23 +892,23 @@ function makeApiKeyAuth(expectedApiKey: string): FastifyPreHandler
 
 ## 6.7 Variáveis de Ambiente do ai-api
 
-| Variável                    | Padrão                      | Descrição                               |
-| --------------------------- | --------------------------- | --------------------------------------- |
-| `PORT`                      | `4000`                      | Porta do servidor                       |
-| `HOST`                      | `0.0.0.0`                   | Host do servidor                        |
-| `GOOGLE_API_KEY`            | —                           | Chave da API Google (obrigatória)       |
-| `GOOGLE_CHAT_MODEL`         | `models/gemini-2.0-flash`   | Modelo Gemini para chat                 |
-| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001` | Modelo Gemini para embeddings           |
-| `GOOGLE_EMBEDDING_DIMS`     | `3072`                      | Dimensão dos embeddings                 |
-| `LLM_TEMPERATURE`           | `0.1`                       | Temperatura do LLM (0-1)                |
-| `DATABASE_URL`              | —                           | URL do PostgreSQL com pgvector          |
-| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`              | Nome da tabela de coleção vetorial      |
-| `KB_DIR`                    | `./docs/knowledge-base`     | Diretório dos documentos institucionais |
-| `RAG_CHUNK_SIZE`            | `400`                       | Tamanho dos chunks para divisão         |
-| `RAG_CHUNK_OVERLAP`         | `0`                         | Sobreposição entre chunks               |
-| `RAG_TOP_K`                 | `4`                         | Número de chunks recuperados            |
-| `AI_API_KEY`                | —                           | Chave para autenticação das requisições |
-| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                     | Limite do body da requisição            |
+| Variável                    | Padrão                      | Descrição                                                                       |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
+| `PORT`                      | `4000`                      | Porta do servidor                                                               |
+| `HOST`                      | `0.0.0.0`                   | Host do servidor                                                                |
+| `GOOGLE_API_KEY`            | —                           | Chave da API Google (obrigatória)                                               |
+| `GOOGLE_CHAT_MODEL`         | `models/gemini-2.0-flash`   | Modelo Gemini para chat                                                         |
+| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001` | Modelo Gemini para embeddings                                                   |
+| `GOOGLE_EMBEDDING_DIMS`     | `3072`                      | Dimensão dos embeddings                                                         |
+| `LLM_TEMPERATURE`           | `0.1`                       | Temperatura do LLM (0-1)                                                        |
+| `DATABASE_URL`              | —                           | URL do PostgreSQL com pgvector                                                  |
+| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`              | Nome da tabela de coleção vetorial                                              |
+| `KB_DIR`                    | `./docs/knowledge-base`     | Diretório dos documentos institucionais                                         |
+| `RAG_CHUNK_SIZE`            | `600`                       | Tamanho dos chunks para divisão (sweet spot empírico do `gemini-embedding-001`) |
+| `RAG_CHUNK_OVERLAP`         | `0`                         | Sobreposição entre chunks                                                       |
+| `RAG_TOP_K`                 | `4`                         | Número de chunks recuperados                                                    |
+| `AI_API_KEY`                | —                           | Chave para autenticação das requisições                                         |
+| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                     | Limite do body da requisição                                                    |
 
 ---
 
@@ -1013,7 +1017,33 @@ Registradas em `src/main/config/env.ts`:
 
 ## Pendente
 
-| Componente                                  | Observação                                                                      |
-| ------------------------------------------- | ------------------------------------------------------------------------------- |
-| Seed de dados (Campus + AdministrativeUnit) | Popular tabelas com dados oficiais da UESPI                                     |
-| `BufferWindowMemory` do LangChain           | Manter estado no servidor para reduzir tráfego (stateless é intencional no MVP) |
+| Componente                                             | Observação                                                                                                                            |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Seed de dados (Campus + AdministrativeUnit)            | Popular tabelas com dados oficiais da UESPI                                                                                           |
+| `BufferWindowMemory` do LangChain                      | Manter estado no servidor para reduzir tráfego (stateless é intencional no MVP)                                                       |
+| Streaming de respostas + classificador em 2 modelos    | Refator multi-arquivo (LLM port → ai-api routes → gateway → frontend). Veja `doc/plans/2026-05-19-ai-integration-refinements.md` §3.1 |
+| Tuning de retrieval (top-K, query rewriting, reranker) | Ver §3.2 do plano de refinamentos                                                                                                     |
+| `PrismaAiChatAuditLogger`                              | Promoção do audit log JSON em stdout para tabela. Schema sugerido em §3.3                                                             |
+
+---
+
+# Apêndice B — Refinamentos pós-MVP (2026-05-19)
+
+Após o primeiro smoke test end-to-end via HTTP real, foi feita uma rodada
+focada de melhorias de produção. Resumo:
+
+| ID  | Item                                                                                                                                                                                                                                                    | Onde                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1   | `RAG_CHUNK_SIZE` 400 → 600                                                                                                                                                                                                                              | `ai-api/.env`                                                                |
+| 2   | Rotação da `x-api-key` (`openssl rand -base64 48`)                                                                                                                                                                                                      | `.env`, `ai-api/.env`                                                        |
+| 3   | Scripts `pnpm dev`/`pnpm start` no backend (resolve ordem Prisma/dotenv via `--env-file`)                                                                                                                                                               | `package.json`                                                               |
+| 4   | `CachedCatalogRepository` (decorator, TTL configurável)                                                                                                                                                                                                 | `src/infra/database/cached-catalog-repository.ts`                            |
+| 5   | `/health` (liveness) e `/ready` (verifica Prisma) no backend                                                                                                                                                                                            | `src/main/routes/health.routes.ts`                                           |
+| 6   | Rate limit `10/min/IP` em `POST /ai/messages` via `@fastify/rate-limit`                                                                                                                                                                                 | `src/main/routes/ai.routes.ts`                                               |
+| 7   | Truncamento de histórico por orçamento de chars (`AI_HISTORY_MAX_CHARS`)                                                                                                                                                                                | `send-ai-message-use-case.ts`                                                |
+| 8   | Prompt reforçado: `involvedPeople` registra referências genéricas ("a atendente")                                                                                                                                                                       | `ai-api/src/infra/rag/rag-prompt-builder.ts`                                 |
+| 9   | Audit log estruturado de chats — **metadata-only por contrato LGPD**: nunca grava `draft.description`/`involvedPeople`/mensagem original; só `requestId`, `intent`, `confidence`, `hasDraft`, `draftFields[]`, `missingFields[]`, `latencyMs`, `error?` | `ConsoleAiChatAuditLogger` + port em `application/ai/`                       |
+| 10  | +9 testes unitários (incluindo asserção anti-PII explícita no audit)                                                                                                                                                                                    | `test/unit/infra/database/` + extensão em `send-ai-message-use-case.spec.ts` |
+
+Documento detalhado com motivações, descobertas e itens pendentes:
+[`doc/plans/2026-05-19-ai-integration-refinements.md`](../plans/2026-05-19-ai-integration-refinements.md).

@@ -7,6 +7,7 @@ import {
   type SendAiMessageBody,
 } from '#src/presentation/controllers/ai/send-ai-message.controller.js'
 
+import { env } from '../../config/env.js'
 import { infrastructure } from '../infrastructure.js'
 
 const aiChatMessageSchema = z.object({
@@ -20,6 +21,10 @@ const sendAiMessageSchema = z.object({
 }) satisfies z.ZodType<SendAiMessageBody>
 
 export function makeSendAiMessageController(): SendAiMessageController {
-  const useCase = new SendAiMessageUseCase(infrastructure.aiGateway, infrastructure.catalogRepository)
+  const useCase = new SendAiMessageUseCase(
+    infrastructure.aiGateway,
+    infrastructure.catalogRepository,
+    env.AI_HISTORY_MAX_CHARS,
+  )
   return new SendAiMessageController(useCase, new ZodValidator(sendAiMessageSchema))
 }
