@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-login-blue: #0d47a1;
+  --color-login-text: #1a1c1d;
+  --color-login-brown: #5b403d;
+  --color-login-field: #d9d9d9;
+  --color-login-icon: #9d918f;
+  --color-login-bg: #f2f2f7;
+  --color-login-footer: #e5e5e5;
+  --color-login-surface: #ffffff;
+  --color-login-on-blue: #ffffff;
+
+  --shadow-login-header: 0 4px 4px rgb(51 51 51 / 0.25);
+  --shadow-login-card: 0 4px 8px #aeaeb2;
+  --shadow-login-frame: 0 0 0 1px rgb(174 174 178 / 0.28);
+
+  --color-home-blue: #0d47a1;
+  --color-home-text: #1a1c1d;
+  --color-home-brown: #5b403d;
+  --color-home-muted: #6b7280;
+  --color-home-field: #c7c7cc;
+  --color-home-chip: #d1d1d6;
+  --color-home-action: #f3f3f4;
+  --color-home-surface: #ffffff;
+  --color-home-footer: #e5e5e5;
+  --color-home-warning: #ffc107;
+  --color-home-warning-strong: #ffb300;
+  --color-home-success: #34c759;
+
+  --shadow-home-header: 0 4px 4px rgb(51 51 51 / 0.25);
+  --shadow-home-card: 0 4px 4px rgb(51 51 51 / 0.25);
+  --drop-shadow-home-mascot: 0 25px 25px rgb(0 0 0 / 0.15);
+
+  --color-landing-blue: #0d47a1;
+  --color-landing-text: #1a1c1d;
+  --color-landing-brown: #5b403d;
+  --color-landing-chip: #d1d1d6;
+  --color-landing-action: #f3f3f4;
+  --color-landing-surface: #ffffff;
+  --color-landing-muted-surface: #f2f2f7;
+  --color-landing-menu: #4b5563;
+  --color-landing-footer: #e5e5e5;
+  --color-landing-social: #d8d8d8;
+  --color-landing-warning: #ffb300;
+  --color-landing-success: #34c759;
+
+  --shadow-landing-header: 0 4px 4px rgb(51 51 51 / 0.25);
+  --shadow-landing-card: 0 4px 8px rgb(174 174 178 / 0.6);
+  --shadow-landing-drawer: 0 16px 48px rgb(26 28 29 / 0.28);
+  --shadow-landing-step: 0 3px 4px rgb(51 51 51 / 0.22);
+  --drop-shadow-landing-mascot: 0 22px 22px rgb(0 0 0 / 0.15);
+}
+
+:root {
+  color: var(--color-login-text);
+  background: var(--color-login-bg);
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  #root {
+    min-height: 100svh;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100svh;
+    overflow-x: hidden;
+    background: var(--color-login-bg);
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
