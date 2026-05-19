@@ -33,10 +33,11 @@ async function checkReadiness(infra: AiApiInfrastructure): Promise<{
       new Array<number>(env.GOOGLE_EMBEDDING_DIMS).fill(0),
       1,
     )
+    const hasIndexedChunks = probe.length > 0
     return {
-      status: geminiConfigured ? 'ok' : 'degraded',
+      status: geminiConfigured && hasIndexedChunks ? 'ok' : 'degraded',
       vectorStoreOk: true,
-      hasIndexedChunks: probe.length > 0,
+      hasIndexedChunks,
       geminiConfigured,
     }
   } catch {
