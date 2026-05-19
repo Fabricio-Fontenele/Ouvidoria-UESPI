@@ -84,14 +84,43 @@ function MessageBubble({ message }: { message: GuaraMessage }) {
   const isGuara = message.author === 'guara'
 
   return (
-    <div className={cx('flex', isGuara ? 'justify-start' : 'justify-end')}>
+    <li className={cx('flex items-end gap-2', isGuara ? 'justify-start' : 'justify-end')}>
+      {isGuara ? (
+        <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full border border-landing-chip bg-landing-surface">
+          <img alt="" className="size-7 object-contain" src={guaraMascot} />
+        </span>
+      ) : null}
       <div
         className={cx(
-          'max-w-[88%] rounded-lg px-4 py-3 text-sm leading-6 shadow-landing-step',
-          isGuara ? 'bg-landing-footer text-landing-text' : 'bg-landing-blue text-white',
+          'max-w-[min(78%,42rem)] px-4 py-3 text-sm leading-6 shadow-landing-step sm:text-[15px]',
+          isGuara
+            ? 'rounded-2xl rounded-bl-sm border border-landing-chip bg-landing-surface text-landing-text'
+            : 'rounded-2xl rounded-br-sm bg-landing-blue text-white',
         )}
       >
+        <span className="sr-only">{isGuara ? 'Mensagem do Guará: ' : 'Sua mensagem: '}</span>
         {message.text}
+      </div>
+      {!isGuara ? (
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-landing-footer text-landing-brown">
+          <Icon className="size-4" name="user" />
+        </span>
+      ) : null}
+    </li>
+  )
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-end gap-2" role="status">
+      <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full border border-landing-chip bg-landing-surface">
+        <img alt="" className="size-7 object-contain" src={guaraMascot} />
+      </span>
+      <div className="flex min-h-11 items-center gap-2 rounded-2xl rounded-bl-sm border border-landing-chip bg-landing-surface px-4 shadow-landing-step">
+        <span className="sr-only">Guará está respondendo</span>
+        <span className="size-2 rounded-full bg-landing-blue/70 motion-safe:animate-pulse" />
+        <span className="size-2 rounded-full bg-landing-blue/60 motion-safe:animate-pulse" />
+        <span className="size-2 rounded-full bg-landing-blue/50 motion-safe:animate-pulse" />
       </div>
     </div>
   )
@@ -102,7 +131,7 @@ function DetailPanel({ protocol }: { protocol: string }) {
   const status = getManifestationStatusContract(manifestationDetailStatus)
 
   return (
-    <aside className="rounded-lg border border-landing-chip bg-landing-surface p-5 shadow-landing-step lg:sticky lg:top-28">
+    <aside className="rounded-lg border border-landing-chip bg-landing-surface p-5 shadow-landing-step">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs leading-4 font-black tracking-[0.1em] text-landing-blue uppercase">Manifestação</p>
@@ -154,17 +183,19 @@ function QuickActions({
   suggestions: GuaraChatSuggestion[]
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <div aria-label="Sugestões de mensagens" className="flex gap-2 overflow-x-auto pb-1" role="list">
       {suggestions.map((suggestion) => (
-        <button
-          className="min-h-9 shrink-0 rounded-full bg-landing-footer px-4 text-xs leading-5 font-bold text-landing-brown transition duration-150 hover:bg-landing-chip active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isSending}
-          key={suggestion.id}
-          onClick={() => onSelect(suggestion)}
-          type="button"
-        >
-          {suggestion.label}
-        </button>
+        <div className="shrink-0" key={suggestion.id} role="listitem">
+          <button
+            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-landing-chip bg-landing-surface px-4 text-xs leading-5 font-bold text-landing-brown transition duration-150 hover:border-landing-blue hover:bg-landing-blue/10 hover:text-landing-blue active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+            disabled={isSending}
+            onClick={() => onSelect(suggestion)}
+            type="button"
+          >
+            <Icon className="size-4" name="message-circle" />
+            {suggestion.label}
+          </button>
+        </div>
       ))}
     </div>
   )
@@ -210,52 +241,68 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
   return (
     <section
       aria-labelledby="guara-chat-title"
-      className="flex min-h-[620px] flex-col rounded-lg border border-landing-chip bg-landing-surface shadow-landing-step"
+      className="isolate flex min-h-[640px] flex-col overflow-hidden rounded-lg border border-landing-chip bg-landing-surface shadow-landing-step md:min-h-[720px]"
     >
-      <div className="flex items-center gap-4 border-b border-landing-chip px-4 py-4 sm:px-5">
-        <img alt="" className="size-16 rounded-full object-contain" src={guaraMascot} />
-        <div>
-          <h2 className="text-xl leading-7 font-black text-landing-text" id="guara-chat-title">
-            Guará
-          </h2>
-          <p className="text-sm leading-5 text-landing-brown">Assistente da Ouvidoria UESPI</p>
+      <div className="flex items-center gap-4 border-b border-landing-chip bg-landing-surface px-4 py-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border border-landing-chip bg-landing-muted-surface sm:size-14">
+            <img alt="" className="size-11 object-contain sm:size-12" src={guaraMascot} />
+            <span className="absolute right-1 bottom-1 size-3 rounded-full border-2 border-landing-surface bg-landing-success" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="truncate text-lg leading-6 font-black text-landing-text sm:text-xl" id="guara-chat-title">
+              Guará
+            </h2>
+            <p className="truncate text-xs leading-5 text-landing-brown sm:text-sm">Assistente da Ouvidoria UESPI</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-5">
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
-        ))}
-        {isSending ? (
-          <p className="text-sm leading-5 text-landing-menu" role="status">
-            Guará está respondendo...
-          </p>
-        ) : null}
+      <div className="flex-1 overflow-y-auto bg-landing-muted-surface px-3 py-5 sm:px-5">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+          <div className="flex justify-center">
+            <span className="rounded-full border border-landing-chip bg-landing-surface px-3 py-1 text-xs leading-5 font-bold text-landing-menu shadow-landing-step">
+              Hoje
+            </span>
+          </div>
+          <ul className="flex flex-col gap-4">
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+          </ul>
+          {isSending ? <TypingIndicator /> : null}
+        </div>
       </div>
 
-      <div className="space-y-4 border-t border-landing-chip px-4 py-4 sm:px-5">
-        <QuickActions
-          isSending={isSending}
-          onSelect={(suggestion) => void handleSuggestionSelect(suggestion)}
-          suggestions={suggestions}
-        />
+      <div className="space-y-3 border-t border-landing-chip bg-landing-surface px-3 py-3 sm:px-5 sm:py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <QuickActions
+            isSending={isSending}
+            onSelect={(suggestion) => void handleSuggestionSelect(suggestion)}
+            suggestions={suggestions}
+          />
 
-        <a
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-landing-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue sm:w-auto"
-          href={formHref}
-        >
-          {formCta}
-          <Icon className="size-4" name="file-text" />
-        </a>
+          <a
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-landing-blue px-4 text-sm leading-5 font-bold text-landing-blue no-underline transition duration-150 hover:bg-landing-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
+            href={formHref}
+          >
+            <Icon className="size-4" name="file-text" />
+            {formCta}
+          </a>
+        </div>
 
         {error !== null ? (
-          <p className="text-sm leading-5 font-bold text-landing-brown" role="alert">
-            {error}
-          </p>
+          <div
+            className="flex items-start gap-2 rounded-lg border border-landing-brown/20 bg-landing-footer px-3 py-2 text-sm leading-5 font-bold text-landing-brown"
+            role="alert"
+          >
+            <Icon className="mt-0.5 size-4 shrink-0" name="info" />
+            <p>{error}</p>
+          </div>
         ) : null}
 
         <form
-          className="grid grid-cols-[1fr_44px] gap-3"
+          className="grid grid-cols-[1fr_48px] items-end gap-2 rounded-full border border-landing-chip bg-landing-muted-surface p-2 transition duration-150 focus-within:border-landing-blue focus-within:bg-landing-surface focus-within:shadow-landing-step"
           onSubmit={(event) => {
             event.preventDefault()
             void handleSubmit()
@@ -265,17 +312,17 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
             Mensagem para o Guará
           </label>
           <textarea
-            className="min-h-12 resize-none rounded-lg bg-landing-muted-surface px-4 py-3 text-sm leading-5 text-landing-text outline-landing-blue placeholder:text-landing-menu focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="max-h-32 min-h-11 resize-none rounded-full bg-transparent px-4 py-3 text-sm leading-5 text-landing-text outline-none placeholder:text-landing-menu focus-visible:outline-none"
             id="guara-message"
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Digite sua mensagem..."
+            placeholder="Mensagem"
             rows={1}
             value={draft}
           />
           <button
             aria-label="Enviar mensagem"
-            className="grid size-11 place-items-center self-end rounded-lg bg-landing-blue text-white transition duration-150 hover:bg-landing-blue/90 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
-            disabled={isSending}
+            className="grid size-12 place-items-center self-end rounded-full bg-landing-blue text-white transition duration-150 hover:bg-landing-blue/90 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue disabled:cursor-not-allowed disabled:bg-landing-menu disabled:opacity-70"
+            disabled={isSending || draft.trim().length === 0}
             type="submit"
           >
             <Icon className="size-5" name="send" />
@@ -317,7 +364,7 @@ export function GuaraPage() {
       <AppHeader isAuthenticated={requiresAuthentication} />
 
       <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
-        <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <section>
           <div>
             <p className="text-sm leading-5 font-black tracking-[0.1em] text-landing-blue uppercase">{copy.eyebrow}</p>
             <h1 className="mt-3 max-w-2xl text-[38px] leading-none font-black text-landing-text sm:text-5xl">
@@ -325,13 +372,17 @@ export function GuaraPage() {
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-landing-brown">{copy.description}</p>
           </div>
-
-          {mode === 'manifestation-detail' ? <DetailPanel protocol={protocol ?? '#2024-0772'} /> : null}
         </section>
 
         <div className="mt-8 lg:mt-10">
           <ChatPanel mode={mode} protocol={protocol} />
         </div>
+
+        {mode === 'manifestation-detail' ? (
+          <div className="mt-8 lg:mt-10">
+            <DetailPanel protocol={protocol ?? '#2024-0772'} />
+          </div>
+        ) : null}
       </main>
 
       <SiteFooter />
