@@ -304,4 +304,47 @@ describe('SendAiMessageUseCase', () => {
 
     expect(aiGateway.chat.mock.calls).toHaveLength(0)
   })
+
+  describe('history truncation', () => {
+    const baseGatewayResponse = {
+      answer: 'ok',
+      intent: 'institutional_question' as const,
+      shouldOpenManifestationDraft: false,
+      draft: null,
+      missingFields: [],
+      confidence: 0.5,
+    }
+
+    it('forwards the full history when it fits within historyMaxChars', async () => {
+      const useCaseWithBudget = new SendAiMessageUseCase(aiGateway, catalogRepository, 10_000)
+      aiGateway.chat.mockResolvedValue(baseGatewayResponse)
+
+      const history = [
+        { role: 'user' as const, content: 'a'.repeat(50) },
+        { role: 'assistant' as const, content: 'b'.repeat(50) },
+        { role: 'user' as const, content: 'c'.repeat(50) },
+      ]
+
+      await useCaseWithBudget.execute({ history, message: 'next' })
+
+      expect(aiGateway.chat.mock.calls[0]?.[0].history).toStrictEqual(history)
+    })
+
+    it('keeps only the most recent messages when historyMaxChars is exceeded', async () => {
+      const useCaseWithBudget = new SendAiMessageUseCase(aiGateway, catalogRepository, 120)
+      aiGateway.chat.mockResolvedValue(baseGatewayResponse)
+
+      const history = [
+        { role: 'user' as const, content: 'A'.repeat(80) },
+        { role: 'assistant' as const, content: 'B'.repeat(80) },
+        { role: 'user' as const, content: 'C'.repeat(80) },
+      ]
+
+      await useCaseWithBudget.execute({ history, message: 'next' })
+
+      const forwarded = aiGateway.chat.mock.calls[0]?.[0].history ?? []
+      expect(forwarded.length).toBeLessThan(history.length)
+      expect(forwarded.at(-1)?.content.startsWith('C')).toBe(true)
+    })
+  })
 })
