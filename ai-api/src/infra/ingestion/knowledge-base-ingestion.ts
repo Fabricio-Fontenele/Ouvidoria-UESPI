@@ -16,7 +16,7 @@ export interface IngestionChunkDocument {
 export type IngestionEmbeddings = EmbeddingsInterface<number[]>
 
 export interface IngestionVectorStore {
-  addDocuments: (documents: Document[]) => Promise<void>
+  addVectors: (vectors: number[][], documents: Document[]) => Promise<void>
   end: () => Promise<void>
 }
 
@@ -93,16 +93,62 @@ export async function runKnowledgeBaseIngestion(
   const chunks = await splitter.splitDocuments(loaded.map((entry) => entry.document))
   deps.logger.log(`[ingest] split into ${String(chunks.length)} chunks`)
 
+  const nonEmptyChunks = chunks.filter((chunk) => chunk.pageContent.trim().length > 0)
+  const droppedChunks = chunks.length - nonEmptyChunks.length
+  if (droppedChunks > 0) {
+    deps.logger.warn(
+      `[ingest] dropped ${String(droppedChunks)} empty/whitespace-only chunks before embedding (would yield zero-dim vectors)`,
+    )
+  }
+  if (nonEmptyChunks.length === 0) {
+    deps.logger.warn('[ingest] no non-empty chunks to ingest. Nothing was written.')
+    return
+  }
+
   const embeddings = deps.createEmbeddings()
   const probe = await embeddings.embedQuery('probe')
   validateEmbeddingProbe(probe, ingestionEnv)
   deps.logger.log(`[ingest] embedding probe OK (dim=${String(probe.length)})`)
 
+  const vectors = await embeddings.embedDocuments(nonEmptyChunks.map((chunk) => chunk.pageContent))
+
+  const validPairs: { vector: number[]; chunk: Document }[] = []
+  const droppedSources: string[] = []
+  for (let i = 0; i < nonEmptyChunks.length; i += 1) {
+    const vector = vectors[i]
+    const chunk = nonEmptyChunks[i]
+    if (vector === undefined || chunk === undefined) {
+      continue
+    }
+    if (vector.length !== ingestionEnv.GOOGLE_EMBEDDING_DIMS) {
+      const source = typeof chunk.metadata['source'] === 'string' ? chunk.metadata['source'] : '<unknown>'
+      droppedSources.push(`${source} (dim=${String(vector.length)})`)
+      continue
+    }
+    validPairs.push({ vector, chunk })
+  }
+
+  if (droppedSources.length > 0) {
+    deps.logger.warn(
+      `[ingest] dropped ${String(droppedSources.length)} chunks whose embedding came back empty or with wrong dimension: ${droppedSources.slice(0, 5).join('; ')}${droppedSources.length > 5 ? '; …' : ''}`,
+    )
+  }
+
+  if (validPairs.length === 0) {
+    deps.logger.warn('[ingest] no valid embeddings to persist. Nothing was written.')
+    return
+  }
+
   const vectorStore = await deps.createVectorStore(embeddings)
 
   try {
-    await vectorStore.addDocuments(chunks)
-    deps.logger.log(`[ingest] persisted ${String(chunks.length)} chunks to "${ingestionEnv.PG_VECTOR_COLLECTION_NAME}"`)
+    await vectorStore.addVectors(
+      validPairs.map((pair) => pair.vector),
+      validPairs.map((pair) => pair.chunk),
+    )
+    deps.logger.log(
+      `[ingest] persisted ${String(validPairs.length)} chunks to "${ingestionEnv.PG_VECTOR_COLLECTION_NAME}"`,
+    )
   } finally {
     await vectorStore.end()
   }
