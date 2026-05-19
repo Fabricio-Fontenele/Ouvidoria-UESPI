@@ -6,6 +6,9 @@
 # Knowledge base PDFs (commit only public/approved sources; PDFs stay out)
 docs/knowledge-base/*.pdf
 
+# Original source PDFs kept locally for reference but not ingested or committed
+docs/knowledge-base-originals/*.pdf
+
 # Dependencies
 node_modules/
 
