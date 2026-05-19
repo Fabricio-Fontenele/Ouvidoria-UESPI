@@ -156,10 +156,6 @@ function getUniqueOptions(items: string[]) {
   return [...new Set(items)].map((item) => ({ label: item, value: item }))
 }
 
-function getDateInputValue(dateLabel: string) {
-  return parseBrazilianShortDateLabel(dateLabel) ?? dateLabel
-}
-
 function MetricCards() {
   return (
     <section aria-labelledby="ombudsman-metrics-title" className="mt-10">
