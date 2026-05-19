@@ -3,6 +3,8 @@ import type { EmbeddingsInterface } from '@langchain/core/embeddings'
 
 import type { Env } from '../../main/env.js'
 
+import { embedInBatches } from './embed-in-batches.js'
+
 export interface IngestionLogger {
   log: (message: string) => void
   warn: (message: string) => void
@@ -56,6 +58,8 @@ export async function runKnowledgeBaseIngestion(
     | 'KB_DIR'
     | 'RAG_CHUNK_SIZE'
     | 'RAG_CHUNK_OVERLAP'
+    | 'RAG_EMBEDDING_BATCH_SIZE'
+    | 'RAG_EMBEDDING_MAX_RETRIES'
     | 'GOOGLE_EMBEDDING_DIMS'
     | 'GOOGLE_EMBEDDING_MODEL'
     | 'PG_VECTOR_COLLECTION_NAME'
@@ -110,44 +114,23 @@ export async function runKnowledgeBaseIngestion(
   validateEmbeddingProbe(probe, ingestionEnv)
   deps.logger.log(`[ingest] embedding probe OK (dim=${String(probe.length)})`)
 
-  const vectors = await embeddings.embedDocuments(nonEmptyChunks.map((chunk) => chunk.pageContent))
-
-  const validPairs: { vector: number[]; chunk: Document }[] = []
-  const droppedSources: string[] = []
-  for (let i = 0; i < nonEmptyChunks.length; i += 1) {
-    const vector = vectors[i]
-    const chunk = nonEmptyChunks[i]
-    if (vector === undefined || chunk === undefined) {
-      continue
-    }
-    if (vector.length !== ingestionEnv.GOOGLE_EMBEDDING_DIMS) {
-      const source = typeof chunk.metadata['source'] === 'string' ? chunk.metadata['source'] : '<unknown>'
-      droppedSources.push(`${source} (dim=${String(vector.length)})`)
-      continue
-    }
-    validPairs.push({ vector, chunk })
-  }
-
-  if (droppedSources.length > 0) {
-    deps.logger.warn(
-      `[ingest] dropped ${String(droppedSources.length)} chunks whose embedding came back empty or with wrong dimension: ${droppedSources.slice(0, 5).join('; ')}${droppedSources.length > 5 ? '; …' : ''}`,
-    )
-  }
-
-  if (validPairs.length === 0) {
-    deps.logger.warn('[ingest] no valid embeddings to persist. Nothing was written.')
-    return
-  }
+  const vectors = await embedInBatches(
+    embeddings,
+    nonEmptyChunks.map((chunk) => chunk.pageContent),
+    {
+      batchSize: ingestionEnv.RAG_EMBEDDING_BATCH_SIZE,
+      maxRetries: ingestionEnv.RAG_EMBEDDING_MAX_RETRIES,
+      dims: ingestionEnv.GOOGLE_EMBEDDING_DIMS,
+      logger: deps.logger,
+    },
+  )
 
   const vectorStore = await deps.createVectorStore(embeddings)
 
   try {
-    await vectorStore.addVectors(
-      validPairs.map((pair) => pair.vector),
-      validPairs.map((pair) => pair.chunk),
-    )
+    await vectorStore.addVectors(vectors, nonEmptyChunks)
     deps.logger.log(
-      `[ingest] persisted ${String(validPairs.length)} chunks to "${ingestionEnv.PG_VECTOR_COLLECTION_NAME}"`,
+      `[ingest] persisted ${String(vectors.length)} chunks to "${ingestionEnv.PG_VECTOR_COLLECTION_NAME}"`,
     )
   } finally {
     await vectorStore.end()

@@ -11,6 +11,8 @@ describe('knowledge-base-ingestion', () => {
     KB_DIR: './docs/knowledge-base',
     RAG_CHUNK_SIZE: 400,
     RAG_CHUNK_OVERLAP: 0,
+    RAG_EMBEDDING_BATCH_SIZE: 20,
+    RAG_EMBEDDING_MAX_RETRIES: 3,
     GOOGLE_EMBEDDING_DIMS: 3,
     GOOGLE_EMBEDDING_MODEL: 'models/gemini-embedding-001',
     PG_VECTOR_COLLECTION_NAME: 'ouvidoria_kb',
