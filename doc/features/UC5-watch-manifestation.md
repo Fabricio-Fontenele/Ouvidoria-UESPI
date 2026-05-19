@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                 |
-| -------------- | ----------------------------------------- |
-| Caso de uso    | UC-05                                     |
-| Nome           | Acompanhar manifestação                   |
-| Feature        | Consulta e interação da manifestação      |
-| Ator principal | Manifestante                              |
-| Prioridade     | Alta                                      |
-| Status         | Núcleo implementado / integração pendente |
+| Campo          | Descrição                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-05                                                                                    |
+| Nome           | Acompanhar manifestação                                                                  |
+| Feature        | Consulta e interação da manifestação                                                     |
+| Ator principal | Manifestante                                                                             |
+| Prioridade     | Alta                                                                                     |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rotas HTTP, e2e) |
 
 ---
 
@@ -43,7 +43,9 @@ Esta feature deve permitir:
 - paginar a listagem por página;
 - consultar os detalhes de uma manifestação específica;
 - validar se a manifestação pertence ao `userId` solicitante;
-- exibir status atual, histórico e mensagens já registradas;
+- exibir status atual, histórico, mensagens e anexos já registrados;
+- permitir upload de anexo pelo manifestante autenticado em recurso dedicado;
+- permitir geração de `download-url` curta para anexo da própria manifestação;
 - registrar nova mensagem do manifestante como entidade de domínio em manifestação autorizada;
 - bloquear o envio de mensagem para manifestação finalizada ou cancelada.
 
@@ -53,13 +55,12 @@ Esta feature não contempla:
 
 - consulta de manifestação anônima por protocolo;
 - anexos em mensagens;
+- remoção ou substituição de anexos;
 - notificações;
 - resposta administrativa;
 - alteração de status;
 - encerramento da manifestação;
-- avaliação do atendimento;
-- persistência concreta em banco;
-- rotas HTTP.
+- avaliação do atendimento.
 
 ---
 
@@ -87,13 +88,20 @@ Para executar o acompanhamento:
 Após operações bem-sucedidas:
 
 - a listagem retorna apenas manifestações do usuário solicitado;
-- a consulta de detalhes retorna o estado atual da manifestação com histórico e mensagens;
+- a consulta de detalhes retorna o estado atual da manifestação com histórico, mensagens e anexos;
+- o anexo enviado fica vinculado à manifestação com metadados públicos próprios;
+- o download do arquivo continua mediado por `download-url` temporária;
 - a mensagem enviada fica registrada com identidade própria, data e remetente;
 - o histórico de acompanhamento permanece rastreável.
 
 ---
 
 ## 8. Entradas
+
+As tabelas desta seção descrevem as entradas de aplicação dos casos de uso. No contrato HTTP atual, o frontend não envia `userId`: ele é derivado do JWT (`request.user.id`) pelos controllers.
+
+> Estes payloads são internos aos casos de uso e não devem ser copiados pelo frontend.
+> Para integração HTTP, use somente a seção `8.4 Contrato HTTP atual`.
 
 ### 8.1 Listagem das manifestações do usuário
 
@@ -102,7 +110,7 @@ Após operações bem-sucedidas:
 | userId | string | Sim         | Identificador do usuário autenticado no fluxo.  |
 | page   | number | Sim         | Número da página da listagem, iniciando em `1`. |
 
-### Exemplo de entrada
+### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -118,7 +126,7 @@ Após operações bem-sucedidas:
 | manifestationId | string | Sim         | Identificador da manifestação consultada.      |
 | userId          | string | Sim         | Identificador do usuário autenticado no fluxo. |
 
-### Exemplo de entrada
+### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -135,7 +143,7 @@ Após operações bem-sucedidas:
 | userId          | string | Sim         | Identificador do manifestante autenticado.             |
 | content         | string | Sim         | Conteúdo textual da mensagem complementar.             |
 
-### Exemplo de entrada
+### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -145,22 +153,34 @@ Após operações bem-sucedidas:
 }
 ```
 
+### 8.4 Contrato HTTP atual
+
+- `GET /manifestations?page=1` lista as manifestações do manifestante autenticado; `page` é opcional e defaulta para `1`.
+- `GET /manifestations/:manifestationId` consulta os detalhes e retorna `attachments[]`; `manifestationId` vem da rota.
+- `POST /manifestations/:manifestationId/attachments` envia `multipart/form-data` com campo `file`.
+- `POST /manifestations/:manifestationId/attachments/:attachmentId/download-url` emite URL curta de download.
+- `POST /manifestations/:manifestationId/messages` envia `{ "content": "..." }` no body.
+- O frontend nunca envia `userId` no body, query ou path.
+
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                                        |
-| ---------- | ------------------------------------------------------------------------------------------------------------ |
-| RN-UC05-01 | O sistema deve listar apenas manifestações pertencentes ao `userId` informado.                               |
-| RN-UC05-02 | A paginação da listagem deve aceitar somente páginas maiores ou iguais a `1`.                                |
-| RN-UC05-03 | A consulta detalhada deve falhar quando a manifestação não existir.                                          |
-| RN-UC05-04 | A consulta detalhada deve falhar quando a manifestação não pertencer ao `userId` autenticado.                |
-| RN-UC05-05 | Manifestações anônimas não devem ser consultadas por este fluxo identificado.                                |
-| RN-UC05-06 | O detalhamento deve retornar status atual, histórico e mensagens associadas à manifestação.                  |
-| RN-UC05-07 | O envio de mensagem deve exigir conteúdo textual não vazio.                                                  |
-| RN-UC05-08 | O envio de mensagem deve falhar quando a manifestação não pertencer ao `userId` autenticado.                 |
-| RN-UC05-09 | Apenas manifestações abertas para interação podem receber novas mensagens.                                   |
-| RN-UC05-10 | Manifestações `finalized` e `canceled` não podem receber novas mensagens.                                    |
-| RN-UC05-11 | Cada mensagem registrada deve manter rastreabilidade de remetente e data de criação.                         |
-| RN-UC05-12 | Regras de autoria, anonimato e abertura para interação devem ficar encapsuladas na entidade `Manifestation`. |
+| Código      | Regra                                                                                                                             |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC05-01  | O sistema deve listar apenas manifestações pertencentes ao `userId` informado.                                                    |
+| RN-UC05-02  | A paginação da listagem deve aceitar somente páginas maiores ou iguais a `1`.                                                     |
+| RN-UC05-03  | A consulta detalhada deve falhar quando a manifestação não existir.                                                               |
+| RN-UC05-04  | A consulta detalhada deve falhar quando a manifestação não pertencer ao `userId` autenticado.                                     |
+| RN-UC05-05  | Manifestações anônimas não devem ser consultadas por este fluxo identificado.                                                     |
+| RN-UC05-06  | O detalhamento deve retornar status atual, histórico e mensagens associadas à manifestação.                                       |
+| RN-UC05-06a | O detalhamento identificado deve retornar também `attachments[]` com metadados públicos do anexo.                                 |
+| RN-UC05-07  | O envio de mensagem deve exigir conteúdo textual não vazio.                                                                       |
+| RN-UC05-08  | O envio de mensagem deve falhar quando a manifestação não pertencer ao `userId` autenticado.                                      |
+| RN-UC05-09  | Apenas manifestações abertas para interação podem receber novas mensagens.                                                        |
+| RN-UC05-10  | Manifestações `finalized` e `canceled` não podem receber novas mensagens.                                                         |
+| RN-UC05-11  | Cada mensagem registrada deve manter rastreabilidade de remetente e data de criação.                                              |
+| RN-UC05-12  | Regras de autoria, anonimato e abertura para interação devem ficar encapsuladas na entidade `Manifestation`.                      |
+| RN-UC05-13  | O upload identificado de anexo deve aceitar exatamente `1` arquivo por request e respeitar limite de `5` anexos por manifestação. |
+| RN-UC05-14  | O download do arquivo deve ocorrer apenas via `download-url` temporária emitida pelo backend, sem expor chave de storage.         |
 
 ---
 
@@ -170,9 +190,11 @@ Após operações bem-sucedidas:
 
 O campo `page` deve:
 
-- ser obrigatório;
+- ser obrigatório na entrada do caso de uso;
 - ser numérico;
 - ser maior ou igual a `1`.
+
+No contrato HTTP, `page` é opcional e, quando ausente, o controller assume `1`.
 
 ### 10.2 Propriedade da manifestação
 
@@ -200,6 +222,17 @@ Para envio de mensagem:
 
 Observação:
 No recorte atual do núcleo, a regra foi modelada como permissão para `in_analysis` e `answered`, com bloqueio explícito para `finalized` e `canceled`.
+
+### 10.5 Anexos
+
+Para upload e visualização de anexos neste fluxo identificado:
+
+- o arquivo deve ser enviado no campo multipart `file`;
+- o endpoint aceita exatamente `1` arquivo por chamada;
+- o frontend deve repetir a chamada para múltiplos anexos;
+- o detalhamento identificado retorna `attachments[]`;
+- o backend expõe apenas metadados públicos e uma `download-url` temporária quando solicitada;
+- não há remoção, substituição ou anexos em mensagens nesta entrega.
 
 ---
 
@@ -298,14 +331,34 @@ O sistema deve bloquear o envio de nova mensagem.
     "id": "manifestation-1",
     "protocol": "2026-0001",
     "type": "complaint",
-    "status": "in_analysis",
+    "status": "finalized",
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
     "description": "O serviço ficou indisponível durante toda a manhã.",
+    "involvedPeople": "Equipe da coordenação",
+    "attendantUserId": "ombudsman-1",
     "createdAt": "2026-05-10T12:00:00.000Z",
     "history": [
       {
+        "type": "registered",
         "description": "Manifestação registrada.",
+        "actorUserId": "user-1",
+        "actorType": "manifestant",
+        "fromStatus": null,
+        "toStatus": "in_analysis",
+        "rating": null,
+        "attendantUserId": null,
+        "createdAt": "2026-05-10T12:00:00.000Z"
+      },
+      {
+        "type": "evaluation_recorded",
+        "description": "Atendimento avaliado pelo autor (5/5).",
+        "actorUserId": "user-1",
+        "actorType": "manifestant",
+        "fromStatus": null,
+        "toStatus": null,
+        "rating": 5,
+        "attendantUserId": "ombudsman-1",
         "createdAt": "2026-05-10T12:00:00.000Z"
       }
     ],
@@ -313,6 +366,7 @@ O sistema deve bloquear o envio de nova mensagem.
       {
         "id": "message-1",
         "senderUserId": "ombudsman-1",
+        "senderType": "ombudsman",
         "content": "Estamos analisando o seu relato.",
         "createdAt": "2026-05-10T15:00:00.000Z"
       }
@@ -328,6 +382,7 @@ O sistema deve bloquear o envio de nova mensagem.
   "message": {
     "id": "message-2",
     "senderUserId": "user-1",
+    "senderType": "manifestant",
     "content": "Poderiam compartilhar uma atualização do andamento?",
     "createdAt": "2026-05-10T16:00:00.000Z"
   }
@@ -386,7 +441,7 @@ Erro esperado:
 - o sistema não deve expor manifestação de outro usuário neste fluxo;
 - manifestações anônimas devem ser consultadas por fluxo específico baseado em protocolo;
 - o conteúdo de mensagem não deve ser aceito em branco;
-- a camada de apresentação deverá mapear erros de autorização e inexistência conforme o contrato HTTP adotado no futuro.
+- a camada de apresentação mapeia erros de autorização e inexistência conforme o contrato HTTP atual (Fastify) — ver detalhes nos controllers descritos na seção 19.
 
 ---
 
@@ -527,11 +582,16 @@ export interface ManifestationInteractionsRepository {
 - erros compartilhados de acesso à manifestação devem permanecer em pasta comum para evitar dependência entre casos de uso;
 - o envio de mensagem utiliza a entidade `ManifestationMessage` e repositório próprio de interação para evitar acoplamento excessivo em `ManifestationsRepository`;
 - `ManifestationMessageDTO` permanece como contrato de saída e leitura, não como modelo principal de domínio;
-- a implementação concreta de persistência ainda precisa materializar os contratos desta feature;
-- a consulta de manifestações anônimas por protocolo deve ser tratada por caso de uso separado.
+- a infraestrutura concreta materializa os contratos: `PrismaManifestationsRepository` (`src/infra/database/prisma/repositories/`) cobre `findById`, `findDetailsById` e `findManyByAuthorUserId` com `MANIFESTATIONS_PAGE_SIZE = 20`; `PrismaManifestationInteractionsRepository` cobre `addMessage`. O histórico em `findDetailsById` é reconstruído a partir das `ManifestationMessage` (criação sintetizada de `createdAt`, mensagens de ombudsman/admin viram `administrative_answered`, e mensagens com `senderType='system'` carregam um payload JSON decodificado por `src/infra/database/prisma/system-message-payload.ts`);
+- a consulta de manifestações anônimas por protocolo é tratada pelo UC-05b;
+- os endpoints `GET /manifestations`, `GET /manifestations/:manifestationId` e `POST /manifestations/:manifestationId/messages` são registrados em `src/main/routes/manifestation.routes.ts` com `preHandler: [ensureAuthenticated, requireRoles(UserRole.MANIFESTANT)]` (`src/infra/http/fastify/middlewares/auth-middleware.ts`), bloqueando ombudsman/admin com `403`;
+- cobertura e2e em `test/e2e/identified-manifestation.e2e.spec.ts` exercita listagem, detalhes (`history === ['registered']` para manifestação recém-criada, `messages === []`), `401` sem auth e `403` entre manifestantes distintos; `test/e2e/manifestation-interaction.e2e.spec.ts` cobre envio de mensagem (sucesso + listagem nos detalhes, body vazio `400`, isolamento entre manifestantes `403`, bloqueio em manifestação finalizada `409`, `401` sem auth);
+- a camada de apresentação fornece `GetManifestationDetailsController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado (`request.user.id`), e mapeia `ManifestationNotFoundError` para `404 Not Found` e `NotAllowedToAccessManifestationError` para `403 Forbidden`; requisições sem usuário autenticado retornam `401 Unauthorized` e `manifestationId` vazio retorna `400 Bad Request` com `MissingParamError`;
+- a camada de apresentação fornece `ListUserManifestationsController` em `src/presentation/controllers/manifestation/`, que deriva `userId` do contexto autenticado, faz parse de `page` a partir de `request.query.page` (default `1`, exige inteiro positivo via regex `/^[1-9]\d*$/`), rejeita valores inválidos com `400 InvalidPageNumberError` antes de chamar o use case, e também mapeia `InvalidPageNumberError` lançado pelo use case para `400 Bad Request`; sem usuário autenticado retorna `401 Unauthorized`;
+- a camada de apresentação fornece `AddManifestationMessageController` em `src/presentation/controllers/manifestation/`, que extrai `manifestationId` de `request.params`, deriva `userId` do contexto autenticado, valida o body via `Validator<AddManifestationMessageBody>` e mapeia: `ManifestationNotFoundError` → `404`, `NotAllowedToAccessManifestationError` → `403`, `ManifestationInteractionNotAllowedError` → `409 Conflict` (manifestação fechada para interação), e `InvalidManifestationMessageContentError` → `400`; sem usuário autenticado retorna `401` e `manifestationId` vazio retorna `400 MissingParamError`.
 
 ---
 
 ## 20. Observação final
 
-Esta feature documenta o recorte atual de acompanhamento identificado da manifestação no núcleo da aplicação. Expansões futuras, como protocolo para anônimos, anexos em mensagens, notificações e regras mais granulares de abertura para interação, devem ser adicionadas em especificações complementares ou revisões desta mesma feature.
+Esta feature documenta o recorte atual de acompanhamento identificado da manifestação no núcleo da aplicação. O fluxo de anexos já implementado está detalhado em `doc/features/UC5c-manifestation-attachments.md`. Expansões futuras, como anexos em mensagens, notificações e regras mais granulares de abertura para interação, devem ser adicionadas em especificações complementares ou revisões desta mesma feature.

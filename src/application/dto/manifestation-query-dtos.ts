@@ -6,6 +6,9 @@ export type ManifestationHistoryEntryType =
   | 'administrative_answered'
   | 'status_changed'
   | 'finalized_by_author'
+  | 'evaluation_recorded'
+
+export type ManifestationAttachmentUploadedByTypeDTO = 'manifestant' | 'anonymous_manifestant' | 'ombudsman' | 'admin'
 
 export interface ManifestationListItemDTO {
   id: string
@@ -26,6 +29,8 @@ export interface ManifestationHistoryEntryDTO {
   actorType: ManifestationMessageSenderType
   fromStatus: ManifestationStatus | null
   toStatus: ManifestationStatus | null
+  rating: number | null
+  attendantUserId: string | null
   createdAt: Date
 }
 
@@ -34,6 +39,15 @@ export interface ManifestationMessageDTO {
   senderUserId: string | null
   senderType: ManifestationMessageSenderType
   content: string
+  createdAt: Date
+}
+
+export interface ManifestationAttachmentDTO {
+  id: string
+  originalName: string
+  mimeType: string
+  sizeInBytes: number
+  uploadedByType: ManifestationAttachmentUploadedByTypeDTO
   createdAt: Date
 }
 
@@ -47,7 +61,9 @@ export interface ManifestationDetailsDTO {
   description: string
   involvedPeople: string | null
   authorUserId: string | null
+  attendantUserId: string | null
   createdAt: Date
   history: ManifestationHistoryEntryDTO[]
   messages: ManifestationMessageDTO[]
+  attachments: ManifestationAttachmentDTO[]
 }

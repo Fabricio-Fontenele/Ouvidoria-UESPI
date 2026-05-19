@@ -1,11 +1,10 @@
+import type { AiChatIntent, AiChatMessage, AiDraftPayload, AiGateway } from '#src/application/ai/ai-gateway.js'
 import type {
-  AiAdministrativeUnitCatalogItem,
-  AiCatalogItem,
-  AiChatIntent,
-  AiChatMessage,
-  AiDraftPayload,
-  AiGateway,
-} from '#src/application/ai/ai-gateway.js'
+  CatalogAdministrativeUnitItemDTO,
+  CatalogCampusItemDTO,
+  PublicCatalogDTO,
+} from '#src/application/dto/catalog-dtos.js'
+import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import { ManifestationType } from '#src/domain/entities/manifestation.js'
 import { AdministrativeUnitId } from '#src/domain/value-objects/administrative-unit-id.js'
 import { CampusId } from '#src/domain/value-objects/campus-id.js'
@@ -21,8 +20,6 @@ type RequiredDraftField = (typeof REQUIRED_DRAFT_FIELDS)[number]
 export interface SendAiMessageInput {
   history: AiChatMessage[]
   message: string
-  campuses: AiCatalogItem[]
-  administrativeUnits: AiAdministrativeUnitCatalogItem[]
 }
 
 export interface SendAiMessageOutput {
@@ -35,9 +32,14 @@ export interface SendAiMessageOutput {
 }
 
 export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiMessageOutput> {
-  constructor(private readonly aiGateway: AiGateway) {}
+  constructor(
+    private readonly aiGateway: AiGateway,
+    private readonly catalogRepository: CatalogRepository,
+  ) {}
 
-  async execute({ history, message, campuses, administrativeUnits }: SendAiMessageInput): Promise<SendAiMessageOutput> {
+  async execute({ history, message }: SendAiMessageInput): Promise<SendAiMessageOutput> {
+    const { campuses, administrativeUnits } = this.flattenCatalog(await this.catalogRepository.listPublic())
+
     const response = await this.aiGateway.chat({
       history,
       message,
@@ -65,6 +67,21 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
     }
   }
 
+  private flattenCatalog(publicCatalog: PublicCatalogDTO): {
+    campuses: CatalogCampusItemDTO[]
+    administrativeUnits: CatalogAdministrativeUnitItemDTO[]
+  } {
+    const campuses = publicCatalog.campuses.map(({ id, label }) => ({ id, label }))
+    const administrativeUnits = publicCatalog.campuses.flatMap((campus) => {
+      return campus.administrativeUnits.map((administrativeUnit) => ({
+        ...administrativeUnit,
+        campusId: campus.id,
+      }))
+    })
+
+    return { campuses, administrativeUnits }
+  }
+
   private normalizeIntent(intent: string): AiChatIntent {
     switch (intent) {
       case 'institutional_question':
@@ -86,8 +103,8 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
       description: string | null
       involvedPeople: string | null
     } | null,
-    campuses: AiCatalogItem[],
-    administrativeUnits: AiAdministrativeUnitCatalogItem[],
+    campuses: CatalogCampusItemDTO[],
+    administrativeUnits: CatalogAdministrativeUnitItemDTO[],
   ): AiDraftPayload | null {
     if (draft === null) {
       return null
@@ -133,7 +150,7 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
 
   private normalizeCatalogId(
     value: string | null,
-    catalog: AiCatalogItem[],
+    catalog: CatalogCampusItemDTO[] | CatalogAdministrativeUnitItemDTO[],
     validate: (value: string) => void,
   ): string | null {
     const normalizedValue = this.normalizeOptionalText(value, validate)
@@ -150,7 +167,7 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
   private normalizeAdministrativeUnitId(
     value: string | null,
     campusId: string | null,
-    administrativeUnits: AiAdministrativeUnitCatalogItem[],
+    administrativeUnits: CatalogAdministrativeUnitItemDTO[],
   ): string | null {
     const normalizedAdministrativeUnitId = this.normalizeCatalogId(value, administrativeUnits, (normalizedValue) => {
       AdministrativeUnitId.create(normalizedValue)

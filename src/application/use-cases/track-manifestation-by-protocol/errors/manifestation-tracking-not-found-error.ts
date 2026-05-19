@@ -1,6 +1,1 @@
-export class ManifestationTrackingNotFoundError extends Error {
-  constructor() {
-    super('Manifestation tracking not found.')
-    this.name = 'ManifestationTrackingNotFoundError'
-  }
-}
+export { ManifestationTrackingNotFoundError } from '#src/application/use-cases/anonymous-manifestation-access/errors/manifestation-tracking-not-found-error.js'

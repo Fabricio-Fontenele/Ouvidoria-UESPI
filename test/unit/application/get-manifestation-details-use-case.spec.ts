@@ -22,6 +22,7 @@ describe('GetManifestationDetailsUseCase', () => {
     description: 'The service was unavailable during the whole morning.',
     involvedPeople: 'Coordination Team',
     authorUserId,
+    attendantUserId: null,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [
       {
@@ -31,6 +32,8 @@ describe('GetManifestationDetailsUseCase', () => {
         actorType: ManifestationMessageSenderType.MANIFESTANT,
         fromStatus: null,
         toStatus: ManifestationStatus.IN_ANALYSIS,
+        rating: null,
+        attendantUserId: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
       {
@@ -40,6 +43,8 @@ describe('GetManifestationDetailsUseCase', () => {
         actorType: ManifestationMessageSenderType.OMBUDSMAN,
         fromStatus: ManifestationStatus.IN_ANALYSIS,
         toStatus: ManifestationStatus.ANSWERED,
+        rating: null,
+        attendantUserId: null,
         createdAt: new Date('2026-05-10T14:00:00.000Z'),
       },
     ],
@@ -52,6 +57,7 @@ describe('GetManifestationDetailsUseCase', () => {
         createdAt: new Date('2026-05-10T15:00:00.000Z'),
       },
     ],
+    attachments: [],
   })
 
   beforeEach(() => {
@@ -83,9 +89,11 @@ describe('GetManifestationDetailsUseCase', () => {
         administrativeUnitId: 'unit-1',
         description: 'The service was unavailable during the whole morning.',
         involvedPeople: 'Coordination Team',
+        attendantUserId: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
         history: manifestationDetails.history,
         messages: manifestationDetails.messages,
+        attachments: manifestationDetails.attachments,
       },
     })
   })

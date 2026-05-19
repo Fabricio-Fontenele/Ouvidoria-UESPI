@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                 |
-| -------------- | ----------------------------------------- |
-| Caso de uso    | UC-04                                     |
-| Nome           | Registrar manifestação                    |
-| Feature        | Abertura de manifestação                  |
-| Ator principal | Usuário                                   |
-| Prioridade     | Alta                                      |
-| Status         | Núcleo implementado / integração pendente |
+| Campo          | Descrição                                                                               |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-04                                                                                   |
+| Nome           | Registrar manifestação                                                                  |
+| Feature        | Abertura de manifestação                                                                |
+| Ator principal | Usuário                                                                                 |
+| Prioridade     | Alta                                                                                    |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
 ---
 
@@ -57,7 +57,7 @@ Esta feature não contempla:
 
 - CRUD de campus;
 - CRUD de unidade administrativa;
-- anexos;
+- upload inline de anexos no mesmo `POST /manifestations`;
 - marcação de sigilo além da autoria anônima;
 - mensagens no chamado;
 - atualização de status após o registro inicial;
@@ -83,7 +83,9 @@ Para executar o registro:
 - o sistema deve estar disponível;
 - o gerador de protocolo deve estar disponível;
 - campus e unidade administrativa devem ser informados;
-- o tipo da manifestação deve estar entre os valores suportados.
+- o tipo da manifestação deve estar entre os valores suportados;
+- manifestações identificadas exigem contexto autenticado;
+- manifestações anônimas podem ser registradas sem usuário autenticado.
 
 ---
 
@@ -102,7 +104,12 @@ Após um registro bem-sucedido:
 
 ## 8. Entrada
 
-A feature deve receber os seguintes dados:
+### 8.1 Entrada de aplicação
+
+No nível de caso de uso, a feature trabalha com os seguintes dados:
+
+> Este payload é interno ao caso de uso e não deve ser usado pelo frontend.
+> Para integração HTTP, use somente a seção `8.2 Contrato HTTP atual`.
 
 | Campo                | Tipo    | Obrigatório | Descrição                                                           |
 | -------------------- | ------- | ----------- | ------------------------------------------------------------------- |
@@ -111,10 +118,10 @@ A feature deve receber os seguintes dados:
 | administrativeUnitId | string  | Sim         | Identificador da unidade administrativa relacionada à manifestação. |
 | description          | string  | Sim         | Descrição textual da manifestação.                                  |
 | involvedPeople       | string  | Não         | Pessoas envolvidas, em texto livre, quando houver.                  |
-| requesterId          | string  | Não         | Identificador do usuário autenticado no contexto da requisição.     |
+| requesterId          | string  | Não         | Identificador do usuário autenticado no contexto da aplicação.      |
 | isAnonymous          | boolean | Sim         | Indica se o usuário deseja registrar a manifestação anonimamente.   |
 
-### Exemplo de entrada identificada
+### Exemplo de entrada identificada no caso de uso
 
 ```json
 {
@@ -128,7 +135,7 @@ A feature deve receber os seguintes dados:
 }
 ```
 
-### Exemplo de entrada anônima
+### Exemplo de entrada anônima no caso de uso
 
 ```json
 {
@@ -142,23 +149,69 @@ A feature deve receber os seguintes dados:
 }
 ```
 
+### 8.2 Contrato HTTP atual
+
+No contrato HTTP público atual:
+
+- o frontend chama `POST /manifestations`;
+- o body **não** carrega `requesterId`;
+- a identidade autenticada é derivada do Bearer token quando houver;
+- em registro identificado (`isAnonymous=false`), a ausência de autenticação válida retorna `401`;
+- em registro anônimo (`isAnonymous=true`), o request pode seguir sem token;
+- anexos não entram neste body e devem usar os recursos dedicados documentados em `doc/api/frontend-integration.md` e `doc/features/UC5c-manifestation-attachments.md`.
+- campos extras não fazem parte do contrato e não devem ser enviados pelo frontend.
+
+Exemplo HTTP identificado:
+
+```http
+POST /manifestations
+Authorization: Bearer <token-do-manifestante>
+Content-Type: application/json
+```
+
+```json
+{
+  "isAnonymous": false,
+  "type": "complaint",
+  "campusId": "campus-1",
+  "administrativeUnitId": "unit-1",
+  "description": "O serviço ficou indisponível durante toda a manhã.",
+  "involvedPeople": "Equipe da coordenação"
+}
+```
+
+Exemplo HTTP anônimo:
+
+```json
+{
+  "isAnonymous": true,
+  "type": "report",
+  "campusId": "campus-2",
+  "administrativeUnitId": "unit-7",
+  "description": "Há indícios de irregularidade no processo informado.",
+  "involvedPeople": null
+}
+```
+
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                                                |
-| ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| RN-UC04-01 | O tipo da manifestação é obrigatório.                                                                                |
-| RN-UC04-02 | O campus da manifestação é obrigatório.                                                                              |
-| RN-UC04-03 | A unidade administrativa da manifestação é obrigatória.                                                              |
-| RN-UC04-04 | A descrição da manifestação é obrigatória.                                                                           |
-| RN-UC04-05 | `involvedPeople` é opcional, deve ser normalizado quando informado e pode ser tratado como `null` quando vier vazio. |
-| RN-UC04-06 | Toda manifestação deve possuir protocolo único.                                                                      |
-| RN-UC04-07 | Toda manifestação deve estar vinculada a um campus e a uma unidade administrativa.                                   |
-| RN-UC04-08 | Os tipos permitidos são `report`, `complaint`, `suggestion` e `compliment`.                                          |
-| RN-UC04-09 | O registro pode ser identificado ou anônimo.                                                                         |
-| RN-UC04-10 | Em registros identificados, o autor da manifestação deve ser derivado do `requesterId` autenticado.                  |
-| RN-UC04-11 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                                      |
-| RN-UC04-12 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                                             |
-| RN-UC04-13 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.                             |
+| Código     | Regra                                                                                                                                                                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC04-01 | O tipo da manifestação é obrigatório.                                                                                                                                                                                                    |
+| RN-UC04-02 | O campus da manifestação é obrigatório.                                                                                                                                                                                                  |
+| RN-UC04-03 | A unidade administrativa da manifestação é obrigatória.                                                                                                                                                                                  |
+| RN-UC04-04 | A descrição da manifestação é obrigatória.                                                                                                                                                                                               |
+| RN-UC04-05 | `involvedPeople` é opcional, deve ser normalizado quando informado e pode ser tratado como `null` quando vier vazio.                                                                                                                     |
+| RN-UC04-06 | Toda manifestação deve possuir protocolo único.                                                                                                                                                                                          |
+| RN-UC04-07 | Toda manifestação deve estar vinculada a um campus e a uma unidade administrativa.                                                                                                                                                       |
+| RN-UC04-08 | Os tipos permitidos são `report`, `complaint`, `suggestion` e `compliment`.                                                                                                                                                              |
+| RN-UC04-09 | O registro pode ser identificado ou anônimo.                                                                                                                                                                                             |
+| RN-UC04-10 | Em registros identificados, o autor da manifestação deve ser derivado do `requesterId` autenticado.                                                                                                                                      |
+| RN-UC04-11 | Registros identificados sem contexto autenticado devem ser rejeitados antes de chamar o caso de uso.                                                                                                                                     |
+| RN-UC04-12 | Em registros anônimos, o autor da manifestação deve ser persistido como `null`.                                                                                                                                                          |
+| RN-UC04-13 | Quando registrada, a manifestação deve iniciar com status `in_analysis`.                                                                                                                                                                 |
+| RN-UC04-14 | A resposta de sucesso deve retornar apenas os dados públicos da manifestação registrada.                                                                                                                                                 |
+| RN-UC04-15 | Em registros identificados, o autor deve possuir papel `manifestant`. Usuários com papel `ombudsman` ou `admin` não podem abrir manifestações identificadas em nome próprio (mantendo a separação entre quem manifesta e quem responde). |
 
 ---
 
@@ -221,9 +274,10 @@ O campo `involvedPeople`:
 
 O campo `requesterId`:
 
-- representa a identidade autenticada do solicitante;
+- representa a identidade autenticada do solicitante na entrada de aplicação;
 - não deve ser tratado como autoria arbitrária enviada pelo cliente;
-- pode ser `null` apenas quando o contexto da requisição não tiver usuário autenticado.
+- deve estar presente quando `isAnonymous` for `false`;
+- pode ser `null` apenas quando `isAnonymous` for `true`.
 
 O campo `isAnonymous`:
 
@@ -231,7 +285,7 @@ O campo `isAnonymous`:
 - indica a escolha do usuário por registro identificado ou anônimo.
 
 Observação:
-No recorte atual do MVP, o caso de uso deriva `authorUserId` internamente a partir de `requesterId` e `isAnonymous`. Regras adicionais de sigilo institucional ainda não fazem parte da implementação.
+No recorte atual do MVP, o caso de uso deriva `authorUserId` internamente a partir de `requesterId` e `isAnonymous`. Na camada HTTP, `requesterId` vem do JWT e não do body da requisição. Regras adicionais de sigilo institucional ainda não fazem parte da implementação.
 
 ---
 
@@ -280,7 +334,15 @@ Condição:
 O usuário tenta registrar manifestação identificada com `isAnonymous` igual a `false`, mas sem `requesterId`.
 
 Comportamento esperado:
-O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação.
+O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação. Na camada de apresentação HTTP, esse cenário deve retornar `401 Unauthorized` sem chamar o caso de uso.
+
+### FA04b - Registro identificado por usuário sem papel `manifestant`
+
+Condição:
+O usuário autenticado possui papel `ombudsman` ou `admin` e tenta registrar manifestação identificada (`isAnonymous=false`).
+
+Comportamento esperado:
+O sistema deve rejeitar o registro com `403 Forbidden` (`IdentifiedManifestationRequiresManifestantRoleError`) antes de chamar o caso de uso. Anônimas continuam permitidas (o `requesterId` é descartado e o agregado é aberto sem autor).
 
 ### FA05 - Falha na geração do protocolo
 
@@ -318,10 +380,12 @@ Corpo da resposta:
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
     "description": "O serviço ficou indisponível durante toda a manhã.",
+    "involvedPeople": null,
     "isAnonymous": false,
     "authorUserId": "user-1",
     "createdAt": "2026-05-10T15:00:00.000Z"
-  }
+  },
+  "accessCode": null
 }
 ```
 
@@ -337,10 +401,12 @@ Exemplo de resposta anônima:
     "campusId": "campus-2",
     "administrativeUnitId": "unit-7",
     "description": "Há indícios de irregularidade no processo informado.",
+    "involvedPeople": null,
     "isAnonymous": true,
     "authorUserId": null,
     "createdAt": "2026-05-10T15:00:00.000Z"
-  }
+  },
+  "accessCode": "plain-access-code"
 }
 ```
 
@@ -358,13 +424,8 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INVALID_INPUT",
-  "message": "Dados inválidos.",
-  "fields": {
-    "campusId": ["Campus obrigatório."],
-    "administrativeUnitId": ["Unidade administrativa obrigatória."],
-    "description": ["Descrição obrigatória."]
-  }
+  "error": "ValidationError",
+  "message": "description: Invalid input: expected string, received undefined"
 }
 ```
 
@@ -378,8 +439,23 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INTERNAL_ERROR",
-  "message": "Falha ao registrar manifestação."
+  "error": "ServerError",
+  "message": "Internal server error."
+}
+```
+
+### 14.3 Registro identificado sem autenticação
+
+Status HTTP:
+
+`401 Unauthorized`
+
+Exemplo de resposta:
+
+```json
+{
+  "error": "UnauthenticatedError",
+  "message": "Authentication required."
 }
 ```
 
@@ -426,9 +502,11 @@ Resultado esperado:
 
 - protocolo gerado e normalizado;
 - descrição normalizada;
+- `involvedPeople` normalizado ou persistido como `null` quando ausente;
 - status inicial `in_analysis`;
 - manifestação persistida;
-- resposta com os dados públicos da manifestação.
+- resposta com os dados públicos da manifestação;
+- `accessCode` igual a `null` para manifestação identificada.
 
 #### CT-UC04-002 - Deve registrar manifestação anônima quando o usuário escolher anonimato
 
@@ -439,7 +517,9 @@ Então o sistema deve registrar a manifestação sem autor identificado.
 Resultado esperado:
 
 - `authorUserId` persistido como `null`;
-- resposta com `authorUserId` igual a `null`.
+- `accessCodeHash` persistido a partir do código gerado;
+- resposta com `authorUserId` igual a `null`;
+- resposta com `accessCode` em texto plano apenas nesse momento.
 
 #### CT-UC04-003 - Não deve registrar manifestação identificada sem `requesterId`
 
@@ -514,6 +594,7 @@ interface RegisterManifestationInput {
   campusId: string
   administrativeUnitId: string
   description: string
+  involvedPeople?: string | null
 }
 ```
 
@@ -529,10 +610,12 @@ interface RegisterManifestationOutput {
     campusId: string
     administrativeUnitId: string
     description: string
+    involvedPeople: string | null
     isAnonymous: boolean
     authorUserId: string | null
     createdAt: Date
   }
+  accessCode: string | null
 }
 ```
 
@@ -552,19 +635,45 @@ interface ProtocolGenerator {
 }
 ```
 
+Gerador de código de acompanhamento:
+
+```ts
+interface AccessCodeGenerator {
+  generate(): Promise<string>
+}
+```
+
+Hash do código de acompanhamento:
+
+```ts
+interface PasswordHasher {
+  hash(value: string): Promise<string>
+}
+```
+
 ---
 
 ## 19. Observações de implementação
 
 - O caso de uso atual trata apenas o registro inicial da manifestação.
-- Em uma camada HTTP futura, `requesterId` deve vir do token/sessão, não do corpo livre da requisição.
+- A camada de apresentação fornece `RegisterManifestationController` em `src/presentation/controllers/manifestation/`, que deriva `requesterId` do contexto autenticado da requisição (`request.user.id`) e não aceita autoria pelo corpo livre.
+- O controller depende de um `Validator<RegisterManifestationBody>` agnóstico e mapeia erros conhecidos (`IdentifiedManifestationRequiresRequesterError`, erros de value-object) para `400 Bad Request`; falhas inesperadas caem no `500` padrão do `BaseController`.
+- A infraestrutura concreta está materializada: `PrismaManifestationsRepository` (`src/infra/database/prisma/repositories/`) implementa `ManifestationsRepository`; `UuidProtocolGenerator` e `RandomAccessCodeGenerator` (`src/infra/protocol/`) implementam os geradores; `BcryptjsHasher` faz hash do `accessCode` antes da persistência; `ZodValidator<RegisterManifestationBody>` (`src/infra/http/fastify/validators/`) materializa o `Validator<T>` da apresentação.
+- O endpoint `POST /manifestations` é registrado em `src/main/routes/manifestation.routes.ts` com `preHandler: optionalAuthenticate` (middleware em `src/infra/http/fastify/middlewares/auth-middleware.ts`), permitindo registro anônimo sem token e injetando `request.user` quando um Bearer válido for enviado.
+- A guarda de papel (RN-UC04-15) é aplicada no `RegisterManifestationController` logo após o check de autenticação: se `request.user.role !== UserRole.MANIFESTANT` e `isAnonymous=false`, retorna `403` com `IdentifiedManifestationRequiresManifestantRoleError` (`src/application/use-cases/register-manifestation/errors/`). Anônimas seguem o caminho normal porque o use case ignora `requesterId` nesse caso.
+- Cobertura e2e: `test/e2e/anonymous-manifestation.e2e.spec.ts` valida o fluxo anônimo + `accessCode` retornado; `test/e2e/identified-manifestation.e2e.spec.ts` cobre registro autenticado, rejeição sem auth (401) e isolamento entre manifestantes (403); `test/e2e/manifestation-administration.e2e.spec.ts` cobre o `403` para ombudsman tentando abrir identificada.
 - `Campus` e `AdministrativeUnit` não possuem CRUD próprio neste MVP.
 - Nesta versão, campus e unidade administrativa são tratados como catálogos fixos previamente carregados por seed.
 - O caso de uso exige apenas que `campusId` e `administrativeUnitId` sejam informados e usados como referência.
 - A validação de tipo pode ocorrer na camada de entrada ou por enum do domínio.
-- O caso de uso depende de `ManifestationsRepository` e `ProtocolGenerator`.
+- Em manifestações anônimas, o caso de uso gera `accessCode` em texto plano, cria `accessCodeHash` por `PasswordHasher` e persiste apenas o hash no agregado.
+- O `accessCode` em texto plano só deve ser retornado no output do registro anônimo, nunca persistido nem reexposto em projeções futuras.
+- O caso de uso depende de `ManifestationsRepository`, `ProtocolGenerator`, `AccessCodeGenerator` e `PasswordHasher`.
 - O caso de uso não deve depender diretamente de banco de dados ou biblioteca concreta de geração de protocolo.
-- O fluxo de anexos, envolvidos, sigilo administrativo e IA deve ser especificado em features próprias ou em evoluções posteriores desta feature.
+- O campo `involvedPeople` já faz parte do recorte atual e deve permanecer alinhado com o draft assistido por IA.
+- A camada de apresentação deve retornar `401 Unauthorized` quando o registro for identificado e não houver usuário autenticado no contexto da requisição.
+- O registro continua sem anexos inline; o fluxo de anexos foi separado em recurso próprio e está documentado em `doc/features/UC5c-manifestation-attachments.md`.
+- O sigilo administrativo e IA devem ser especificados em features próprias ou em evoluções posteriores desta feature.
 
 ---
 

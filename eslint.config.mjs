@@ -54,7 +54,15 @@ const sharedTypeScriptRules = {
 
 export default defineConfig([
   {
-    ignores: ['build/**', 'coverage/**', 'node_modules/**', '.eslintcache', '.extra/**', '**/*.tsbuildinfo'],
+    ignores: [
+      'build/**',
+      'coverage/**',
+      'node_modules/**',
+      '.eslintcache',
+      '.extra/**',
+      '**/*.tsbuildinfo',
+      'ai-api/**',
+    ],
   },
 
   js.configs.recommended,
@@ -63,6 +71,7 @@ export default defineConfig([
     files: [
       'eslint.config.mjs',
       'vitest.config.mjs',
+      'vitest.config.e2e.mjs',
       'lint-staged.config.mjs',
       '.extra/**/*.js',
       '.extra/**/*.mjs',

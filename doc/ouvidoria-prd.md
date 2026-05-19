@@ -365,7 +365,7 @@ O sistema deve permitir que perfis administrativos autorizados filtrem, atribuam
 
 O sistema deve permitir consultar relatórios gerenciais disponíveis para perfis autorizados.
 
-## 14. Requisitos não funcionais de alto nível
+## 15. Requisitos não funcionais de alto nível
 
 > Registrar apenas requisitos não funcionais em nível sistêmico.  
 > Detalhamento técnico local pertence à especificação técnica do recorte correspondente.

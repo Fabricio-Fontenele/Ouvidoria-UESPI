@@ -54,17 +54,21 @@ export class AnswerManifestationUseCase implements UseCase<AnswerManifestationIn
       throw new ManifestationNotFoundError()
     }
 
+    const previousStatus = manifestation.status
     manifestation.recordAdministrativeAnswer()
+    manifestation.assignAttendant(senderUserId, requester.role)
 
-    const message = await this.manifestationAdministrationRepository.recordAnswer(
+    const message = await this.manifestationAdministrationRepository.recordAnswer({
       manifestation,
-      ManifestationMessage.create({
+      fromStatus: previousStatus,
+      toStatus: manifestation.status,
+      message: ManifestationMessage.create({
         manifestationId: targetManifestationId,
         senderUserId,
         senderType,
         content: normalizedContent,
       }),
-    )
+    })
 
     return { message }
   }
