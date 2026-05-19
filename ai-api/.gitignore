@@ -1,0 +1,36 @@
+# Environment
+.env
+.env.*
+!.env.sample
+
+# Knowledge base PDFs (commit only public/approved sources; PDFs stay out)
+docs/knowledge-base/*.pdf
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+
+# Lock files (optional - some prefer to commit these)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml

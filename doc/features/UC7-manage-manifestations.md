@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                 |
-| -------------- | ----------------------------------------- |
-| Caso de uso    | UC-07                                     |
-| Nome           | Gerenciar manifestações                   |
-| Feature        | Gestão administrativa de manifestações    |
-| Ator principal | Ouvidor                                   |
-| Prioridade     | Alta                                      |
-| Status         | Núcleo implementado / integração pendente |
+| Campo          | Descrição                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-07                                                                                    |
+| Nome           | Gerenciar manifestações                                                                  |
+| Feature        | Gestão administrativa de manifestações                                                   |
+| Ator principal | Ouvidor                                                                                  |
+| Prioridade     | Alta                                                                                     |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rotas HTTP, e2e) |
 
 ---
 
@@ -45,10 +45,12 @@ Esta feature deve permitir:
 - listar manifestações disponíveis ao perfil administrativo, com paginação;
 - filtrar a listagem por status, tipo, campus, unidade administrativa e período;
 - consultar os detalhes de qualquer manifestação visível ao perfil, inclusive anônimas;
-- consultar os detalhes administrativos com `involvedPeople`, quando o campo existir;
+- consultar os detalhes administrativos com `involvedPeople` e `attachments[]`, quando existirem;
+- emitir `download-url` curta para anexos visíveis no detalhe administrativo;
 - registrar resposta administrativa em manifestação aberta para interação;
 - transitar o status da manifestação para `answered` ao responder;
 - atualizar o status da manifestação respeitando guardas do agregado;
+- persistir respostas e alterações de status com metadados explícitos de auditoria;
 - encerrar administrativamente a manifestação para `finalized` ou `canceled`.
 
 ### 4.2 Não incluído
@@ -56,11 +58,10 @@ Esta feature deve permitir:
 Esta feature não contempla:
 
 - atribuição ou encaminhamento da manifestação a responsáveis (RF20);
+- upload, remoção ou substituição administrativa de anexos;
 - materialização explícita do histórico de ações em entidade própria;
 - notificações ao manifestante;
-- relatórios gerenciais;
-- persistência concreta em banco;
-- rotas HTTP.
+- relatórios gerenciais.
 
 ---
 
@@ -88,15 +89,21 @@ Para executar a gestão administrativa:
 Após operações bem-sucedidas:
 
 - a listagem retorna manifestações compatíveis com os filtros informados;
-- a consulta de detalhes retorna o estado atual com histórico e mensagens, inclusive para manifestações anônimas;
+- a consulta de detalhes retorna o estado atual com histórico, mensagens e anexos, inclusive para manifestações anônimas;
 - a consulta de detalhes pode expor `involvedPeople` quando o campo existir na manifestação;
+- o download do anexo administrativo ocorre por `download-url` temporária emitida pelo backend;
 - a resposta administrativa fica registrada como mensagem e o status passa a `answered`;
-- a transição administrativa de status fica persistida no agregado;
+- a resposta administrativa, a alteração de status e o encerramento administrativo ficam persistidos com ator e transição de status rastreáveis;
 - o histórico de tratamento permanece rastreável.
 
 ---
 
 ## 8. Entradas
+
+As tabelas abaixo descrevem entradas de aplicação dos casos de uso administrativos. No contrato HTTP atual, o frontend não envia `requesterUserId`: a identidade administrativa é derivada do JWT (`request.user.id`). Na listagem, os filtros são enviados como query params diretos; não existe wrapper `filters` no HTTP.
+
+> Estes payloads são internos aos casos de uso e não devem ser copiados pelo frontend.
+> Para integração HTTP, use a seção `10.5 Contrato HTTP atual`.
 
 ### 8.1 Listagem administrativa
 
@@ -111,7 +118,7 @@ Após operações bem-sucedidas:
 | filters.from                 | Date                | Não         | Filtra manifestações criadas a partir desta data, inclusive. |
 | filters.to                   | Date                | Não         | Filtra manifestações criadas até esta data, inclusive.       |
 
-#### Exemplo de entrada
+#### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -135,7 +142,7 @@ Após operações bem-sucedidas:
 | requesterUserId | string | Sim         | Identificador do ator autenticado. |
 | manifestationId | string | Sim         | Identificador da manifestação.     |
 
-#### Exemplo de entrada
+#### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -152,7 +159,7 @@ Após operações bem-sucedidas:
 | manifestationId | string | Sim         | Identificador da manifestação que será respondida. |
 | content         | string | Sim         | Conteúdo textual da resposta administrativa.       |
 
-#### Exemplo de entrada
+#### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -170,7 +177,7 @@ Após operações bem-sucedidas:
 | manifestationId | string              | Sim         | Identificador da manifestação a ter o status atualizado. |
 | status          | ManifestationStatus | Sim         | Novo status pretendido para a manifestação.              |
 
-#### Exemplo de entrada
+#### Exemplo de entrada de aplicação
 
 ```json
 {
@@ -184,21 +191,22 @@ Após operações bem-sucedidas:
 
 ## 9. Regras de negócio
 
-| Código     | Regra                                                                                                                                                |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RN-UC07-01 | Apenas usuários com perfil `ombudsman` ou `admin` podem operar a feature.                                                                            |
-| RN-UC07-02 | A paginação da listagem administrativa deve aceitar somente páginas maiores ou iguais a `1`.                                                         |
-| RN-UC07-03 | Os filtros administrativos são opcionais e devem ser repassados ao repositório como informados.                                                      |
-| RN-UC07-04 | A consulta de detalhes administrativos deve falhar quando a manifestação não existir.                                                                |
-| RN-UC07-05 | A consulta administrativa de detalhes deve incluir manifestações anônimas.                                                                           |
-| RN-UC07-06 | A resposta administrativa deve exigir conteúdo textual não vazio.                                                                                    |
-| RN-UC07-07 | A resposta administrativa só pode ser registrada quando a manifestação estiver aberta para interação.                                                |
-| RN-UC07-08 | A resposta administrativa deve transitar o status da manifestação para `answered`.                                                                   |
-| RN-UC07-09 | O fluxo de resposta administrativa deve preservar consistência entre atualização de status e gravação da mensagem.                                   |
-| RN-UC07-10 | A atualização administrativa de status não pode partir de manifestações em estado terminal (`finalized`, `canceled`).                                |
-| RN-UC07-11 | A atualização administrativa de status não pode ter como alvo o mesmo status atual da manifestação.                                                  |
-| RN-UC07-12 | Regras de transição administrativa devem ficar encapsuladas na entidade `Manifestation`.                                                             |
-| RN-UC07-13 | As transições administrativas válidas são `in_analysis -> answered`, `in_analysis -> canceled`, `answered -> in_analysis` e `answered -> finalized`. |
+| Código      | Regra                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-UC07-01  | Apenas usuários com perfil `ombudsman` ou `admin` podem operar a feature.                                                                                                                                                                                                                                                                                                                         |
+| RN-UC07-02  | A paginação da listagem administrativa deve aceitar somente páginas maiores ou iguais a `1`.                                                                                                                                                                                                                                                                                                      |
+| RN-UC07-03  | Os filtros administrativos são opcionais e devem ser repassados ao repositório como informados.                                                                                                                                                                                                                                                                                                   |
+| RN-UC07-03a | Na camada de apresentação, filtros `from` e `to` só são aceitos quando vierem em timestamp ISO UTC completo (`YYYY-MM-DDTHH:mm:ss.SSSZ`).                                                                                                                                                                                                                                                         |
+| RN-UC07-04  | A consulta de detalhes administrativos deve falhar quando a manifestação não existir.                                                                                                                                                                                                                                                                                                             |
+| RN-UC07-05  | A consulta administrativa de detalhes deve incluir manifestações anônimas.                                                                                                                                                                                                                                                                                                                        |
+| RN-UC07-06  | A resposta administrativa deve exigir conteúdo textual não vazio.                                                                                                                                                                                                                                                                                                                                 |
+| RN-UC07-07  | A resposta administrativa só pode ser registrada quando a manifestação estiver aberta para interação.                                                                                                                                                                                                                                                                                             |
+| RN-UC07-08  | A resposta administrativa deve transitar o status da manifestação para `answered`.                                                                                                                                                                                                                                                                                                                |
+| RN-UC07-09  | O fluxo de resposta administrativa deve preservar consistência entre atualização de status e gravação da mensagem.                                                                                                                                                                                                                                                                                |
+| RN-UC07-10  | A atualização administrativa de status não pode partir de manifestações em estado terminal (`finalized`, `canceled`).                                                                                                                                                                                                                                                                             |
+| RN-UC07-11  | A atualização administrativa de status não pode ter como alvo o mesmo status atual da manifestação.                                                                                                                                                                                                                                                                                               |
+| RN-UC07-12  | Regras de transição administrativa devem ficar encapsuladas na entidade `Manifestation`.                                                                                                                                                                                                                                                                                                          |
+| RN-UC07-13  | As transições administrativas via atualização de status são `in_analysis -> canceled`, `answered -> in_analysis` e `answered -> finalized`. **Chegar em `answered` só é permitido via resposta administrativa (`POST /admin/manifestations/:manifestationId/answer`)**, jamais via `PATCH status=answered`, para garantir que toda manifestação `answered` tenha de fato uma resposta registrada. |
 
 ---
 
@@ -210,6 +218,8 @@ O par `requesterUserId` e a `role` carregada pelo repositório deve:
 
 - localizar um usuário existente;
 - corresponder a um perfil `ombudsman` ou `admin`.
+
+No contrato HTTP, `requesterUserId` não é enviado pelo cliente; ele é inferido do token Bearer.
 
 ### 10.2 Página da listagem
 
@@ -239,16 +249,27 @@ Para atualização administrativa de status:
 Observação:
 A guarda fica encapsulada na entidade `Manifestation` por meio dos métodos `recordAdministrativeAnswer()` e `transitionStatusAdministratively(target)`.
 
-### 10.5 Atomicidade da resposta administrativa
+### 10.5 Contrato HTTP atual
+
+- `GET /admin/manifestations?page=1&status=in_analysis&type=complaint&campusId=campus-1&administrativeUnitId=unit-1&from=2026-05-01T00:00:00.000Z&to=2026-05-31T23:59:59.999Z`
+- `GET /admin/manifestations/:manifestationId` retorna `attachments[]`
+- `POST /admin/manifestations/:manifestationId/attachments/:attachmentId/download-url` emite URL curta de download
+- `POST /admin/manifestations/:manifestationId/answer` com body `{ "content": "..." }`
+- `PATCH /admin/manifestations/:manifestationId/status` com body `{ "status": "finalized" }`
+- o frontend nunca envia `requesterUserId`
+
+### 10.6 Atomicidade da resposta administrativa
 
 No recorte atual do núcleo:
 
 - a resposta administrativa delega a persistência do novo status e da mensagem a um contrato atômico de aplicação;
+- a atualização administrativa de status delega a persistência a um contrato que recebe `actorUserId`, `actorType`, `fromStatus` e `toStatus`;
+- o encerramento administrativo e o encerramento pelo autor seguem a mesma diretriz de persistência auditável;
 - a implementação concreta de infraestrutura continua responsável por materializar a fronteira transacional única.
 
 Diretriz para a integração futura:
 
-- a persistência do novo status e o registro da mensagem devem ocorrer dentro de uma fronteira transacional única.
+- a persistência do novo status, o registro da mensagem e a inserção do histórico devem ocorrer dentro de uma fronteira transacional única.
 
 ---
 
@@ -276,9 +297,8 @@ Diretriz para a integração futura:
 3. O sistema valida a autorização administrativa do ator.
 4. O sistema carrega a manifestação por identificador.
 5. O agregado transita o status para `answered` aplicando a guarda de interação.
-6. O sistema persiste o novo status da manifestação.
-7. O sistema registra a mensagem da resposta administrativa.
-8. O sistema retorna a mensagem registrada.
+6. O sistema persiste, em uma única operação, a mudança de status, o histórico auditável e a mensagem administrativa.
+7. O sistema retorna a mensagem registrada.
 
 ### 11.4 Atualização administrativa de status
 
@@ -286,7 +306,7 @@ Diretriz para a integração futura:
 2. O sistema valida a autorização administrativa do ator.
 3. O sistema carrega a manifestação por identificador.
 4. O agregado aplica a transição administrativa.
-5. O sistema persiste o novo status.
+5. O sistema persiste o novo status com metadados de auditoria do ator e da transição.
 6. O sistema retorna o estado atualizado da manifestação.
 
 ---
@@ -373,20 +393,47 @@ O sistema deve falhar com erro de transição não permitida.
     "id": "manifestation-1",
     "protocol": "2026-0001",
     "type": "complaint",
-    "status": "in_analysis",
+    "status": "finalized",
     "campusId": "campus-1",
     "administrativeUnitId": "unit-1",
     "description": "O serviço ficou indisponível durante toda a manhã.",
     "involvedPeople": "Equipe da coordenação",
-    "authorUserId": null,
+    "authorUserId": "user-1",
+    "attendantUserId": "ombudsman-1",
     "createdAt": "2026-05-10T12:00:00.000Z",
     "history": [
       {
+        "type": "registered",
         "description": "Manifestação registrada.",
+        "actorUserId": "user-1",
+        "actorType": "manifestant",
+        "fromStatus": null,
+        "toStatus": "in_analysis",
+        "rating": null,
+        "attendantUserId": null,
+        "createdAt": "2026-05-10T12:00:00.000Z"
+      },
+      {
+        "type": "evaluation_recorded",
+        "description": "Atendimento avaliado pelo autor (5/5).",
+        "actorUserId": "user-1",
+        "actorType": "manifestant",
+        "fromStatus": null,
+        "toStatus": null,
+        "rating": 5,
+        "attendantUserId": "ombudsman-1",
         "createdAt": "2026-05-10T12:00:00.000Z"
       }
     ],
-    "messages": []
+    "messages": [
+      {
+        "id": "message-2",
+        "senderUserId": "ombudsman-1",
+        "senderType": "ombudsman",
+        "content": "Concluímos a análise do seu relato.",
+        "createdAt": "2026-05-10T16:00:00.000Z"
+      }
+    ]
   }
 }
 ```
@@ -398,6 +445,7 @@ O sistema deve falhar com erro de transição não permitida.
   "message": {
     "id": "message-2",
     "senderUserId": "ombudsman-1",
+    "senderType": "ombudsman",
     "content": "Concluímos a análise do seu relato.",
     "createdAt": "2026-05-10T16:00:00.000Z"
   }
@@ -475,7 +523,7 @@ Erro esperado:
 - a verificação de perfil deve ocorrer antes de qualquer acesso à manifestação;
 - a resposta administrativa não deve ser aceita em branco;
 - transições inválidas de status não devem ser persistidas;
-- a camada de apresentação deverá mapear erros de autorização, inexistência e transição conforme o contrato HTTP adotado no futuro.
+- a camada de apresentação mapeia erros de autorização, inexistência e transição conforme o contrato HTTP atual (Fastify) — ver detalhes dos controllers admin na seção 19.
 
 ---
 
@@ -548,7 +596,7 @@ Erro esperado:
 
 - dado `manifestationId` existente com status aberto e conteúdo válido;
 - quando o caso de uso de resposta administrativa for executado por um ouvidor;
-- então deve transitar o status para `answered`, persistir a manifestação e gravar a mensagem com conteúdo normalizado.
+- então deve transitar o status para `answered`, persistir atomicamente o histórico auditável e gravar a mensagem com conteúdo normalizado.
 
 #### CT-UC07-009 - Não deve registrar resposta com conteúdo inválido
 
@@ -568,7 +616,7 @@ Erro esperado:
 
 - dado `manifestationId` com status `answered`;
 - quando o caso de uso de atualização de status for executado por um ouvidor com alvo `finalized`;
-- então deve transitar o status para `finalized` e persistir a manifestação.
+- então deve transitar o status para `finalized` e persistir a mudança com ator e transição rastreáveis.
 
 #### CT-UC07-012 - Não deve atualizar status partindo de estado terminal
 
@@ -636,11 +684,26 @@ export interface ManifestationsRepository {
     filters: AdminManifestationFilters,
     paginationParams: PaginationParams,
   ): Promise<ManifestationListItemDTO[]>
-  save(manifestation: Manifestation): Promise<void>
 }
 
 export interface UsersRepository {
   findById(userId: string): Promise<User | null>
+}
+
+export interface ManifestationAdministrationRepository {
+  recordAnswer(params: {
+    manifestation: Manifestation
+    message: ManifestationMessage
+    fromStatus: ManifestationStatus
+    toStatus: ManifestationStatus
+  }): Promise<ManifestationMessageDTO>
+  updateStatus(params: {
+    manifestation: Manifestation
+    actorUserId: string
+    actorType: ManifestationMessageSenderType
+    fromStatus: ManifestationStatus
+    toStatus: ManifestationStatus
+  }): Promise<void>
 }
 ```
 
@@ -651,14 +714,20 @@ export interface UsersRepository {
 - a autorização administrativa é centralizada por leitura do `User` em `UsersRepository.findById()` e verificação do `role` contra `OMBUDSMAN` e `ADMIN`;
 - o erro `NotAllowedToManageManifestationError` permanece em `manifestation-administration/errors/` por ser compartilhado entre os quatro casos de uso administrativos;
 - o erro `ManifestationStatusTransitionNotAllowedError` é exportado pelo módulo do agregado em `src/domain/entities/manifestation.ts`, mantendo o invariante de transição dentro do domínio;
-- a resposta administrativa reaproveita `ManifestationMessage` e delega a persistência atômica ao contrato `ManifestationAdministrationRepository.recordAnswer(manifestation, message)`;
+- a resposta administrativa reaproveita `ManifestationMessage` e delega a persistência atômica ao contrato `ManifestationAdministrationRepository.recordAnswer(...)`;
 - a transição para `answered` continua ocorrendo via `manifestation.recordAdministrativeAnswer()`, e o caso de uso não executa mais gravações separadas de status e mensagem;
-- a implementação concreta de persistência deve materializar `recordAnswer(...)` dentro de uma única transação;
-- a atualização administrativa de status usa `manifestation.transitionStatusAdministratively(target)`, que bloqueia transições a partir de estados terminais e transições para o status atual;
+- a atualização administrativa de status delega a persistência ao contrato `ManifestationAdministrationRepository.updateStatus(...)`, também pensado para materializar histórico e mudança de status em uma única transação;
+- a implementação concreta vive em `PrismaManifestationAdministrationRepository` (`src/infra/database/prisma/repositories/`), que envolve `recordAnswer(...)`, `updateStatus(...)` e `finalizeByAuthor(...)` em `prisma.$transaction` — cada um grava o `UPDATE manifestations` + um `INSERT manifestation_messages` (a mensagem real do `recordAnswer` e/ou uma mensagem com `senderType='system'` carregando o payload JSON definido em `src/infra/database/prisma/system-message-payload.ts`: `{ type, description, actorUserId, actorType, fromStatus, toStatus }`). A fronteira transacional única garante que histórico e estado nunca divirjam;
+- a atualização administrativa de status usa `manifestation.transitionStatusAdministratively(target)`, que bloqueia transições a partir de estados terminais, transições para o status atual e **transições para `answered`** (essa entrada só é alcançada por `recordAdministrativeAnswer()`, garantindo que não exista manifestação `answered` sem uma resposta registrada);
 - a listagem administrativa utiliza um novo contrato `findManyForAdmin(filters, pagination)` no repositório, mantendo `findManyByAuthorUserId` voltado ao fluxo identificado do manifestante;
 - o erro `InvalidPageNumberError` permanece em `list-user-manifestations/errors/` e é reaproveitado pela listagem administrativa enquanto não houver pasta de utilitários compartilhados de paginação;
-- a implementação concreta de persistência ainda precisa materializar `findManyForAdmin` e o `UsersRepository.findById`;
-- atribuição e encaminhamento (RF20), assim como a materialização explícita do histórico (RF23 em entidade própria), permanecem fora do escopo desta fatia.
+- `PrismaManifestationsRepository.findManyForAdmin` (`src/infra/database/prisma/repositories/`) materializa os filtros (`status`, `type`, `campusId`, `administrativeUnitId`, range `createdAt`) e a paginação (`MANIFESTATIONS_PAGE_SIZE = 20`, ordenação `createdAt desc`); `PrismaUsersRepository.findById` (`src/infra/database/prisma/repositories/`) materializa a autorização administrativa;
+- atribuição e encaminhamento (RF20), assim como a materialização explícita do histórico (RF23 em entidade própria), permanecem fora do escopo desta fatia;
+- a camada de apresentação fornece `ListAdminManifestationsController` em `src/presentation/controllers/admin/`, que deriva `requesterUserId` do contexto autenticado, faz parse de `request.query` (`page` por regex `/^[1-9]\d*$/`, `status`/`type` validados contra enums de domínio, `campusId`/`administrativeUnitId` repassados como strings com fallback de string vazia, `from`/`to` aceitos apenas em timestamp ISO UTC completo e então convertidos para `Date`) e rejeita valores inválidos com `400` (`InvalidPageNumberError` ou `InvalidParamError`); mapeia `NotAllowedToManageManifestationError` para `403 Forbidden` e `InvalidPageNumberError` do use case para `400`; sem usuário autenticado retorna `401`;
+- a camada de apresentação fornece `GetAdminManifestationDetailsController`, `AnswerManifestationController` e `UpdateManifestationStatusController` em `src/presentation/controllers/admin/`. Todos derivam `requesterUserId` do contexto autenticado, extraem `manifestationId` de `request.params`, e mapeiam erros compartilhados (`ManifestationNotFoundError` → `404`, `NotAllowedToManageManifestationError` → `403`); os fluxos de escrita (`answer`, `update-status`) validam o body via `Validator` agnóstico e mapeiam `ManifestationStatusTransitionNotAllowedError` para `409 Conflict`; o `answer` também mapeia `InvalidManifestationMessageContentError` para `400` e retorna `201`, enquanto `update-status` retorna `200` com o agregado atualizado; sem usuário autenticado retornam `401` e `manifestationId` vazio retorna `400 MissingParamError`;
+- os endpoints `GET /admin/manifestations`, `GET /admin/manifestations/:manifestationId`, `POST /admin/manifestations/:manifestationId/answer` e `PATCH /admin/manifestations/:manifestationId/status` são registrados em `src/main/routes/admin.routes.ts` com `preHandler: [ensureAuthenticated, requireRoles(UserRole.OMBUDSMAN, UserRole.ADMIN)]` (`src/infra/http/fastify/middlewares/auth-middleware.ts`); manifestantes recebem `403` e requisições sem token recebem `401`;
+- cobertura e2e em `test/e2e/manifestation-administration.e2e.spec.ts` valida a rastreabilidade: após `answer`, o detalhamento traz `history` na ordem `['registered', 'administrative_answered', 'status_changed']` com `fromStatus='in_analysis'`/`toStatus='answered'` e `prisma.manifestationMessage.count({ senderType: 'system' })` resulta em `1`; após `PATCH status=canceled`, o último item do histórico é o `status_changed` correspondente. Também cobre `403` para manifestante chamando rota admin, `401` sem auth, `409` ao tentar `PATCH status=answered` (rota inválida para chegar em answered) e `403` quando ombudsman tenta abrir manifestação identificada em nome próprio (UC-04 RN-15);
+- cobertura e2e adicional em `test/e2e/manifestation-interaction.e2e.spec.ts` cobre o lado do manifestante: envio de mensagem, bloqueio em manifestação finalizada (`409`), isolamento entre manifestantes (`403`), finalização após resposta e bloqueio de finalização precoce (`409`).
 
 ---
 

@@ -1,3 +1,4 @@
+import type { CatalogAdministrativeUnitItemDTO, CatalogCampusItemDTO } from '#src/application/dto/catalog-dtos.js'
 import type { ManifestationType } from '#src/domain/entities/manifestation.js'
 
 export type AiChatRole = 'assistant' | 'system' | 'user'
@@ -14,15 +15,6 @@ export interface AiChatMessage {
   content: string
 }
 
-export interface AiCatalogItem {
-  id: string
-  label: string
-}
-
-export interface AiAdministrativeUnitCatalogItem extends AiCatalogItem {
-  campusId: string
-}
-
 export interface AiDraftPayload {
   type: ManifestationType | null
   campusId: string | null
@@ -34,8 +26,8 @@ export interface AiDraftPayload {
 export interface AiGatewayChatInput {
   history: AiChatMessage[]
   message: string
-  campuses: AiCatalogItem[]
-  administrativeUnits: AiAdministrativeUnitCatalogItem[]
+  campuses: CatalogCampusItemDTO[]
+  administrativeUnits: CatalogAdministrativeUnitItemDTO[]
 }
 
 export interface AiGatewayChatResponse {

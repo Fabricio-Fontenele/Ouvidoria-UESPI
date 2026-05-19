@@ -1,4 +1,5 @@
 import { Entity } from './entity.js'
+import { UserRole } from './user.js'
 import type { AdministrativeUnitId } from '../value-objects/administrative-unit-id.js'
 import type { CampusId } from '../value-objects/campus-id.js'
 import type { ManifestationDescription } from '../value-objects/manifestation-description.js'
@@ -50,6 +51,7 @@ interface ManifestationProps {
   description: ManifestationDescription
   involvedPeople: ManifestationInvolvedPeople | null
   authorUserId: UniqueEntityId | null
+  attendantUserId: UniqueEntityId | null
   accessCodeHash: string | null
   createdAt: Date
 }
@@ -68,7 +70,7 @@ interface OpenManifestationProps {
 
 export class Manifestation extends Entity<ManifestationProps> {
   private static readonly allowedAdministrativeStatusTransitions: Record<ManifestationStatus, ManifestationStatus[]> = {
-    [ManifestationStatus.IN_ANALYSIS]: [ManifestationStatus.ANSWERED, ManifestationStatus.CANCELED],
+    [ManifestationStatus.IN_ANALYSIS]: [ManifestationStatus.CANCELED],
     [ManifestationStatus.ANSWERED]: [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.FINALIZED],
     [ManifestationStatus.CANCELED]: [],
     [ManifestationStatus.FINALIZED]: [],
@@ -83,6 +85,7 @@ export class Manifestation extends Entity<ManifestationProps> {
       {
         ...props,
         status: ManifestationStatus.IN_ANALYSIS,
+        attendantUserId: null,
         createdAt,
       },
       id,
@@ -153,6 +156,18 @@ export class Manifestation extends Entity<ManifestationProps> {
     this.props.status = ManifestationStatus.FINALIZED
   }
 
+  assignAttendant(userId: UniqueEntityId, role: UserRole): void {
+    if (role !== UserRole.OMBUDSMAN && role !== UserRole.ADMIN) {
+      return
+    }
+
+    if (this.props.attendantUserId !== null) {
+      return
+    }
+
+    this.props.attendantUserId = userId
+  }
+
   get protocol(): Protocol {
     return this.props.protocol
   }
@@ -183,6 +198,10 @@ export class Manifestation extends Entity<ManifestationProps> {
 
   get authorUserId(): UniqueEntityId | null {
     return this.props.authorUserId
+  }
+
+  get attendantUserId(): UniqueEntityId | null {
+    return this.props.attendantUserId
   }
 
   get accessCodeHash(): string | null {

@@ -1,10 +1,12 @@
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToManageManifestationError } from '#src/application/use-cases/manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
 import { UpdateManifestationStatusUseCase } from '#src/application/use-cases/update-manifestation-status/update-manifestation-status-use-case.js'
+import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import {
   Manifestation,
   ManifestationStatus,
@@ -21,6 +23,7 @@ import { Protocol } from '#src/domain/value-objects/protocol.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 describe('UpdateManifestationStatusUseCase', () => {
+  let manifestationAdministrationRepository: DeepMockProxy<ManifestationAdministrationRepository>
   let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
   let usersRepository: DeepMockProxy<UsersRepository>
   let sut: UpdateManifestationStatusUseCase
@@ -48,6 +51,7 @@ describe('UpdateManifestationStatusUseCase', () => {
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         involvedPeople: null,
         authorUserId: new UniqueEntityId('user-1'),
+        attendantUserId: null,
         accessCodeHash: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
@@ -55,13 +59,19 @@ describe('UpdateManifestationStatusUseCase', () => {
     )
 
   beforeEach(() => {
+    manifestationAdministrationRepository = mockDeep<ManifestationAdministrationRepository>()
     manifestationsRepository = mockDeep<ManifestationsRepository>()
     usersRepository = mockDeep<UsersRepository>()
 
+    mockReset(manifestationAdministrationRepository)
     mockReset(manifestationsRepository)
     mockReset(usersRepository)
 
-    sut = new UpdateManifestationStatusUseCase(manifestationsRepository, usersRepository)
+    sut = new UpdateManifestationStatusUseCase(
+      manifestationAdministrationRepository,
+      manifestationsRepository,
+      usersRepository,
+    )
   })
 
   it('finalizes an open manifestation administratively', async () => {
@@ -77,7 +87,18 @@ describe('UpdateManifestationStatusUseCase', () => {
     })
 
     expect(manifestation.status).toBe(ManifestationStatus.FINALIZED)
-    expect(manifestationsRepository.save.mock.calls).toStrictEqual([[manifestation]])
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toStrictEqual([
+      [
+        {
+          manifestation,
+          actorUserId: 'ombudsman-1',
+          actorType: ManifestationMessageSenderType.OMBUDSMAN,
+          fromStatus: ManifestationStatus.ANSWERED,
+          toStatus: ManifestationStatus.FINALIZED,
+        },
+      ],
+    ])
     expect(result.manifestation.status).toBe(ManifestationStatus.FINALIZED)
     expect(result.manifestation.id).toBe('manifestation-1')
     expect(result.manifestation.involvedPeople).toBeNull()
@@ -95,7 +116,7 @@ describe('UpdateManifestationStatusUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
   })
 
   it('rejects requesters without administrative role', async () => {
@@ -110,6 +131,7 @@ describe('UpdateManifestationStatusUseCase', () => {
     ).rejects.toBeInstanceOf(NotAllowedToManageManifestationError)
 
     expect(manifestationsRepository.findById.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation does not exist', async () => {
@@ -137,7 +159,7 @@ describe('UpdateManifestationStatusUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
   })
 
   it('throws when transitioning from a terminal status', async () => {
@@ -152,21 +174,21 @@ describe('UpdateManifestationStatusUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
   })
 
-  it('propagates save failures', async () => {
+  it('propagates administrative persistence failures', async () => {
     const saveError = new Error('save failed')
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
     manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.IN_ANALYSIS))
-    manifestationsRepository.save.mockRejectedValue(saveError)
+    manifestationAdministrationRepository.updateStatus.mockRejectedValue(saveError)
 
     await expect(
       sut.execute({
         requesterUserId: 'ombudsman-1',
         manifestationId: 'manifestation-1',
-        status: ManifestationStatus.ANSWERED,
+        status: ManifestationStatus.CANCELED,
       }),
     ).rejects.toThrow(saveError)
   })

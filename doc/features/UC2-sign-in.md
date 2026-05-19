@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                |
-| -------------- | ------------------------ |
-| Caso de uso    | UC-02                    |
-| Nome           | Autenticar usuário       |
-| Feature        | Login de conta de acesso |
-| Ator principal | Usuário                  |
-| Prioridade     | Alta                     |
-| Status         | Em especificação         |
+| Campo          | Descrição                                                                               |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-02                                                                                   |
+| Nome           | Autenticar usuário                                                                      |
+| Feature        | Login de conta de acesso                                                                |
+| Ator principal | Usuário                                                                                 |
+| Prioridade     | Alta                                                                                    |
+| Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
 ---
 
@@ -261,11 +261,8 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INVALID_INPUT",
-  "message": "Dados inválidos.",
-  "fields": {
-    "email": ["E-mail inválido."]
-  }
+  "error": "InvalidEmailError",
+  "message": "Invalid email"
 }
 ```
 
@@ -279,14 +276,14 @@ Exemplo de resposta:
 
 ```json
 {
-  "error": "INVALID_CREDENTIALS",
-  "message": "Credenciais inválidas."
+  "error": "InvalidCredentialsError",
+  "message": "Invalid credentials"
 }
 ```
 
 ---
 
-## 15. Contrato sugerido da API
+## 15. Contrato HTTP atual
 
 Endpoint:
 
@@ -310,6 +307,9 @@ Response body:
   "token": "access-token"
 }
 ```
+
+Observação:
+O token retornado aqui deve ser enviado nos endpoints protegidos como `Authorization: Bearer <token>`.
 
 ---
 
@@ -544,6 +544,10 @@ interface TokenGenerator {
 - O caso de uso não deve depender diretamente de biblioteca de JWT.
 - Erros de domínio devem ser mapeados para status HTTP na camada de apresentação.
 - A resposta pública de falha de autenticação deve permanecer genérica.
+- A camada de apresentação fornece `SignInController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<SignInBody>` agnóstico, mapeia `InvalidCredentialsError` para `401 Unauthorized` e `InvalidEmailError` para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
+- A infraestrutura concreta está materializada: `PrismaUsersRepository` implementa `UsersRepository`, `BcryptjsHasher` implementa `HashComparer` (mesma instância usada como `PasswordHasher`) e `JwtTokenGenerator` (`src/infra/auth/`, jsonwebtoken HS256) implementa `TokenGenerator` com payload `{ sub, role }`; `ZodValidator<SignInBody>` (`src/infra/http/fastify/validators/`) materializa o contrato `Validator<T>`.
+- O endpoint `POST /sessions` é registrado em `src/main/routes/auth.routes.ts` via `adaptRoute(makeSignInController())`. O token emitido aqui é validado pelos middlewares `ensureAuthenticated`/`optionalAuthenticate`/`requireRoles` (`src/infra/http/fastify/middlewares/auth-middleware.ts`) através do plugin `@fastify/jwt`, compartilhando o segredo `JWT_SECRET` carregado em `src/main/config/env.ts`.
+- Cobertura e2e em `test/e2e/auth.e2e.spec.ts` cobre autenticação válida, credenciais inválidas (401) e o fluxo register → sign-in.
 
 ---
 

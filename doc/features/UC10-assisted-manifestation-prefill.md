@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                  |
-| -------------- | ------------------------------------------ |
-| Caso de uso    | UC-10                                      |
-| Nome           | Pré-preencher manifestação com apoio da IA |
-| Feature        | Abertura assistida de manifestação         |
-| Ator principal | Usuário                                    |
-| Prioridade     | Alta                                       |
-| Status         | Núcleo implementado / integração pendente  |
+| Campo          | Descrição                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Caso de uso    | UC-10                                                                                                                                       |
+| Nome           | Pré-preencher manifestação com apoio da IA                                                                                                  |
+| Feature        | Abertura assistida de manifestação                                                                                                          |
+| Ator principal | Usuário                                                                                                                                     |
+| Prioridade     | Alta                                                                                                                                        |
+| Status         | Implementado de ponta a ponta via `POST /ai/messages` (UC-09) com `FakeAiGateway` — adapter real de RAG/LLM pendente, contrato HTTP estável |
 
 ---
 
@@ -161,8 +161,8 @@ O draft transitório deve usar a seguinte forma:
 O sinalizador `shouldOpenManifestationDraft` só pode ser `true` quando:
 
 - `type` estiver entre os tipos válidos do domínio;
-- `campusId` for canônico e estiver no catálogo informado;
-- `administrativeUnitId` for canônico e estiver no catálogo informado;
+- `campusId` for canônico e estiver no catálogo oficial carregado para o fluxo;
+- `administrativeUnitId` for canônico e estiver no catálogo oficial carregado para o fluxo;
 - `description` for texto válido após normalização.
 
 ### 10.2 Pessoas envolvidas
@@ -243,4 +243,6 @@ O sistema deve permitir continuidade por preenchimento manual no fluxo regular.
 - O núcleo atual não persiste draft nem conversa.
 - O campo `involvedPeople` passou a fazer parte do domínio e do caso de uso de registro para manter compatibilidade entre draft assistido e envio formal.
 - O draft assistido é consumido pelo chamador; a decisão de abrir formulário, exibir pendências e chamar o UC-04 fica fora deste repositório.
-- A consistência entre campus e unidade administrativa depende de o catálogo fornecido ao fluxo carregar relacionamento suficiente para essa validação na integração final.
+- A consistência entre campus e unidade administrativa depende de os catálogos oficiais carregados para o fluxo preservarem relacionamento suficiente para essa validação na integração final.
+- O draft é entregue como parte do output de `SendAiMessageUseCase` (`draft`, `shouldOpenManifestationDraft`, `missingFields`). Quando o chamador identificar `shouldOpenManifestationDraft === true`, ele monta o body do `RegisterManifestationController` (UC-04) — que já tem rota e infraestrutura wireadas — e o usuário confirma o envio formal.
+- O UC-09 já está exposto via `POST /ai/messages` com `FakeAiGateway`, então esta feature é consumida automaticamente pelo mesmo endpoint — o frontend lê `draft`, `shouldOpenManifestationDraft` e `missingFields` da resposta para decidir quando abrir o formulário. Quando o adapter real de RAG/LLM substituir o fake, o draft assistido passa a vir da IA real sem mudanças no contrato HTTP.

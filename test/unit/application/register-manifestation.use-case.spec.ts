@@ -4,7 +4,13 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 import type { PasswordHasher } from '#src/application/cryptography/password-hasher.js'
 import type { AccessCodeGenerator } from '#src/application/protocol/access-code-generator.js'
 import type { ProtocolGenerator } from '#src/application/protocol/protocol-generator.js'
+import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import { AdministrativeUnitDoesNotBelongToCampusError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-does-not-belong-to-campus-error.js'
+import { AdministrativeUnitInactiveError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-inactive-error.js'
+import { AdministrativeUnitNotFoundError } from '#src/application/use-cases/register-manifestation/errors/administrative-unit-not-found-error.js'
+import { CampusInactiveError } from '#src/application/use-cases/register-manifestation/errors/campus-inactive-error.js'
+import { CampusNotFoundError } from '#src/application/use-cases/register-manifestation/errors/campus-not-found-error.js'
 import { IdentifiedManifestationRequiresRequesterError } from '#src/application/use-cases/register-manifestation/errors/identified-manifestation-requires-requester-error.js'
 import { RegisterManifestationUseCase } from '#src/application/use-cases/register-manifestation/register-manifestation.use-case.js'
 import type { Manifestation } from '#src/domain/entities/manifestation.js'
@@ -14,10 +20,11 @@ import { InvalidCampusIdError } from '#src/domain/value-objects/campus-id.js'
 import { InvalidManifestationDescriptionError } from '#src/domain/value-objects/manifestation-description.js'
 
 describe('RegisterManifestationUseCase', () => {
-  let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
-  let protocolGenerator: DeepMockProxy<ProtocolGenerator>
   let accessCodeGenerator: DeepMockProxy<AccessCodeGenerator>
+  let catalogRepository: DeepMockProxy<CatalogRepository>
+  let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
   let passwordHasher: DeepMockProxy<PasswordHasher>
+  let protocolGenerator: DeepMockProxy<ProtocolGenerator>
   let sut: RegisterManifestationUseCase
   let validInput: {
     requesterId: string | null
@@ -31,6 +38,7 @@ describe('RegisterManifestationUseCase', () => {
 
   beforeEach(() => {
     manifestationsRepository = mockDeep<ManifestationsRepository>()
+    catalogRepository = mockDeep<CatalogRepository>()
     protocolGenerator = mockDeep<ProtocolGenerator>()
     accessCodeGenerator = mockDeep<AccessCodeGenerator>()
     passwordHasher = mockDeep<PasswordHasher>()
@@ -45,12 +53,27 @@ describe('RegisterManifestationUseCase', () => {
     }
 
     mockReset(manifestationsRepository)
+    mockReset(catalogRepository)
     mockReset(protocolGenerator)
     mockReset(accessCodeGenerator)
     mockReset(passwordHasher)
 
+    catalogRepository.findCampusById.mockResolvedValue({
+      id: 'campus-1',
+      name: 'Campus 1',
+      city: 'Teresina',
+      isActive: true,
+    })
+    catalogRepository.findAdministrativeUnitById.mockResolvedValue({
+      id: 'unit-1',
+      name: 'Unit 1',
+      campusId: 'campus-1',
+      isActive: true,
+    })
+
     sut = new RegisterManifestationUseCase(
       manifestationsRepository,
+      catalogRepository,
       protocolGenerator,
       accessCodeGenerator,
       passwordHasher,
@@ -62,6 +85,8 @@ describe('RegisterManifestationUseCase', () => {
 
     const result = await sut.execute(validInput)
 
+    expect(catalogRepository.findCampusById).toHaveBeenCalledWith('campus-1')
+    expect(catalogRepository.findAdministrativeUnitById).toHaveBeenCalledWith('unit-1')
     expect(protocolGenerator.generate.mock.calls).toHaveLength(1)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(1)
     expect(accessCodeGenerator.generate.mock.calls).toHaveLength(0)
@@ -150,13 +175,14 @@ describe('RegisterManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(IdentifiedManifestationRequiresRequesterError)
 
+    expect(catalogRepository.findCampusById.mock.calls).toHaveLength(0)
     expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
     expect(accessCodeGenerator.generate.mock.calls).toHaveLength(0)
     expect(passwordHasher.hash.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
   })
 
-  it('rejects invalid campus ids before generating a protocol or saving', async () => {
+  it('rejects invalid campus ids before validating the catalog or generating a protocol', async () => {
     await expect(
       sut.execute({
         ...validInput,
@@ -164,6 +190,7 @@ describe('RegisterManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(InvalidCampusIdError)
 
+    expect(catalogRepository.findCampusById.mock.calls).toHaveLength(0)
     expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
   })
@@ -183,7 +210,7 @@ describe('RegisterManifestationUseCase', () => {
     })
   })
 
-  it('rejects invalid administrative unit ids before generating a protocol or saving', async () => {
+  it('rejects invalid administrative unit ids before validating the catalog or generating a protocol', async () => {
     await expect(
       sut.execute({
         ...validInput,
@@ -191,6 +218,7 @@ describe('RegisterManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(InvalidAdministrativeUnitIdError)
 
+    expect(catalogRepository.findCampusById.mock.calls).toHaveLength(0)
     expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
   })
@@ -202,6 +230,76 @@ describe('RegisterManifestationUseCase', () => {
         description: '   ',
       }),
     ).rejects.toBeInstanceOf(InvalidManifestationDescriptionError)
+
+    expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('rejects non-existent campuses before generating protocol, access code or saving', async () => {
+    catalogRepository.findCampusById.mockResolvedValue(null)
+
+    await expect(
+      sut.execute({
+        ...validInput,
+        isAnonymous: true,
+        requesterId: null,
+      }),
+    ).rejects.toBeInstanceOf(CampusNotFoundError)
+
+    expect(catalogRepository.findAdministrativeUnitById.mock.calls).toHaveLength(0)
+    expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
+    expect(accessCodeGenerator.generate.mock.calls).toHaveLength(0)
+    expect(passwordHasher.hash.mock.calls).toHaveLength(0)
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('rejects inactive campuses before generating protocol or saving', async () => {
+    catalogRepository.findCampusById.mockResolvedValue({
+      id: 'campus-1',
+      name: 'Campus 1',
+      city: 'Teresina',
+      isActive: false,
+    })
+
+    await expect(sut.execute(validInput)).rejects.toBeInstanceOf(CampusInactiveError)
+
+    expect(catalogRepository.findAdministrativeUnitById.mock.calls).toHaveLength(0)
+    expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('rejects non-existent administrative units before generating protocol or saving', async () => {
+    catalogRepository.findAdministrativeUnitById.mockResolvedValue(null)
+
+    await expect(sut.execute(validInput)).rejects.toBeInstanceOf(AdministrativeUnitNotFoundError)
+
+    expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('rejects inactive administrative units before generating protocol or saving', async () => {
+    catalogRepository.findAdministrativeUnitById.mockResolvedValue({
+      id: 'unit-1',
+      name: 'Unit 1',
+      campusId: 'campus-1',
+      isActive: false,
+    })
+
+    await expect(sut.execute(validInput)).rejects.toBeInstanceOf(AdministrativeUnitInactiveError)
+
+    expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('rejects administrative units that do not belong to the selected campus', async () => {
+    catalogRepository.findAdministrativeUnitById.mockResolvedValue({
+      id: 'unit-1',
+      name: 'Unit 1',
+      campusId: 'campus-2',
+      isActive: true,
+    })
+
+    await expect(sut.execute(validInput)).rejects.toBeInstanceOf(AdministrativeUnitDoesNotBelongToCampusError)
 
     expect(protocolGenerator.generate.mock.calls).toHaveLength(0)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)

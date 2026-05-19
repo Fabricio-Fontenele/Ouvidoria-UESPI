@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { AiGateway } from '#src/application/ai/ai-gateway.js'
+import type { PublicCatalogDTO } from '#src/application/dto/catalog-dtos.js'
+import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import { SendAiMessageUseCase } from '#src/application/use-cases/send-ai-message/send-ai-message-use-case.js'
 import { ManifestationType } from '#src/domain/entities/manifestation.js'
 
 describe('SendAiMessageUseCase', () => {
   let aiGateway: DeepMockProxy<AiGateway>
+  let catalogRepository: DeepMockProxy<CatalogRepository>
   let sut: SendAiMessageUseCase
 
   const input = {
@@ -17,21 +20,58 @@ describe('SendAiMessageUseCase', () => {
       },
     ],
     message: 'Foi na coordenação de sistemas em Parnaíba.',
+  }
+
+  const publicCatalog: PublicCatalogDTO = {
     campuses: [
-      { id: 'campus-parnaiba', label: 'Campus Parnaíba' },
-      { id: 'campus-teresina', label: 'Campus Teresina' },
-    ],
-    administrativeUnits: [
-      { id: 'coord-sistemas', label: 'Coordenação de Sistemas', campusId: 'campus-parnaiba' },
-      { id: 'biblioteca-central', label: 'Biblioteca Central', campusId: 'campus-teresina' },
+      {
+        id: 'campus-professor-alexandre-alves-de-oliveira',
+        label: 'Campus Professor Alexandre Alves de Oliveira',
+        city: 'Parnaíba',
+        administrativeUnits: [
+          {
+            id: 'unit-coordenacao-computacao-parnaiba',
+            label: 'Coordenação do Curso de Ciência da Computação',
+          },
+        ],
+      },
+      {
+        id: 'campus-poeta-torquato-neto',
+        label: 'Campus Poeta Torquato Neto',
+        city: 'Teresina',
+        administrativeUnits: [{ id: 'unit-prad-teresina', label: 'Pró-Reitoria de Administração' }],
+      },
     ],
   }
 
+  const campuses = [
+    { id: 'campus-professor-alexandre-alves-de-oliveira', label: 'Campus Professor Alexandre Alves de Oliveira' },
+    { id: 'campus-poeta-torquato-neto', label: 'Campus Poeta Torquato Neto' },
+  ]
+
+  const administrativeUnits = [
+    {
+      id: 'unit-coordenacao-computacao-parnaiba',
+      label: 'Coordenação do Curso de Ciência da Computação',
+      campusId: 'campus-professor-alexandre-alves-de-oliveira',
+    },
+    {
+      id: 'unit-prad-teresina',
+      label: 'Pró-Reitoria de Administração',
+      campusId: 'campus-poeta-torquato-neto',
+    },
+  ]
+
   beforeEach(() => {
     aiGateway = mockDeep<AiGateway>()
-    mockReset(aiGateway)
+    catalogRepository = mockDeep<CatalogRepository>()
 
-    sut = new SendAiMessageUseCase(aiGateway)
+    mockReset(aiGateway)
+    mockReset(catalogRepository)
+
+    catalogRepository.listPublic.mockResolvedValue(publicCatalog)
+
+    sut = new SendAiMessageUseCase(aiGateway, catalogRepository)
   })
 
   it('returns a normalized institutional answer without a draft', async () => {
@@ -46,7 +86,16 @@ describe('SendAiMessageUseCase', () => {
 
     const result = await sut.execute(input)
 
-    expect(aiGateway.chat.mock.calls).toStrictEqual([[input]])
+    expect(catalogRepository.listPublic.mock.calls).toStrictEqual([[]])
+    expect(aiGateway.chat.mock.calls).toStrictEqual([
+      [
+        {
+          ...input,
+          campuses,
+          administrativeUnits,
+        },
+      ],
+    ])
     expect(result).toStrictEqual({
       answer: 'A biblioteca funciona de segunda a sexta, das 8h às 18h.',
       intent: 'institutional_question',
@@ -64,8 +113,8 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: true,
       draft: {
         type: ManifestationType.COMPLAINT,
-        campusId: 'campus-parnaiba',
-        administrativeUnitId: 'coord-sistemas',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
+        administrativeUnitId: 'unit-coordenacao-computacao-parnaiba',
         description: 'Payload indevido para pergunta institucional.',
         involvedPeople: 'Coordenação',
       },
@@ -87,8 +136,8 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: true,
       draft: {
         type: ManifestationType.COMPLAINT,
-        campusId: 'campus-parnaiba',
-        administrativeUnitId: 'coord-sistemas',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
+        administrativeUnitId: 'unit-coordenacao-computacao-parnaiba',
         description: 'Payload indevido para caso fora de escopo.',
         involvedPeople: null,
       },
@@ -115,8 +164,8 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: true,
       draft: {
         type: ManifestationType.COMPLAINT,
-        campusId: ' campus-parnaiba ',
-        administrativeUnitId: ' coord-sistemas ',
+        campusId: ' campus-professor-alexandre-alves-de-oliveira ',
+        administrativeUnitId: ' unit-coordenacao-computacao-parnaiba ',
         description: '  O usuário relata demora no atendimento da coordenação.  ',
         involvedPeople: '  Coordenação de Sistemas  ',
       },
@@ -132,8 +181,8 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: true,
       draft: {
         type: ManifestationType.COMPLAINT,
-        campusId: 'campus-parnaiba',
-        administrativeUnitId: 'coord-sistemas',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
+        administrativeUnitId: 'unit-coordenacao-computacao-parnaiba',
         description: 'O usuário relata demora no atendimento da coordenação.',
         involvedPeople: 'Coordenação de Sistemas',
       },
@@ -150,7 +199,7 @@ describe('SendAiMessageUseCase', () => {
       draft: {
         type: ManifestationType.COMPLAINT,
         campusId: 'campus-inexistente',
-        administrativeUnitId: 'coord-sistemas',
+        administrativeUnitId: 'unit-coordenacao-computacao-parnaiba',
         description: '   ',
         involvedPeople: '   ',
       },
@@ -167,7 +216,7 @@ describe('SendAiMessageUseCase', () => {
       draft: {
         type: ManifestationType.COMPLAINT,
         campusId: null,
-        administrativeUnitId: 'coord-sistemas',
+        administrativeUnitId: 'unit-coordenacao-computacao-parnaiba',
         description: null,
         involvedPeople: null,
       },
@@ -183,8 +232,8 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: true,
       draft: {
         type: ManifestationType.COMPLAINT,
-        campusId: 'campus-parnaiba',
-        administrativeUnitId: 'biblioteca-central',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
+        administrativeUnitId: 'unit-prad-teresina',
         description: 'O usuário relata demora no atendimento da coordenação.',
         involvedPeople: null,
       },
@@ -200,7 +249,7 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: false,
       draft: {
         type: ManifestationType.COMPLAINT,
-        campusId: 'campus-parnaiba',
+        campusId: 'campus-professor-alexandre-alves-de-oliveira',
         administrativeUnitId: null,
         description: 'O usuário relata demora no atendimento da coordenação.',
         involvedPeople: null,
@@ -244,5 +293,15 @@ describe('SendAiMessageUseCase', () => {
     aiGateway.chat.mockRejectedValue(gatewayError)
 
     await expect(sut.execute(input)).rejects.toThrow(gatewayError)
+  })
+
+  it('propagates catalog repository failures before calling the gateway', async () => {
+    const catalogError = new Error('catalog unavailable')
+
+    catalogRepository.listPublic.mockRejectedValue(catalogError)
+
+    await expect(sut.execute(input)).rejects.toThrow(catalogError)
+
+    expect(aiGateway.chat.mock.calls).toHaveLength(0)
   })
 })

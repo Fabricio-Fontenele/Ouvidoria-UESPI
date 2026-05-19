@@ -1,5 +1,7 @@
+import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
+import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { UserRole } from '#src/domain/entities/user.js'
 
@@ -33,6 +35,7 @@ export class UpdateManifestationStatusUseCase implements UseCase<
   UpdateManifestationStatusOutput
 > {
   constructor(
+    private readonly manifestationAdministrationRepository: ManifestationAdministrationRepository,
     private readonly manifestationsRepository: ManifestationsRepository,
     private readonly usersRepository: UsersRepository,
   ) {}
@@ -54,9 +57,21 @@ export class UpdateManifestationStatusUseCase implements UseCase<
       throw new ManifestationNotFoundError()
     }
 
+    const previousStatus = manifestation.status
     manifestation.transitionStatusAdministratively(status)
 
-    await this.manifestationsRepository.save(manifestation)
+    const actorType =
+      requester.role === UserRole.ADMIN
+        ? ManifestationMessageSenderType.ADMIN
+        : ManifestationMessageSenderType.OMBUDSMAN
+
+    await this.manifestationAdministrationRepository.updateStatus({
+      manifestation,
+      actorUserId: requesterUserId,
+      actorType,
+      fromStatus: previousStatus,
+      toStatus: manifestation.status,
+    })
 
     return {
       manifestation: {

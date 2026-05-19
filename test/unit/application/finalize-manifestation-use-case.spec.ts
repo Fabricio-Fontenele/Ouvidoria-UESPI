@@ -1,9 +1,11 @@
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import { FinalizeManifestationUseCase } from '#src/application/use-cases/finalize-manifestation/finalize-manifestation-use-case.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
+import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import {
   Manifestation,
   ManifestationStatus,
@@ -17,6 +19,7 @@ import { Protocol } from '#src/domain/value-objects/protocol.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 describe('FinalizeManifestationUseCase', () => {
+  let manifestationAdministrationRepository: DeepMockProxy<ManifestationAdministrationRepository>
   let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
   let sut: FinalizeManifestationUseCase
 
@@ -31,6 +34,7 @@ describe('FinalizeManifestationUseCase', () => {
         description: ManifestationDescription.create('The service was unavailable during the whole morning.'),
         involvedPeople: null,
         authorUserId: authorUserId === null ? null : new UniqueEntityId(authorUserId),
+        attendantUserId: null,
         accessCodeHash: authorUserId === null ? 'hashed-access-code' : null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
@@ -38,11 +42,13 @@ describe('FinalizeManifestationUseCase', () => {
     )
 
   beforeEach(() => {
+    manifestationAdministrationRepository = mockDeep<ManifestationAdministrationRepository>()
     manifestationsRepository = mockDeep<ManifestationsRepository>()
 
+    mockReset(manifestationAdministrationRepository)
     mockReset(manifestationsRepository)
 
-    sut = new FinalizeManifestationUseCase(manifestationsRepository)
+    sut = new FinalizeManifestationUseCase(manifestationsRepository, manifestationAdministrationRepository)
   })
 
   it('finalizes an answered manifestation owned by the author', async () => {
@@ -57,7 +63,18 @@ describe('FinalizeManifestationUseCase', () => {
 
     expect(manifestation.status).toBe(ManifestationStatus.FINALIZED)
     expect(manifestationsRepository.findById.mock.calls).toStrictEqual([['manifestation-1']])
-    expect(manifestationsRepository.save.mock.calls).toStrictEqual([[manifestation]])
+    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.finalizeByAuthor.mock.calls).toStrictEqual([
+      [
+        {
+          manifestation,
+          actorUserId: 'user-1',
+          actorType: ManifestationMessageSenderType.MANIFESTANT,
+          fromStatus: ManifestationStatus.ANSWERED,
+          toStatus: ManifestationStatus.FINALIZED,
+        },
+      ],
+    ])
     expect(result.manifestation.status).toBe(ManifestationStatus.FINALIZED)
     expect(result.manifestation.id).toBe('manifestation-1')
     expect(result.manifestation.authorUserId).toBe('user-1')
@@ -74,7 +91,7 @@ describe('FinalizeManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ManifestationNotFoundError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.finalizeByAuthor.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation belongs to another user', async () => {
@@ -87,7 +104,7 @@ describe('FinalizeManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(NotAllowedToAccessManifestationError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.finalizeByAuthor.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation is anonymous', async () => {
@@ -100,7 +117,7 @@ describe('FinalizeManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(NotAllowedToAccessManifestationError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.finalizeByAuthor.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation has not been answered yet', async () => {
@@ -113,7 +130,7 @@ describe('FinalizeManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.finalizeByAuthor.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation is already finalized', async () => {
@@ -126,7 +143,7 @@ describe('FinalizeManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.finalizeByAuthor.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation has been canceled', async () => {
@@ -139,14 +156,14 @@ describe('FinalizeManifestationUseCase', () => {
       }),
     ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
 
-    expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.finalizeByAuthor.mock.calls).toHaveLength(0)
   })
 
-  it('propagates save failures after the domain transition', async () => {
+  it('propagates finalize persistence failures after the domain transition', async () => {
     const saveError = new Error('save failed')
 
     manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.ANSWERED))
-    manifestationsRepository.save.mockRejectedValue(saveError)
+    manifestationAdministrationRepository.finalizeByAuthor.mockRejectedValue(saveError)
 
     await expect(
       sut.execute({

@@ -1,7 +1,35 @@
 import type { ManifestationMessageDTO } from '#src/application/dto/manifestation-query-dtos.js'
-import type { ManifestationMessage } from '#src/domain/entities/manifestation-message.js'
-import type { Manifestation } from '#src/domain/entities/manifestation.js'
+import type {
+  ManifestationMessage,
+  ManifestationMessageSenderType,
+} from '#src/domain/entities/manifestation-message.js'
+import type { Manifestation, ManifestationStatus } from '#src/domain/entities/manifestation.js'
+
+interface RecordManifestationAnswerParams {
+  manifestation: Manifestation
+  message: ManifestationMessage
+  fromStatus: ManifestationStatus
+  toStatus: ManifestationStatus
+}
+
+interface UpdateManifestationStatusParams {
+  manifestation: Manifestation
+  actorUserId: string
+  actorType: ManifestationMessageSenderType
+  fromStatus: ManifestationStatus
+  toStatus: ManifestationStatus
+}
+
+interface FinalizeManifestationByAuthorParams {
+  manifestation: Manifestation
+  actorUserId: string
+  actorType: ManifestationMessageSenderType
+  fromStatus: ManifestationStatus
+  toStatus: ManifestationStatus
+}
 
 export interface ManifestationAdministrationRepository {
-  recordAnswer(manifestation: Manifestation, message: ManifestationMessage): Promise<ManifestationMessageDTO>
+  recordAnswer(params: RecordManifestationAnswerParams): Promise<ManifestationMessageDTO>
+  updateStatus(params: UpdateManifestationStatusParams): Promise<void>
+  finalizeByAuthor(params: FinalizeManifestationByAuthorParams): Promise<void>
 }
