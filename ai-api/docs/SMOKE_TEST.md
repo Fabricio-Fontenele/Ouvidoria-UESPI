@@ -2,7 +2,7 @@
 
 Roteiro para validar o anel completo: `db:up → ingest → dev → /health → /ready → POST /ai/messages → backend principal via HttpAiGateway`.
 
-Use o FAQ placeholder em `docs/knowledge-base/faq-ouvidoria.md` neste primeiro passe. Só depois que tudo girar fim-a-fim, troque por documentos institucionais reais (regimento etc.).
+A base de conhecimento em `docs/knowledge-base/` deve conter apenas documentos institucionais oficiais (Resolução CONSUN 005/2018, Lei 13.460/2017, Decreto 15.188/2013 etc.). Não inclua FAQs paráfrase nem material que descreva o comportamento interno do bot.
 
 ## 0. Pré-requisitos
 
@@ -89,7 +89,7 @@ curl -s -X POST localhost:4000/ai/messages \
 
 ```json
 {
-  "answer": "...resposta baseada no FAQ...",
+  "answer": "...resposta baseada nos documentos institucionais...",
   "intent": "institutional_question",
   "confidence": 0.7,
   "shouldOpenManifestationDraft": false,
