@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
-import { buildGuaraNewManifestationHref, navigateTo, routes } from '../../app/routes'
+import { buildGuaraNewManifestationHref, getAuthenticatedHomeRoute, navigateTo, routes } from '../../app/routes'
+import type { AuthenticatedUserRole } from '../../application/auth/auth-types'
 import uespiLogo from '../../assets/brasao.png'
 import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
@@ -17,13 +18,24 @@ interface MenuItem {
   label: string
 }
 
-const authenticatedMenuItems: MenuItem[] = [
+const manifestantMenuItems: MenuItem[] = [
   { href: routes.home, icon: 'home', label: 'Início' },
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
   { href: buildGuaraNewManifestationHref(), icon: 'plus-circle', label: 'Novo registro' },
   { href: '#notificacoes', icon: 'bell', label: 'Notificações' },
   { href: '#perfil', icon: 'user', label: 'Perfil' },
   { href: '#suporte', icon: 'help', label: 'Suporte' },
+  { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
+  { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
+]
+
+const ombudsmanMenuItems: MenuItem[] = [
+  { href: routes.ombudsmanHome, icon: 'home', label: 'Início' },
+  { href: `${routes.ombudsmanHome}#demandas`, icon: 'file-text', label: 'Demandas' },
+  { href: `${routes.ombudsmanHome}#pendentes`, icon: 'clock', label: 'Pendentes' },
+  { href: `${routes.ombudsmanHome}#em-analise`, icon: 'info', label: 'Em análise' },
+  { href: `${routes.ombudsmanHome}#resolvidas`, icon: 'check-circle', label: 'Resolvidas' },
+  { href: '#perfil', icon: 'user', label: 'Perfil' },
   { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
   { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
 ]
@@ -40,6 +52,14 @@ const publicMenuItems: MenuItem[] = [
 const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 const iconButtonClasses =
   'grid size-10 place-items-center rounded-full text-login-blue transition duration-150 hover:bg-login-blue/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
+
+function getAuthenticatedMenuItems(role: AuthenticatedUserRole | null) {
+  if (role === 'ombudsman' || role === 'admin') {
+    return ombudsmanMenuItems
+  }
+
+  return manifestantMenuItems
+}
 
 function AppMenuLink({
   action,
@@ -82,15 +102,18 @@ function AppSideMenu({
   onClose,
   openerRef,
   onSignOut,
+  role,
 }: {
   isAuthenticated: boolean
   isOpen: boolean
   onClose: () => void
   onSignOut: () => Promise<void>
   openerRef: RefObject<HTMLButtonElement | null>
+  role: AuthenticatedUserRole | null
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const menuItems = isAuthenticated ? authenticatedMenuItems : publicMenuItems
+  const menuItems = isAuthenticated ? getAuthenticatedMenuItems(role) : publicMenuItems
+  const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const titleId = isAuthenticated ? 'authenticated-project-menu-title' : 'public-project-menu-title'
 
   useEffect(() => {
@@ -168,7 +191,7 @@ function AppSideMenu({
         <div className="flex items-center justify-between gap-4">
           <a
             className="flex min-w-0 items-center gap-2 text-login-blue no-underline"
-            href={isAuthenticated ? routes.home : routes.landing}
+            href={homeHref}
             onClick={onClose}
           >
             <img alt="Brasão da UESPI" className="h-12 w-8 object-contain" src={uespiLogo} />
@@ -194,7 +217,7 @@ function AppSideMenu({
               <li key={`${item.label}-${item.href}`}>
                 <AppMenuLink
                   {...item}
-                  isActive={item.href === (isAuthenticated ? routes.home : routes.landing)}
+                  isActive={item.href === homeHref}
                   onNavigate={onClose}
                   onSignOut={onSignOut}
                 />
@@ -208,9 +231,11 @@ function AppSideMenu({
 }
 
 export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
-  const { signOut } = useAuth()
+  const { signOut, user } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const role = user?.role ?? null
+  const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const handleSignOut = async () => {
     await signOut()
     setIsMenuOpen(false)
@@ -223,7 +248,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
         <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[52px_1fr_40px] items-center gap-3 px-5 min-[361px]:gap-6 min-[361px]:px-[34px] sm:px-8 md:h-22 md:grid-cols-[60px_1fr_52px] lg:px-12">
           <a
             className="justify-self-start"
-            href={isAuthenticated ? routes.home : routes.landing}
+            href={homeHref}
             aria-label="Página inicial"
           >
             <img
@@ -256,6 +281,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
           onClose={() => setIsMenuOpen(false)}
           onSignOut={handleSignOut}
           openerRef={menuButtonRef}
+          role={role}
         />
       </div>
     </>

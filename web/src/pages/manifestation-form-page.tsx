@@ -11,6 +11,7 @@ import type {
 import { useForm, useWatch } from 'react-hook-form'
 
 import { getSearchParams, normalizeProtocol, routes } from '../app/routes'
+import { manifestantOnlyRoles } from '../app/access-policy'
 import {
   getManifestationFormDefaultValues,
   manifestationAreas,
@@ -305,7 +306,7 @@ export function ManifestationFormPage() {
 
   return (
     <div className="min-h-svh bg-white font-sans text-[#1d1b1b]">
-      <AuthenticatedAppShell fixedHeader>
+      <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles} fixedHeader>
         <main className="mx-auto w-full max-w-5xl px-5 pt-7 pb-12 min-[390px]:px-7 sm:px-8 lg:px-10">
           <section className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:items-start lg:gap-12">
             <div className="lg:sticky lg:top-28">

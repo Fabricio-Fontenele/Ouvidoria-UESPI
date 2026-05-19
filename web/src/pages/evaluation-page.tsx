@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from 'react'
 
 import { getSearchParams, navigateTo, normalizeProtocol, routes } from '../app/routes'
+import { manifestantOnlyRoles } from '../app/access-policy'
 import { Icon } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
@@ -87,7 +88,7 @@ export function EvaluationPage() {
 
   return (
     <div className="min-h-svh bg-white font-sans text-[#1d1b1b]">
-      <AuthenticatedAppShell>
+      <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles}>
         <main className="mx-auto flex w-full max-w-5xl flex-col px-6 pt-9 pb-10 min-[390px]:px-8 md:px-10 md:pt-12">
           <section aria-labelledby="evaluation-title" className="w-full max-w-[672px] md:mx-auto">
             <div className="border-l-8 border-[#0d47a1] pl-6 md:pl-8">

@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { buildManifestationFormHref, getSearchParams, normalizeProtocol, replaceWith, routes } from '../app/routes'
+import {
+  buildManifestationFormHref,
+  getAuthenticatedHomeRoute,
+  getSearchParams,
+  normalizeProtocol,
+  replaceWith,
+  routes,
+} from '../app/routes'
 import guaraMascot from '../assets/guara-mascot.png'
 import { getGuaraInitialMessages, getGuaraSuggestions } from '../application/guara-chat/guara-chat-content'
 import type { GuaraChatSuggestion } from '../application/guara-chat/guara-chat-content'
@@ -335,23 +342,33 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
 
 export function GuaraPage() {
   const { mode, protocol } = resolveMode()
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const copy = getPageCopy(mode, protocol)
+  const canUseGuara = user?.role === 'manifestant'
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      replaceWith(routes.login)
+    if (isLoading) {
+      return
     }
-  }, [isAuthenticated, isLoading])
 
-  if (isLoading || !isAuthenticated) {
+    if (!isAuthenticated) {
+      replaceWith(routes.login)
+      return
+    }
+
+    if (user !== null && !canUseGuara) {
+      replaceWith(getAuthenticatedHomeRoute(user.role))
+    }
+  }, [canUseGuara, isAuthenticated, isLoading, user])
+
+  if (isLoading || !isAuthenticated || !canUseGuara) {
     return (
       <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
-        <AppHeader />
+        <AppHeader isAuthenticated={isAuthenticated} />
 
         <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
           <p className="text-base leading-7 text-landing-brown" role="status">
-            Redirecionando para o acesso ao sistema...
+            Redirecionando para a área correta...
           </p>
         </main>
       </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { buildEvaluationHref, routes } from '../../app/routes'
+import { manifestantOnlyRoles } from '../../app/access-policy'
 import { cx } from '../../utils/cx'
 import { Icon } from '../icons/icon'
 import type { IconName } from '../icons/icon'
@@ -52,7 +53,7 @@ export function ManifestationSubmissionSuccess({ protocol }: ManifestationSubmis
 
   return (
     <div className="min-h-svh bg-white font-sans text-[#1a1c1d]">
-      <AuthenticatedAppShell fixedHeader>
+      <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles} fixedHeader>
         <main className="mx-auto flex w-full max-w-5xl flex-col items-center px-5 pt-10 min-[390px]:px-7 sm:px-8 md:pt-14 lg:px-10">
           <section
             aria-labelledby="submission-success-title"
