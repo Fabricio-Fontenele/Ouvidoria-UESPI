@@ -10,6 +10,8 @@ export interface OmbudsmanManifestationStatusContract {
 }
 
 export interface OmbudsmanManifestationSummary extends ManifestationSearchContract {
+  area: string
+  manifestationType: string
   status: OmbudsmanManifestationStatus
   updatedAt: string
 }

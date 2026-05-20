@@ -1,9 +1,9 @@
 export type AuthenticatedUserRole = 'admin' | 'manifestant' | 'ombudsman'
 
 export interface AuthenticatedUser {
-  email: string
+  email: string | null
   id: string
-  name: string
+  name: string | null
   role: AuthenticatedUserRole
 }
 
@@ -14,5 +14,11 @@ export interface AuthSession {
 
 export interface SignInCredentials {
   email: string
+  password: string
+}
+
+export interface SignUpCredentials {
+  email: string
+  name: string
   password: string
 }
