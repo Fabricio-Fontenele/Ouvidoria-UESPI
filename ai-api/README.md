@@ -57,8 +57,8 @@ PG_VECTOR_COLLECTION_NAME=ouvidoria_kb
 # Knowledge base + RAG tuning
 KB_DIR=./docs/knowledge-base
 RAG_CHUNK_SIZE=400
-RAG_CHUNK_OVERLAP=0
-RAG_TOP_K=4
+RAG_CHUNK_OVERLAP=300
+RAG_TOP_K=8
 
 # Mesma chave configurada no AI_SERVICE_API_KEY do backend principal
 AI_API_KEY=...

@@ -19,7 +19,7 @@ Antes do chatbot responder aos usuários, ele precisa processar e compreender os
 
 ### Ferramenta Utilizada
 
-- `RecursiveCharacterTextSplitter` do LangChain (`@langchain/textsplitters`).
+- `HeaderAwareTextSplitter` (custom, em `ai-api/src/infra/ingestion/text-splitter.ts`) envolvendo o `RecursiveCharacterTextSplitter` do LangChain (`@langchain/textsplitters`).
 
 ### Funcionamento
 
@@ -32,13 +32,31 @@ Cada documento é identificado pela metadata `source` (caminho relativo ao `KB_D
 
 ### Divisão em Chunks
 
-Os documentos são divididos em blocos de texto chamados **chunks** usando `RecursiveCharacterTextSplitter` com:
+Os documentos são divididos em blocos de texto chamados **chunks**. A pipeline:
 
-- `chunkSize`: 600 caracteres (configurável via `RAG_CHUNK_SIZE`).
-- `chunkOverlap`: 0 caracteres (configurável via `RAG_CHUNK_OVERLAP`).
-- Separadores: `['\n\n', '\n', ' ', '']`.
+1. Parseia o markdown extraindo a hierarquia de headers (`#` a `######`), mantendo um stack `Doc → Capítulo → Seção → Artigo` em memória.
+2. Divide o corpo de cada seção com o `RecursiveCharacterTextSplitter` (separadores `['\n\n', '\n', ' ', '']`).
+3. **Prepende o caminho completo de headers** em cada chunk filho. Um chunk com `§ 1º A Ouvidoria... trinta dias` é persistido como:
 
-> **Sweet spot empírico.** Tentamos `RAG_CHUNK_SIZE=1000` para favorecer textos jurídicos, mas o `gemini-embedding-001` rejeita silenciosamente ~96% dos chunks nesse tamanho (retorna vetor vazio). 600 manteve a base saudável (78 chunks persistidos sobre 178 gerados). Detalhes em `doc/plans/2026-05-19-ai-integration-refinements.md` §2.1. A pipeline já filtra vetores vazios antes do insert no `pgvector` (`addVectors` manual em `knowledge-base-ingestion.ts`), então a base nunca fica corrompida — apenas menor que o esperado.
+   ```
+   # Resolução CONSUN nº 005/2018
+   ## Capítulo IV - Das manifestações dos usuários
+   ### Seção VI - Das disposições comuns
+   #### Art. 15
+
+   § 1º A Ouvidoria encaminhará a decisão administrativa final...
+   ```
+
+   Sem isso, o chunker corta entre `#### Art. X` e `§ Yº ...`, e o LLM nunca sabe a qual artigo o parágrafo pertence (root cause da issue #37).
+
+4. Para documentos sem headers (PDFs convertidos sem estrutura, `.txt` puro), cai pro `RecursiveCharacterTextSplitter` direto.
+
+Parâmetros:
+
+- `chunkSize`: 600 caracteres (configurável via `RAG_CHUNK_SIZE`). Aplica ao corpo da seção; o prefixo de header é somado por cima (~150 chars adicionais por chunk).
+- `chunkOverlap`: 300 caracteres (configurável via `RAG_CHUNK_OVERLAP`). Defesa adicional contra header propagation falha em casos extremos.
+
+> **Sweet spot empírico do embedding.** Tentamos `RAG_CHUNK_SIZE=1000` para favorecer textos jurídicos, mas o `gemini-embedding-001` rejeita silenciosamente ~50–96% dos chunks em tamanhos grandes (retorna vetor vazio). 600 manteve a base saudável. O `embedInBatches` em `ai-api/src/infra/ingestion/embed-in-batches.ts` faz retry individual de chunks que vieram vazios e falha alto se exaurir as tentativas, então a base nunca fica corrompida.
 
 ### Objetivo
 
@@ -125,7 +143,7 @@ O microserviço `ai-api` em TypeScript:
 1. recebe a pergunta do usuário (via `POST /ai/messages`);
 2. converte a pergunta em embedding usando o mesmo modelo da ingestão;
 3. consulta o pgvector com `similaritySearchWithScore(query, k)`;
-4. recupera os `k` chunks mais relevantes semanticamente (`RAG_TOP_K`, padrão: 4).
+4. recupera os `k` chunks mais relevantes semanticamente (`RAG_TOP_K`, padrão: 8). Cada chunk já vem com seu caminho de headers prependido (ver §1.1), então o LLM tem contexto suficiente para citar o artigo correto.
 
 ### Retorno
 
@@ -202,7 +220,7 @@ O `GeminiStructuredLlmProvider` (em `ai-api/src/infra/llm/`) utiliza:
 
 ```ts
 const model = new ChatGoogleGenerativeAI({
-  model: 'models/gemini-2.0-flash', // configurável via GOOGLE_CHAT_MODEL
+  model: 'models/gemini-2.5-flash', // configurável via GOOGLE_CHAT_MODEL
   temperature: 0.1, // configurável via LLM_TEMPERATURE
 })
 ```
@@ -668,7 +686,7 @@ KB_DIR (./docs/knowledge-base)
 DocumentLoader (recursivo, com metadata source)
     │
     ▼
-RecursiveCharacterTextSplitter (chunkSize=600, overlap=0)
+HeaderAwareTextSplitter (chunkSize=600, overlap=300, prepende caminho de headers markdown)
     │
     ▼
 GoogleGenerativeAIEmbeddings (text-embedding-001, 3072 dims)
@@ -686,16 +704,16 @@ pnpm ingest / pnpm ingest:reset
 
 # 5. Tecnologias Principais
 
-| Tecnologia                     | Função                          | Status                               |
-| ------------------------------ | ------------------------------- | ------------------------------------ |
-| TypeScript                     | Backend principal               | Implementado                         |
-| Zod                            | Validação de schemas            | Implementado (em ambos os pacotes)   |
-| Fastify                        | Servidor HTTP                   | Implementado (backend + ai-api)      |
-| LangChain                      | Orquestração de IA              | Implementado (ai-api)                |
-| Gemini (2.0 Flash)             | Modelo LLM                      | Implementado (ai-api)                |
-| Gemini Embedding (text-001)    | Geração de embeddings           | Implementado (ai-api)                |
-| pgvector                       | Banco vetorial                  | Implementado (ai-api, PostgreSQL 17) |
-| RecursiveCharacterTextSplitter | Divisão de documentos em chunks | Implementado (ai-api)                |
+| Tecnologia                  | Função                                                          | Status                               |
+| --------------------------- | --------------------------------------------------------------- | ------------------------------------ |
+| TypeScript                  | Backend principal                                               | Implementado                         |
+| Zod                         | Validação de schemas                                            | Implementado (em ambos os pacotes)   |
+| Fastify                     | Servidor HTTP                                                   | Implementado (backend + ai-api)      |
+| LangChain                   | Orquestração de IA                                              | Implementado (ai-api)                |
+| Gemini (2.5 Flash)          | Modelo LLM                                                      | Implementado (ai-api)                |
+| Gemini Embedding (text-001) | Geração de embeddings                                           | Implementado (ai-api)                |
+| pgvector                    | Banco vetorial                                                  | Implementado (ai-api, PostgreSQL 17) |
+| HeaderAwareTextSplitter     | Divisão markdown-consciente em chunks com propagação de headers | Implementado (ai-api)                |
 
 ## Histórico de Evolução
 
@@ -821,7 +839,7 @@ ai-api/src/
 ```ts
 interface GeminiClientConfig {
   apiKey: string // GOOGLE_API_KEY
-  chatModel: string // GOOGLE_CHAT_MODEL (padrão: models/gemini-2.0-flash)
+  chatModel: string // GOOGLE_CHAT_MODEL (padrão: models/gemini-2.5-flash)
   embeddingModel: string // GOOGLE_EMBEDDING_MODEL (padrão: models/text-embedding-001)
   temperature: number // LLM_TEMPERATURE (padrão: 0.1)
 }
@@ -892,23 +910,23 @@ function makeApiKeyAuth(expectedApiKey: string): FastifyPreHandler
 
 ## 6.7 Variáveis de Ambiente do ai-api
 
-| Variável                    | Padrão                      | Descrição                                                                       |
-| --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
-| `PORT`                      | `4000`                      | Porta do servidor                                                               |
-| `HOST`                      | `0.0.0.0`                   | Host do servidor                                                                |
-| `GOOGLE_API_KEY`            | —                           | Chave da API Google (obrigatória)                                               |
-| `GOOGLE_CHAT_MODEL`         | `models/gemini-2.0-flash`   | Modelo Gemini para chat                                                         |
-| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001` | Modelo Gemini para embeddings                                                   |
-| `GOOGLE_EMBEDDING_DIMS`     | `3072`                      | Dimensão dos embeddings                                                         |
-| `LLM_TEMPERATURE`           | `0.1`                       | Temperatura do LLM (0-1)                                                        |
-| `DATABASE_URL`              | —                           | URL do PostgreSQL com pgvector                                                  |
-| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`              | Nome da tabela de coleção vetorial                                              |
-| `KB_DIR`                    | `./docs/knowledge-base`     | Diretório dos documentos institucionais                                         |
-| `RAG_CHUNK_SIZE`            | `600`                       | Tamanho dos chunks para divisão (sweet spot empírico do `gemini-embedding-001`) |
-| `RAG_CHUNK_OVERLAP`         | `0`                         | Sobreposição entre chunks                                                       |
-| `RAG_TOP_K`                 | `4`                         | Número de chunks recuperados                                                    |
-| `AI_API_KEY`                | —                           | Chave para autenticação das requisições                                         |
-| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                     | Limite do body da requisição                                                    |
+| Variável                    | Padrão                      | Descrição                                                                        |
+| --------------------------- | --------------------------- | -------------------------------------------------------------------------------- |
+| `PORT`                      | `4000`                      | Porta do servidor                                                                |
+| `HOST`                      | `0.0.0.0`                   | Host do servidor                                                                 |
+| `GOOGLE_API_KEY`            | —                           | Chave da API Google (obrigatória)                                                |
+| `GOOGLE_CHAT_MODEL`         | `models/gemini-2.5-flash`   | Modelo Gemini para chat (atenção: `gemini-3.5-flash` tem só 20 RPD no free tier) |
+| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001` | Modelo Gemini para embeddings                                                    |
+| `GOOGLE_EMBEDDING_DIMS`     | `3072`                      | Dimensão dos embeddings                                                          |
+| `LLM_TEMPERATURE`           | `0.1`                       | Temperatura do LLM (0-1)                                                         |
+| `DATABASE_URL`              | —                           | URL do PostgreSQL com pgvector                                                   |
+| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`              | Nome da tabela de coleção vetorial                                               |
+| `KB_DIR`                    | `./docs/knowledge-base`     | Diretório dos documentos institucionais                                          |
+| `RAG_CHUNK_SIZE`            | `600`                       | Tamanho dos chunks para divisão (sweet spot empírico do `gemini-embedding-001`)  |
+| `RAG_CHUNK_OVERLAP`         | `300`                       | Sobreposição entre chunks (defesa adicional à propagação de headers)             |
+| `RAG_TOP_K`                 | `8`                         | Número de chunks recuperados por query                                           |
+| `AI_API_KEY`                | —                           | Chave para autenticação das requisições                                          |
+| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                     | Limite do body da requisição                                                     |
 
 ---
 
