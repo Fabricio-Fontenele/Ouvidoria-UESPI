@@ -189,11 +189,7 @@ function AppSideMenu({
         role="dialog"
       >
         <div className="flex items-center justify-between gap-4">
-          <a
-            className="flex min-w-0 items-center gap-2 text-login-blue no-underline"
-            href={homeHref}
-            onClick={onClose}
-          >
+          <a className="flex min-w-0 items-center gap-2 text-login-blue no-underline" href={homeHref} onClick={onClose}>
             <img alt="Brasão da UESPI" className="h-12 w-8 object-contain" src={uespiLogo} />
             <strong className="truncate text-base leading-6 font-bold" id={titleId}>
               Ouvidoria UESPI
@@ -215,12 +211,7 @@ function AppSideMenu({
           <ul className="space-y-2">
             {menuItems.map((item) => (
               <li key={`${item.label}-${item.href}`}>
-                <AppMenuLink
-                  {...item}
-                  isActive={item.href === homeHref}
-                  onNavigate={onClose}
-                  onSignOut={onSignOut}
-                />
+                <AppMenuLink {...item} isActive={item.href === homeHref} onNavigate={onClose} onSignOut={onSignOut} />
               </li>
             ))}
           </ul>
@@ -246,11 +237,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
     <>
       <header className="relative z-40 h-22 w-full flex-none bg-login-surface shadow-login-header md:h-24">
         <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[52px_1fr_40px] items-center gap-3 px-5 min-[361px]:gap-6 min-[361px]:px-[34px] sm:px-8 md:h-22 md:grid-cols-[60px_1fr_52px] lg:px-12">
-          <a
-            className="justify-self-start"
-            href={homeHref}
-            aria-label="Página inicial"
-          >
+          <a className="justify-self-start" href={homeHref} aria-label="Página inicial">
             <img
               alt="Brasão da UESPI"
               className="h-[72px] w-[52px] object-contain md:h-20 md:w-[58px]"
