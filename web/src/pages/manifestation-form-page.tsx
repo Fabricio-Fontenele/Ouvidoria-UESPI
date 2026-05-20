@@ -217,9 +217,8 @@ export function ManifestationFormPage() {
     setSubmissionError(null)
     setSubmissionValidationMessage(null)
 
-    const involvedPeople = values.involvedPeople === undefined || values.involvedPeople === ''
-      ? null
-      : values.involvedPeople
+    const involvedPeople =
+      values.involvedPeople === undefined || values.involvedPeople === '' ? null : values.involvedPeople
 
     try {
       const result = await manifestationsService.create({
