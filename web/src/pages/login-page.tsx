@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
-import { navigateTo, routes } from '../app/routes'
+import { getAuthenticatedHomeRoute, navigateTo, routes } from '../app/routes'
 import { getSignInFormDefaultValues, signInFormSchema } from '../application/auth/sign-in-form-contract'
 import type { SignInFormData } from '../application/auth/sign-in-form-contract'
 import { AuthForm } from '../components/auth/auth-form'
@@ -33,7 +33,7 @@ const loginFields: AuthFormField<SignInFormData>[] = [
 ]
 
 export function LoginPage() {
-  const { error, isAuthenticated, isLoading, signIn } = useAuth()
+  const { error, isAuthenticated, isLoading, signIn, user } = useAuth()
   const form = useForm<SignInFormData>({
     defaultValues: getSignInFormDefaultValues(),
     mode: 'onSubmit',
@@ -48,10 +48,10 @@ export function LoginPage() {
   }
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigateTo(routes.home)
+    if (isAuthenticated && user !== null) {
+      navigateTo(getAuthenticatedHomeRoute(user.role))
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, user])
 
   return (
     <AuthPageShell
@@ -86,9 +86,14 @@ export function LoginPage() {
           Esqueci minha senha.
         </a>
 
-        <p className="text-center text-xs leading-5 text-login-brown">
-          Acesso de teste: <strong>exemplo@uespi.br</strong> / <strong>123456</strong>
-        </p>
+        <div className="space-y-1 text-center text-xs leading-5 text-login-brown">
+          <p>
+            Manifestante: <strong>exemplo@uespi.br</strong> / <strong>123456</strong>
+          </p>
+          <p>
+            Ouvidor: <strong>ouvidor@uespi.com.br</strong> / <strong>ouv12345</strong>
+          </p>
+        </div>
       </AuthForm>
 
       <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">

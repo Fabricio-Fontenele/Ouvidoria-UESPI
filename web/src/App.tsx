@@ -5,6 +5,8 @@ import { LandingPage } from './pages/landing-page'
 import { LoginPage } from './pages/login-page'
 import { EvaluationPage } from './pages/evaluation-page'
 import { ManifestationFormPage } from './pages/manifestation-form-page'
+import { OmbudsmanManifestationDetailsPage } from './pages/ombudsman-manifestation-details-page'
+import { OmbudsmanHomePage } from './pages/ombudsman-home-page'
 import { SignPage } from './pages/sign-page'
 
 function App() {
@@ -24,6 +26,14 @@ function App() {
 
   if (normalizedPath === routes.home) {
     return <HomePage />
+  }
+
+  if (normalizedPath === routes.ombudsmanHome) {
+    return <OmbudsmanHomePage />
+  }
+
+  if (normalizedPath === routes.ombudsmanManifestation) {
+    return <OmbudsmanManifestationDetailsPage />
   }
 
   if (normalizedPath === routes.guara) {

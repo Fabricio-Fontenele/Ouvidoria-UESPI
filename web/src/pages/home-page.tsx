@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import { buildGuaraNewManifestationHref, buildManifestationDetailsHref } from '../app/routes'
+import { manifestantOnlyRoles } from '../app/access-policy'
 import {
   getManifestationStatusContract,
   manifestationStatusContracts,
@@ -336,7 +337,7 @@ export function HomePage() {
 
   return (
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
-      <AuthenticatedAppShell>
+      <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles}>
         <main className="mx-auto w-full max-w-6xl px-3 pt-8 min-[375px]:px-6 sm:px-8 md:pt-14 lg:px-12">
           <section className="grid max-w-3xl gap-8 md:gap-10 lg:max-w-none">
             <div>
