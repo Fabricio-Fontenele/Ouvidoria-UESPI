@@ -12,7 +12,7 @@ export const envSchema = z
     GOOGLE_API_KEY: z.string().min(1, 'GOOGLE_API_KEY is required'),
     GOOGLE_EMBEDDING_MODEL: z.string().default('models/gemini-embedding-001'),
     GOOGLE_EMBEDDING_DIMS: z.coerce.number().int().positive().default(3072),
-    GOOGLE_CHAT_MODEL: z.string().default('models/gemini-3-flash'),
+    GOOGLE_CHAT_MODEL: z.string().default('models/gemini-3.5-flash'),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.1),
 
     DATABASE_URL: z.url(),

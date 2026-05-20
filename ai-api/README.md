@@ -48,7 +48,7 @@ PORT=4000
 GOOGLE_API_KEY=...
 GOOGLE_EMBEDDING_MODEL=models/gemini-embedding-001
 GOOGLE_EMBEDDING_DIMS=3072
-GOOGLE_CHAT_MODEL=models/gemini-3-flash
+GOOGLE_CHAT_MODEL=models/gemini-3.5-flash
 
 # pgVector
 DATABASE_URL=postgresql://postgres:postgres@localhost:5433/rag

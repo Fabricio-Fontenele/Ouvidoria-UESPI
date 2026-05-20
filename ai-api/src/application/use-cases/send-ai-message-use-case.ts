@@ -48,12 +48,7 @@ export class SendAiMessageUseCase {
       catalog,
     })
 
-    let raw: unknown
-    try {
-      raw = await llm.completeStructured({ systemPrompt, userPrompt })
-    } catch {
-      return NEUTRAL_FALLBACK_RESPONSE
-    }
+    const raw = await llm.completeStructured({ systemPrompt, userPrompt })
 
     const parsed = aiChatResponseSchema.safeParse(raw)
     if (!parsed.success) {

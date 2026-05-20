@@ -2,11 +2,7 @@ import type { BaseLanguageModelInput } from '@langchain/core/language_models/bas
 import type { Runnable } from '@langchain/core/runnables'
 import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain/google-genai'
 
-import {
-  aiChatResponseSchema,
-  type AiChatResponse,
-  NEUTRAL_FALLBACK_RESPONSE,
-} from '../../application/dtos/ai-chat-response.js'
+import { aiChatResponseSchema, type AiChatResponse } from '../../application/dtos/ai-chat-response.js'
 import type { LlmProvider, StructuredCompletionInput } from '../../application/ports/llm-provider.js'
 
 export interface GeminiClientConfig {
@@ -41,13 +37,9 @@ export class GeminiStructuredLlmProvider implements LlmProvider {
   }
 
   async completeStructured({ systemPrompt, userPrompt }: StructuredCompletionInput): Promise<AiChatResponse> {
-    try {
-      return await this.structured.invoke([
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ])
-    } catch {
-      return NEUTRAL_FALLBACK_RESPONSE
-    }
+    return this.structured.invoke([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ])
   }
 }

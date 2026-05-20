@@ -12,7 +12,7 @@ const baseProcessEnv = {
   GOOGLE_API_KEY: 'google-key',
   GOOGLE_EMBEDDING_MODEL: 'models/gemini-embedding-001',
   GOOGLE_EMBEDDING_DIMS: '3072',
-  GOOGLE_CHAT_MODEL: 'models/gemini-3-flash',
+  GOOGLE_CHAT_MODEL: 'models/gemini-3.5-flash',
   LLM_TEMPERATURE: '0.1',
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5433/rag',
   PG_VECTOR_COLLECTION_NAME: 'ouvidoria_kb',
