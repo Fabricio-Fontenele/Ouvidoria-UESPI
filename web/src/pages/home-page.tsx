@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { buildGuaraNewManifestationHref, buildManifestationDetailsHref } from '../app/routes'
+import { buildGuaraNewManifestationHref, buildManifestationDetailsHref, routes } from '../app/routes'
 import { manifestantOnlyRoles } from '../app/access-policy'
+import type { Catalog } from '../application/catalog/catalog-types'
 import {
   getManifestationStatusContract,
   manifestationStatusContracts,
 } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
+import { getManifestationTypeLabel } from '../application/manifestations/manifestation-type-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
 import guaraMascot from '../assets/guara-mascot.png'
 import guaraPoses from '../assets/poses-guara.webp'
@@ -15,9 +17,12 @@ import { Icon } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
+import { useCatalog } from '../hooks/use-catalog'
+import { useManifestationsService } from '../hooks/use-manifestations-service'
 import { cx } from '../utils/cx'
 
 type ManifestationFilter = 'all' | ManifestationStatus
+type ListStatus = 'loading' | 'ready' | 'error'
 
 interface Metric {
   colorClassName?: string
@@ -30,56 +35,43 @@ interface Filter {
   label: string
 }
 
-const manifestations: ManifestationSummary[] = [
-  {
-    area: 'Administração Superior',
-    createdAt: '01 Set, 2024',
-    description:
-      'Solicito a avaliação da possibilidade de ampliação dos horários de funcionamento da Biblioteca Central.',
-    manifestationType: 'Sugestão',
-    protocol: '#2024-0772',
-    status: 'in_analysis',
-    title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
-    updatedAt: '02 Set, 2024',
-  },
-  {
-    area: 'Administração Superior',
-    createdAt: '01 Set, 2024',
-    description:
-      'Solicito a avaliação da possibilidade de ampliação dos horários de funcionamento da Biblioteca Central.',
-    manifestationType: 'Sugestão',
-    protocol: '#2024-0773',
-    status: 'answered',
-    title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
-    updatedAt: '02 Set, 2024',
-  },
-  {
-    area: 'Administração Superior',
-    createdAt: '01 Set, 2024',
-    description:
-      'Solicito a avaliação da possibilidade de ampliação dos horários de funcionamento da Biblioteca Central.',
-    manifestationType: 'Sugestão',
-    protocol: '#2024-0774',
-    status: 'finalized',
-    title: 'Solicitação de Ampliação de Horários na Biblioteca Central',
-    updatedAt: '02 Set, 2024',
-  },
-  {
-    area: 'Assistência Estudantil',
-    createdAt: '03 Set, 2024',
-    description: 'Preciso atualizar a documentação pendente para continuidade do atendimento estudantil.',
-    manifestationType: 'Reclamação',
-    protocol: '#2024-0775',
-    status: 'canceled',
-    title: 'Atualização de documentação pendente para atendimento estudantil',
-    updatedAt: '03 Set, 2024',
-  },
-]
-
 const filters: Filter[] = [
   { id: 'all', label: 'Todos' },
   ...manifestationStatusContracts.map((status) => ({ id: status.value, label: status.filterLabel })),
 ]
+
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+
+function formatBrDate(iso: string) {
+  const date = new Date(iso)
+
+  if (Number.isNaN(date.getTime())) {
+    return iso
+  }
+
+  return dateFormatter.format(date)
+}
+
+function buildAreaLabel(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
+  const campus = catalog?.campuses.find((entry) => entry.id === campusId)
+  const unit = campus?.administrativeUnits.find((entry) => entry.id === administrativeUnitId)
+
+  if (campus === undefined || unit === undefined) {
+    return 'Unidade não identificada'
+  }
+
+  return `${campus.label} — ${unit.label}`
+}
+
+function buildTitle(description: string) {
+  const trimmed = description.trim()
+
+  if (trimmed.length <= 80) {
+    return trimmed
+  }
+
+  return `${trimmed.slice(0, 80).trimEnd()}…`
+}
 
 function NewRecordCard() {
   return (
@@ -256,7 +248,7 @@ function SearchField({ onSearchChange, search }: { onSearchChange: (search: stri
           className="min-w-0 bg-transparent text-sm leading-none text-home-text outline-none placeholder:text-home-muted"
           id="manifestation-search"
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Buscar por protocolo, tipo, área ou descrição..."
+          placeholder="Buscar por protocolo ou descrição..."
           type="search"
           value={search}
         />
@@ -265,9 +257,19 @@ function SearchField({ onSearchChange, search }: { onSearchChange: (search: stri
   )
 }
 
-function ManifestationCard({ manifestation }: { manifestation: ManifestationSummary }) {
+function ManifestationCard({
+  catalog,
+  manifestation,
+}: {
+  catalog: Catalog | null
+  manifestation: ManifestationSummary
+}) {
   const status = getManifestationStatusContract(manifestation.status)
   const statusStyle = getManifestationStatusStyle(manifestation.status)
+  const areaLabel = buildAreaLabel(catalog, manifestation.campusId, manifestation.administrativeUnitId)
+  const typeLabel = getManifestationTypeLabel(manifestation.type)
+  const title = buildTitle(manifestation.description)
+  const createdAtLabel = formatBrDate(manifestation.createdAt)
 
   return (
     <article
@@ -298,17 +300,17 @@ function ManifestationCard({ manifestation }: { manifestation: ManifestationSumm
             </span>
           </div>
 
-          <h3 className="mt-3 text-lg leading-[22.5px] font-bold text-home-text">{manifestation.title}</h3>
+          <h3 className="mt-3 text-lg leading-[22.5px] font-bold text-home-text">{title}</h3>
           <p className="mt-2 text-sm leading-5 text-home-brown">
-            {manifestation.manifestationType} • {manifestation.area}
+            {typeLabel} • {areaLabel}
           </p>
         </div>
       </div>
 
       <div className="mt-8 flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs leading-4 font-bold text-home-brown/40 uppercase">Última atualização</p>
-          <p className="mt-1 text-sm leading-5 font-semibold text-home-text">{manifestation.updatedAt}</p>
+          <p className="text-xs leading-4 font-bold text-home-brown/40 uppercase">Registrada em</p>
+          <p className="mt-1 text-sm leading-5 font-semibold text-home-text">{createdAtLabel}</p>
         </div>
         <a
           aria-label={`Abrir manifestação ${manifestation.protocol}`}
@@ -323,17 +325,58 @@ function ManifestationCard({ manifestation }: { manifestation: ManifestationSumm
 }
 
 export function HomePage() {
+  const manifestationsService = useManifestationsService()
+  const { catalog } = useCatalog()
   const [activeFilter, setActiveFilter] = useState<ManifestationFilter>('all')
   const [search, setSearch] = useState('')
-  const metrics = useMemo(() => getMetrics(manifestations), [])
+  const [items, setItems] = useState<ManifestationSummary[]>([])
+  const [listStatus, setListStatus] = useState<ListStatus>('loading')
+  const [listError, setListError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    setListStatus('loading')
+    setListError(null)
+
+    async function loadItems() {
+      try {
+        const fetched = await manifestationsService.list(1)
+
+        if (!isMounted) {
+          return
+        }
+
+        setItems(fetched)
+        setListStatus('ready')
+      } catch (loadError) {
+        if (!isMounted) {
+          return
+        }
+
+        const message = loadError instanceof Error ? loadError.message : 'Não foi possível carregar suas manifestações.'
+        setListError(message)
+        setListStatus('error')
+      }
+    }
+
+    void loadItems()
+
+    return () => {
+      isMounted = false
+    }
+  }, [manifestationsService])
+
+  const metrics = useMemo(() => getMetrics(items), [items])
   const filteredManifestations = useMemo(
     () =>
       searchManifestations(
-        manifestations.filter((manifestation) => matchesFilter(manifestation, activeFilter)),
+        items.filter((manifestation) => matchesFilter(manifestation, activeFilter)),
         search,
       ),
-    [activeFilter, search],
+    [items, activeFilter, search],
   )
+  const hasNoManifestations = items.length === 0
+  const hasNoFilteredResults = items.length > 0 && filteredManifestations.length === 0
 
   return (
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
@@ -361,17 +404,50 @@ export function HomePage() {
                 <SearchField onSearchChange={setSearch} search={search} />
               </div>
 
-              {filteredManifestations.length > 0 ? (
+              {listStatus === 'loading' ? (
+                <div className="rounded-lg bg-home-action px-5 py-8 text-center text-sm leading-6 text-home-brown">
+                  Carregando suas manifestações...
+                </div>
+              ) : null}
+
+              {listStatus === 'error' ? (
+                <div
+                  className="rounded-lg bg-red-50 px-5 py-8 text-center text-sm leading-6 font-bold text-red-800"
+                  role="alert"
+                >
+                  {listError ?? 'Não foi possível carregar suas manifestações.'}
+                </div>
+              ) : null}
+
+              {listStatus === 'ready' && filteredManifestations.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {filteredManifestations.map((manifestation) => (
-                    <ManifestationCard key={manifestation.protocol} manifestation={manifestation} />
+                    <ManifestationCard catalog={catalog} key={manifestation.id} manifestation={manifestation} />
                   ))}
                 </div>
-              ) : (
-                <div className="rounded-lg bg-home-action px-5 py-8 text-center text-sm leading-6 text-home-brown">
-                  Nenhuma manifestação encontrada para o filtro selecionado.
+              ) : null}
+
+              {listStatus === 'ready' && hasNoManifestations ? (
+                <div className="rounded-lg bg-home-action px-5 py-10 text-center text-home-brown">
+                  <p className="text-base leading-6 font-bold text-home-text">Você ainda não registrou manifestações</p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-5">
+                    Quando você registrar uma manifestação, ela aparecerá aqui para acompanhamento.
+                  </p>
+                  <a
+                    className="mt-5 inline-flex min-h-10 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:opacity-90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+                    href={routes.manifestationForm}
+                  >
+                    Registrar manifestação
+                  </a>
                 </div>
-              )}
+              ) : null}
+
+              {listStatus === 'ready' && hasNoFilteredResults ? (
+                <div className="rounded-lg bg-home-action px-5 py-8 text-center text-sm leading-6 text-home-brown">
+                  <p className="font-bold text-home-text">Nenhuma manifestação encontrada para o filtro selecionado</p>
+                  <p className="mt-2">Tente ajustar os filtros ou buscar por outro termo.</p>
+                </div>
+              ) : null}
             </div>
           </section>
         </main>

@@ -9,6 +9,7 @@ import type { SignUpFormData } from '../application/auth/sign-up-form-contract'
 import { AuthForm, AuthFormMessage } from '../components/auth/auth-form'
 import type { AuthFormField } from '../components/auth/auth-form'
 import { AuthPageShell } from '../components/layout/auth-page-shell'
+import { useAuth } from '../hooks/use-auth'
 import { cx } from '../utils/cx'
 
 const signUpFields: AuthFormField<SignUpFormData>[] = [
@@ -94,6 +95,7 @@ function TermsCheckbox({ error, inputProps }: { error?: string; inputProps: UseF
 }
 
 export function SignPage() {
+  const { error: authError, signUp } = useAuth()
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const form = useForm<SignUpFormData>({
     defaultValues: getSignUpFormDefaultValues(),
@@ -108,9 +110,23 @@ export function SignPage() {
     onChange: () => setSuccessMessage(null),
   })
 
-  const handleSubmit: SubmitHandler<SignUpFormData> = () => {
-    setSuccessMessage('Cadastro validado com sucesso. A integração com o backend poderá criar a conta.')
+  const handleSubmit: SubmitHandler<SignUpFormData> = async (values) => {
+    setSuccessMessage(null)
+
+    const ok = await signUp({
+      email: values.email.trim(),
+      name: values.fullName.trim(),
+      password: values.password,
+    })
+
+    if (ok) {
+      setSuccessMessage('Conta criada com sucesso. Redirecionando...')
+      window.location.assign(routes.home)
+    }
   }
+
+  const status = authError !== null ? 'error' : successMessage !== null ? 'success' : null
+  const statusMessage = authError ?? successMessage ?? undefined
 
   return (
     <AuthPageShell
@@ -134,8 +150,8 @@ export function SignPage() {
         form={form}
         onInvalid={() => setSuccessMessage(null)}
         onSubmit={handleSubmit}
-        status={successMessage === null ? null : 'success'}
-        statusMessage={successMessage ?? undefined}
+        status={status}
+        statusMessage={statusMessage}
         submitLabel="Cadastrar"
       >
         <div className="mt-[2px] md:col-span-2 md:mt-1">
