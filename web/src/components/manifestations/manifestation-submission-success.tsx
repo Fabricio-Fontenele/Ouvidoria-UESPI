@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { buildEvaluationHref, routes } from '../../app/routes'
+import { buildManifestationDetailsHref, routes } from '../../app/routes'
 import { manifestantOnlyRoles } from '../../app/access-policy'
 import { cx } from '../../utils/cx'
 import { Icon } from '../icons/icon'
@@ -131,10 +131,10 @@ export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSu
 
           <a
             className="mt-7 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg bg-[#2b5bb5] px-6 text-base leading-6 font-bold text-white no-underline transition duration-150 hover:bg-[#234d9d] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
-            href={buildEvaluationHref(id)}
+            href={buildManifestationDetailsHref(id)}
           >
-            <Icon className="size-5" name="star" />
-            Avaliar atendimento
+            <Icon className="size-5" name="file-text" />
+            Abrir manifestação
           </a>
 
           <a
