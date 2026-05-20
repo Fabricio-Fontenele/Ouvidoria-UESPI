@@ -30,7 +30,7 @@ describe('parseEnv', () => {
       HOST: '0.0.0.0',
       GOOGLE_EMBEDDING_MODEL: 'models/gemini-embedding-001',
       GOOGLE_EMBEDDING_DIMS: 3072,
-      GOOGLE_CHAT_MODEL: 'models/gemini-3-flash',
+      GOOGLE_CHAT_MODEL: 'models/gemini-3.5-flash',
       KB_DIR: './docs/knowledge-base',
       RAG_CHUNK_SIZE: 400,
       RAG_CHUNK_OVERLAP: 0,

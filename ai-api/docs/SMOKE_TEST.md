@@ -11,7 +11,7 @@ A base de conhecimento em `docs/knowledge-base/` deve conter apenas documentos i
 - `ai-api/.env` preenchido a partir de `ai-api/.env.sample`, com:
   - `GOOGLE_API_KEY` real da Google AI Studio
   - `AI_API_KEY` definido (string qualquer; será usado no `x-api-key`)
-  - `GOOGLE_CHAT_MODEL` confirmado para a chave (recomendado: `models/gemini-3-flash`)
+  - `GOOGLE_CHAT_MODEL` confirmado para a chave (recomendado: `models/gemini-3.5-flash`)
 
 Para confirmar quais modelos sua chave aceita:
 
@@ -171,7 +171,7 @@ O backend principal vai (1) buscar o catálogo no Prisma, (2) repassar para o `a
 | Sintoma                                   | Causa provável                                             | O que checar                                                                              |
 | ----------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `404 model not found` no ingest           | `GOOGLE_EMBEDDING_MODEL` errado                            | Lista de modelos da chave                                                                 |
-| `404 model not found` no chat             | `GOOGLE_CHAT_MODEL` errado                                 | Idem; tente `models/gemini-3-flash` ou `models/gemini-2.0-flash`                          |
+| `404 model not found` no chat             | `GOOGLE_CHAT_MODEL` errado                                 | Idem; tente `models/gemini-3.5-flash` ou `models/gemini-2.5-flash`                        |
 | `dimension mismatch` no ingest            | Tabela criada com outra dim, mudou `GOOGLE_EMBEDDING_DIMS` | Rode `ingest:reset`                                                                       |
 | `ECONNREFUSED 5433`                       | Container do pgVector não subiu                            | `docker ps`, `pnpm --filter @ouvidoria/ai-api db:logs`                                    |
 | 429 do Gemini                             | Rate limit do free tier                                    | Espera alguns minutos; reduz `RAG_CHUNK_SIZE` é contraproducente — embeddings é por chunk |
