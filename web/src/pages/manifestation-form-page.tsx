@@ -166,7 +166,7 @@ export function ManifestationFormPage() {
   const formId = useId()
   const manifestationsService = useManifestationsService()
   const { catalog, error: catalogError, status: catalogStatus } = useCatalog()
-  const [submittedProtocol, setSubmittedProtocol] = useState<string | null>(null)
+  const [submittedManifestation, setSubmittedManifestation] = useState<{ id: string; protocol: string } | null>(null)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [submissionValidationMessage, setSubmissionValidationMessage] = useState<string | null>(null)
   const form = useForm<ManifestationFormData>({
@@ -208,7 +208,7 @@ export function ManifestationFormPage() {
   }, [administrativeUnitsForCampus, form, selectedCampusId])
 
   const handleInvalidSubmit: SubmitErrorHandler<ManifestationFormData> = () => {
-    setSubmittedProtocol(null)
+    setSubmittedManifestation(null)
     setSubmissionError(null)
     setSubmissionValidationMessage('Não foi possível enviar. Corrija os campos indicados e tente novamente.')
   }
@@ -230,7 +230,7 @@ export function ManifestationFormPage() {
         type: values.type,
       })
 
-      setSubmittedProtocol(result.manifestation.protocol)
+      setSubmittedManifestation({ id: result.manifestation.id, protocol: result.manifestation.protocol })
     } catch (creationError) {
       const message =
         creationError instanceof Error
@@ -240,8 +240,8 @@ export function ManifestationFormPage() {
     }
   }
 
-  if (submittedProtocol !== null) {
-    return <ManifestationSubmissionSuccess protocol={submittedProtocol} />
+  if (submittedManifestation !== null) {
+    return <ManifestationSubmissionSuccess id={submittedManifestation.id} protocol={submittedManifestation.protocol} />
   }
 
   const catalogIsLoading = catalogStatus === 'loading' || catalogStatus === 'idle'

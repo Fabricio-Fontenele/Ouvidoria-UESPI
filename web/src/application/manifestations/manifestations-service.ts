@@ -1,3 +1,4 @@
+import type { ManifestationDetail, ManifestationMessageEntry } from './manifestation-detail-contract'
 import type { ManifestationStatus } from './manifestation-status-contract'
 import type { ManifestationSummary } from './manifestation-summary-contract'
 import type { ManifestationType } from './manifestation-type-contract'
@@ -30,7 +31,22 @@ export interface CreateManifestationResult {
   manifestation: CreatedManifestation
 }
 
+export interface AddMessageInput {
+  content: string
+  manifestationId: string
+}
+
+export interface EvaluateInput {
+  comment: string | null
+  manifestationId: string
+  rating: number
+}
+
 export interface ManifestationsService {
+  addMessage(input: AddMessageInput): Promise<ManifestationMessageEntry>
   create(input: CreateManifestationInput): Promise<CreateManifestationResult>
+  evaluate(input: EvaluateInput): Promise<void>
+  finalize(manifestationId: string): Promise<void>
+  getById(id: string): Promise<ManifestationDetail>
   list(page?: number): Promise<ManifestationSummary[]>
 }

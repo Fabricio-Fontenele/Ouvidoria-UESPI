@@ -20,6 +20,7 @@ import { getManifestationStatusStyle } from '../components/manifestations/manife
 import { useCatalog } from '../hooks/use-catalog'
 import { useManifestationsService } from '../hooks/use-manifestations-service'
 import { cx } from '../utils/cx'
+import { formatBrDate } from '../utils/format-date'
 
 type ManifestationFilter = 'all' | ManifestationStatus
 type ListStatus = 'loading' | 'ready' | 'error'
@@ -39,18 +40,6 @@ const filters: Filter[] = [
   { id: 'all', label: 'Todos' },
   ...manifestationStatusContracts.map((status) => ({ id: status.value, label: status.filterLabel })),
 ]
-
-const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
-
-function formatBrDate(iso: string) {
-  const date = new Date(iso)
-
-  if (Number.isNaN(date.getTime())) {
-    return iso
-  }
-
-  return dateFormatter.format(date)
-}
 
 function buildAreaLabel(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
   const campus = catalog?.campuses.find((entry) => entry.id === campusId)
@@ -315,7 +304,7 @@ function ManifestationCard({
         <a
           aria-label={`Abrir manifestação ${manifestation.protocol}`}
           className="grid size-10 place-items-center rounded-lg bg-home-action text-home-text transition duration-150 hover:bg-home-chip active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href={buildManifestationDetailsHref(manifestation.protocol)}
+          href={buildManifestationDetailsHref(manifestation.id)}
         >
           <Icon className="size-4" name="chevron-right" />
         </a>
