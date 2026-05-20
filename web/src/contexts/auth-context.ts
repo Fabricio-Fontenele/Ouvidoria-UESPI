@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 
-import type { AuthSession, SignInCredentials } from '../application/auth/auth-types'
+import type { AuthSession, SignInCredentials, SignUpCredentials } from '../application/auth/auth-types'
 
 export interface AuthContextValue {
   error: string | null
@@ -8,6 +8,7 @@ export interface AuthContextValue {
   isLoading: boolean
   session: AuthSession | null
   signIn(credentials: SignInCredentials): Promise<boolean>
+  signUp(credentials: SignUpCredentials): Promise<boolean>
   signOut(): Promise<void>
   user: AuthSession['user'] | null
 }
