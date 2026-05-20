@@ -353,8 +353,7 @@ export function HomePage() {
           return
         }
 
-        const message =
-          loadError instanceof Error ? loadError.message : 'Não foi possível carregar suas manifestações.'
+        const message = loadError instanceof Error ? loadError.message : 'Não foi possível carregar suas manifestações.'
         setListError(message)
         setListStatus('error')
       }
@@ -430,9 +429,7 @@ export function HomePage() {
 
               {listStatus === 'ready' && hasNoManifestations ? (
                 <div className="rounded-lg bg-home-action px-5 py-10 text-center text-home-brown">
-                  <p className="text-base leading-6 font-bold text-home-text">
-                    Você ainda não registrou manifestações
-                  </p>
+                  <p className="text-base leading-6 font-bold text-home-text">Você ainda não registrou manifestações</p>
                   <p className="mx-auto mt-2 max-w-sm text-sm leading-5">
                     Quando você registrar uma manifestação, ela aparecerá aqui para acompanhamento.
                   </p>
