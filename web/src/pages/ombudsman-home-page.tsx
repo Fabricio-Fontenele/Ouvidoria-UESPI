@@ -165,11 +165,7 @@ function MetricCards() {
 
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
         {dashboardMetrics.map((metric) => (
-          <div
-            className={metricCardClasses.join(' ')}
-            id={metric.anchorId}
-            key={metric.label}
-          >
+          <div className={metricCardClasses.join(' ')} id={metric.anchorId} key={metric.label}>
             <div className="absolute inset-x-0 top-0 h-1 bg-home-blue/80 opacity-0 transition duration-150 group-hover:opacity-100" />
             <dt className="flex items-start justify-between gap-3">
               <span>
@@ -296,10 +292,7 @@ function ManifestationCard({ manifestation }: { manifestation: OmbudsmanManifest
   return (
     <article
       aria-labelledby={`${protocolId}-title`}
-      className={cx(
-        manifestationCardClasses.join(' '),
-        statusVisual.accentClassName,
-      )}
+      className={cx(manifestationCardClasses.join(' '), statusVisual.accentClassName)}
     >
       <div aria-hidden="true" className={cx('absolute inset-y-0 left-0 w-1 opacity-70', statusVisual.barClassName)} />
 
@@ -435,12 +428,7 @@ export function OmbudsmanHomePage() {
                   options={typeOptions}
                   value={typeFilter}
                 />
-                <DateFilterInput
-                  id="ombudsman-date-filter"
-                  label="Data"
-                  onChange={setDateFilter}
-                  value={dateFilter}
-                />
+                <DateFilterInput id="ombudsman-date-filter" label="Data" onChange={setDateFilter} value={dateFilter} />
               </div>
             </div>
 

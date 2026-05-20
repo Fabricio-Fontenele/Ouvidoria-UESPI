@@ -135,7 +135,9 @@ function DescriptionCard({ description }: { description: string }) {
         <h2 className="text-2xl font-black text-home-text" id="manifestation-description-title">
           Descrição da manifestação
         </h2>
-        <span className="rounded-full bg-home-chip px-4 py-2 text-sm font-bold text-home-brown">Mensagem registrada</span>
+        <span className="rounded-full bg-home-chip px-4 py-2 text-sm font-bold text-home-brown">
+          Mensagem registrada
+        </span>
       </div>
       <p className="mt-5 text-lg leading-7 text-home-text sm:text-xl">{description}</p>
     </section>
@@ -152,7 +154,9 @@ function ChatBubble({ reply }: { reply: LocalReply }) {
             <p className="font-bold uppercase tracking-[0.14em] text-white/80">Anexos</p>
             <ul className="space-y-2">
               {reply.attachments.map((name) => (
-                <li key={name} className="truncate">{name}</li>
+                <li key={name} className="truncate">
+                  {name}
+                </li>
               ))}
             </ul>
           </div>
@@ -262,7 +266,10 @@ function ConversationCard({
             <p className="text-xs font-black uppercase tracking-[0.14em] text-home-blue">Anexos</p>
             <ul className="mt-3 space-y-2">
               {attachments.map((file, index) => (
-                <li key={`${file.name}-${file.size}`} className="flex items-center justify-between gap-3 rounded-2xl border border-home-chip bg-home-action/40 px-3 py-2 text-sm text-home-text">
+                <li
+                  key={`${file.name}-${file.size}`}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-home-chip bg-home-action/40 px-3 py-2 text-sm text-home-text"
+                >
                   <span className="truncate">{file.name}</span>
                   <button
                     className="grid size-8 place-items-center rounded-full bg-home-chip text-home-brown transition duration-150 hover:bg-home-blue/10 hover:text-home-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-home-blue"
@@ -306,10 +313,7 @@ function ManifestationNotFound({ protocol }: { protocol: string | null }) {
 
 export function OmbudsmanManifestationDetailsPage() {
   const protocol = resolveProtocol()
-  const manifestation = useMemo(
-    () => (protocol === null ? null : getManifestationDetails(protocol)),
-    [protocol],
-  )
+  const manifestation = useMemo(() => (protocol === null ? null : getManifestationDetails(protocol)), [protocol])
   const [draft, setDraft] = useState('')
   const [replyStatus, setReplyStatus] = useState<ReplyStatus>('idle')
   const [attachments, setAttachments] = useState<File[]>([])
