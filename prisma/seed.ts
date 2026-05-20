@@ -1,5 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const connectionString = process.env['DATABASE_URL']
 
@@ -13,6 +14,22 @@ const schema = databaseUrl.searchParams.get('schema') ?? 'public'
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: databaseUrl.toString() }, { schema }),
 })
+
+const developmentPassword = 'Senha123'
+const passwordHashRounds = Number(process.env['PASSWORD_HASH_ROUNDS'] ?? '10')
+
+const usersSeedData = [
+  {
+    email: 'ouvidor@uespi.br',
+    name: 'Ouvidor de Demonstração',
+    role: 'ombudsman' as const,
+  },
+  {
+    email: 'admin@uespi.br',
+    name: 'Administrador de Demonstração',
+    role: 'admin' as const,
+  },
+]
 
 const catalogSeedData = {
   campuses: [
@@ -141,6 +158,30 @@ async function main(): Promise<void> {
         isActive: administrativeUnit.isActive,
       },
     })
+  }
+
+  const passwordHash = await bcrypt.hash(developmentPassword, passwordHashRounds)
+
+  for (const user of usersSeedData) {
+    await prisma.user.upsert({
+      where: { email: user.email },
+      create: {
+        email: user.email,
+        name: user.name,
+        passwordHash,
+        role: user.role,
+      },
+      update: {
+        name: user.name,
+        passwordHash,
+        role: user.role,
+      },
+    })
+  }
+
+  console.warn(`Seeded development users (password: ${developmentPassword}):`)
+  for (const user of usersSeedData) {
+    console.warn(`  - ${user.role.padEnd(10)} ${user.email}`)
   }
 }
 
