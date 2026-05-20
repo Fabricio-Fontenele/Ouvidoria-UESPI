@@ -16,6 +16,7 @@ interface InfoCard {
 }
 
 interface ManifestationSubmissionSuccessProps {
+  id: string
   protocol: string
 }
 
@@ -35,7 +36,7 @@ const infoCards: InfoCard[] = [
   },
 ]
 
-export function ManifestationSubmissionSuccess({ protocol }: ManifestationSubmissionSuccessProps) {
+export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSubmissionSuccessProps) {
   const [copyStatus, setCopyStatus] = useState<'copied' | 'error' | 'idle'>('idle')
 
   const handleCopyProtocol = async () => {
@@ -130,7 +131,7 @@ export function ManifestationSubmissionSuccess({ protocol }: ManifestationSubmis
 
           <a
             className="mt-7 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg bg-[#2b5bb5] px-6 text-base leading-6 font-bold text-white no-underline transition duration-150 hover:bg-[#234d9d] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
-            href={buildEvaluationHref(protocol)}
+            href={buildEvaluationHref(id)}
           >
             <Icon className="size-5" name="star" />
             Avaliar atendimento
