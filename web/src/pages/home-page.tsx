@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { buildGuaraNewManifestationHref, buildManifestationDetailsHref } from '../app/routes'
+import { buildGuaraNewManifestationHref, buildManifestationDetailsHref, routes } from '../app/routes'
 import { manifestantOnlyRoles } from '../app/access-policy'
 import type { Catalog } from '../application/catalog/catalog-types'
 import {
@@ -376,6 +376,8 @@ export function HomePage() {
       ),
     [items, activeFilter, search],
   )
+  const hasNoManifestations = items.length === 0
+  const hasNoFilteredResults = items.length > 0 && filteredManifestations.length === 0
 
   return (
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
@@ -426,9 +428,27 @@ export function HomePage() {
                 </div>
               ) : null}
 
-              {listStatus === 'ready' && filteredManifestations.length === 0 ? (
+              {listStatus === 'ready' && hasNoManifestations ? (
+                <div className="rounded-lg bg-home-action px-5 py-10 text-center text-home-brown">
+                  <p className="text-base leading-6 font-bold text-home-text">
+                    Você ainda não registrou manifestações
+                  </p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-5">
+                    Quando você registrar uma manifestação, ela aparecerá aqui para acompanhamento.
+                  </p>
+                  <a
+                    className="mt-5 inline-flex min-h-10 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:opacity-90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+                    href={routes.manifestationForm}
+                  >
+                    Registrar manifestação
+                  </a>
+                </div>
+              ) : null}
+
+              {listStatus === 'ready' && hasNoFilteredResults ? (
                 <div className="rounded-lg bg-home-action px-5 py-8 text-center text-sm leading-6 text-home-brown">
-                  Nenhuma manifestação encontrada para o filtro selecionado.
+                  <p className="font-bold text-home-text">Nenhuma manifestação encontrada para o filtro selecionado</p>
+                  <p className="mt-2">Tente ajustar os filtros ou buscar por outro termo.</p>
                 </div>
               ) : null}
             </div>
