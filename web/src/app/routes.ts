@@ -53,8 +53,8 @@ export function buildGuaraNewManifestationHref() {
   return `${routes.guara}?mode=new`
 }
 
-export function buildManifestationDetailsHref(protocol: string) {
-  return `${routes.manifestation}?protocol=${protocolForQuery(protocol)}`
+export function buildManifestationDetailsHref(id: string) {
+  return `${routes.manifestation}?id=${id}`
 }
 
 export function buildOmbudsmanManifestationDetailsHref(protocol: string) {
@@ -69,10 +69,10 @@ export function buildManifestationFormHref(protocol?: string | null) {
   return `${routes.manifestationForm}?protocol=${protocolForQuery(protocol)}`
 }
 
-export function buildEvaluationHref(protocol?: string | null) {
-  if (protocol === undefined || protocol === null) {
+export function buildEvaluationHref(id?: string | null) {
+  if (id === undefined || id === null) {
     return routes.evaluation
   }
 
-  return `${routes.evaluation}?protocol=${protocolForQuery(protocol)}`
+  return `${routes.evaluation}?id=${id}`
 }
