@@ -1,87 +1,34 @@
 import { z } from 'zod'
 
-export const manifestationTypes = ['Denúncia', 'Reclamação', 'Solicitação', 'Sugestão', 'Elogio'] as const
-
-export const manifestationAreas = [
-  'Administração Superior',
-  'Coordenação de Curso',
-  'Biblioteca',
-  'Assistência Estudantil',
-  'Outro setor',
-] as const
-
-export const manifestationIdentificationOptions = [
-  { label: 'Manifestação identificada', value: 'identified' },
-  { label: 'Manifestação anônima', value: 'anonymous' },
-] as const
-
-export const manifestationAttachmentLimits = {
-  maxFileSizeInBytes: 5 * 1024 * 1024,
-  maxFiles: 5,
-}
+import { manifestationTypeValues } from './manifestation-type-contract'
 
 export const manifestationFormSchema = z.object({
-  area: z
-    .string()
-    .min(1, 'Selecione a área responsável.')
-    .refine(
-      (value) => manifestationAreas.includes(value as (typeof manifestationAreas)[number]),
-      'Selecione uma área válida.',
-    ),
-  attachments: z
-    .custom<FileList>()
-    .optional()
-    .refine((files) => files === undefined || files.length <= manifestationAttachmentLimits.maxFiles, {
-      message: `Envie no máximo ${manifestationAttachmentLimits.maxFiles} arquivos.`,
-    })
-    .refine(
-      (files) =>
-        files === undefined ||
-        Array.from(files).every((file) => file.size <= manifestationAttachmentLimits.maxFileSizeInBytes),
-      'Cada arquivo deve ter até 5 MB.',
-    ),
+  administrativeUnitId: z.string().min(1, 'Selecione a unidade administrativa.'),
+  campusId: z.string().min(1, 'Selecione o campus.'),
   description: z
     .string()
     .trim()
     .min(20, 'Descreva a manifestação com pelo menos 20 caracteres.')
     .max(4000, 'A descrição deve ter no máximo 4000 caracteres.'),
-  identification: z
+  involvedPeople: z
     .string()
-    .min(1, 'Selecione a forma de identificação.')
-    .refine((value) => manifestationIdentificationOptions.some((option) => option.value === value), {
-      message: 'Selecione uma forma de identificação válida.',
-    }),
-  involvedPeople: z.string().trim().max(250, 'Informe as pessoas envolvidas com no máximo 250 caracteres.'),
-  manifestationType: z
-    .string()
-    .min(1, 'Selecione o tipo de manifestação.')
-    .refine(
-      (value) => manifestationTypes.includes(value as (typeof manifestationTypes)[number]),
-      'Selecione um tipo válido.',
-    ),
+    .trim()
+    .max(250, 'Informe as pessoas envolvidas com no máximo 250 caracteres.')
+    .optional()
+    .or(z.literal('')),
+  isAnonymous: z.boolean(),
+  type: z.enum(manifestationTypeValues, { message: 'Selecione um tipo de manifestação.' }),
 })
 
 export type ManifestationFormData = z.infer<typeof manifestationFormSchema>
 
-export function getManifestationFormDefaultValues(isEditing: boolean): ManifestationFormData {
-  if (isEditing) {
-    return {
-      area: 'Administração Superior',
-      attachments: undefined,
-      description:
-        'Solicito a avaliação da possibilidade de ampliação dos horários de funcionamento da Biblioteca Central.',
-      identification: 'identified',
-      involvedPeople: 'Biblioteca Central',
-      manifestationType: 'Sugestão',
-    }
-  }
-
+export function getManifestationFormDefaultValues(): ManifestationFormData {
   return {
-    area: '',
-    attachments: undefined,
+    administrativeUnitId: '',
+    campusId: '',
     description: '',
-    identification: 'identified',
     involvedPeople: '',
-    manifestationType: '',
+    isAnonymous: false,
+    type: '' as ManifestationFormData['type'],
   }
 }
