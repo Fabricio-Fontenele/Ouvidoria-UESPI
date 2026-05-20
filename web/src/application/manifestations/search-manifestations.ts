@@ -1,15 +1,11 @@
 import type { ManifestationSearchContract } from './manifestation-summary-contract'
 
-export const manifestationSearchFields = ['protocol', 'manifestationType', 'area', 'description'] as const
+export const manifestationSearchFields = ['protocol', 'description'] as const
 
 type ManifestationSearchField = (typeof manifestationSearchFields)[number]
 
 function normalizeSearchValue(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
+  return value.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
 }
 
 function getManifestationSearchValue<TManifestation extends ManifestationSearchContract>(
