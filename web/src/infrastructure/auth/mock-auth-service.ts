@@ -3,15 +3,39 @@ import type { AuthSession, SignInCredentials } from '../../application/auth/auth
 
 const mockSessionStorageKey = 'ouvidoria-uespi-auth-session'
 
-const mockSession: AuthSession = {
-  token: 'mock-session-token',
-  user: {
-    email: 'exemplo@uespi.br',
-    id: 'mock-user-1',
-    name: 'Manifestante UESPI',
-    role: 'manifestant',
-  },
+interface MockAuthAccount {
+  password: string
+  session: AuthSession
 }
+
+const mockAccounts: MockAuthAccount[] = [
+  {
+    password: '123456',
+    session: {
+      token: 'mock-manifestant-session-token',
+      user: {
+        email: 'exemplo@uespi.br',
+        id: 'mock-user-1',
+        name: 'Manifestante UESPI',
+        role: 'manifestant',
+      },
+    },
+  },
+  {
+    password: 'ouv12345',
+    session: {
+      token: 'mock-ombudsman-session-token',
+      user: {
+        email: 'ouvidor@uespi.com.br',
+        id: 'mock-ombudsman-1',
+        name: 'Ouvidor UESPI',
+        role: 'ombudsman',
+      },
+    },
+  },
+]
+
+const authRoles: AuthSession['user']['role'][] = ['admin', 'manifestant', 'ombudsman']
 
 export class InvalidCredentialsError extends Error {
   constructor() {
@@ -33,7 +57,7 @@ function isAuthSession(value: unknown): value is AuthSession {
     typeof user?.email === 'string' &&
     typeof user.id === 'string' &&
     typeof user.name === 'string' &&
-    typeof user.role === 'string'
+    authRoles.includes(user.role as AuthSession['user']['role'])
   )
 }
 
@@ -54,12 +78,18 @@ export class MockAuthService implements AuthService {
   }
 
   async signIn(credentials: SignInCredentials): Promise<AuthSession> {
-    if (credentials.email !== mockSession.user.email || credentials.password !== '123456') {
+    const account = mockAccounts.find(
+      (mockAccount) =>
+        mockAccount.session.user.email === credentials.email.toLowerCase() &&
+        mockAccount.password === credentials.password,
+    )
+
+    if (account === undefined) {
       throw new InvalidCredentialsError()
     }
 
-    window.sessionStorage.setItem(mockSessionStorageKey, JSON.stringify(mockSession))
-    return mockSession
+    window.sessionStorage.setItem(mockSessionStorageKey, JSON.stringify(account.session))
+    return account.session
   }
 
   async signOut(): Promise<void> {
