@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import type { AuthService } from '../application/auth/auth-service'
-import type { AuthSession, SignInCredentials } from '../application/auth/auth-types'
+import type { AuthSession, SignInCredentials, SignUpCredentials } from '../application/auth/auth-types'
 import { SignIn } from '../application/auth/sign-in'
+import { SignUp } from '../application/auth/sign-up'
 import { AuthContext } from './auth-context'
 
 function resolveAuthError(error: unknown) {
@@ -11,7 +12,7 @@ function resolveAuthError(error: unknown) {
     return error.message
   }
 
-  return 'Não foi possível entrar agora. Tente novamente.'
+  return 'Não foi possível concluir a operação agora. Tente novamente.'
 }
 
 export function AuthProvider({ children, service }: { children: ReactNode; service: AuthService }) {
@@ -19,6 +20,7 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const signInUseCase = useMemo(() => new SignIn(service), [service])
+  const signUpUseCase = useMemo(() => new SignUp(service), [service])
 
   useEffect(() => {
     let isMounted = true
@@ -59,6 +61,26 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
     [signInUseCase],
   )
 
+  const signUp = useCallback(
+    async (credentials: SignUpCredentials) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        const nextSession = await signUpUseCase.execute(credentials)
+        setSession(nextSession)
+        return true
+      } catch (signUpError) {
+        setSession(null)
+        setError(resolveAuthError(signUpError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [signUpUseCase],
+  )
+
   const signOut = useCallback(async () => {
     await service.signOut()
     setSession(null)
@@ -72,10 +94,11 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
       isLoading,
       session,
       signIn,
+      signUp,
       signOut,
       user: session?.user ?? null,
     }),
-    [error, isLoading, session, signIn, signOut],
+    [error, isLoading, session, signIn, signUp, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
