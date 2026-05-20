@@ -109,6 +109,7 @@ services:
       backend:
         condition: service_started
     environment:
+      VITE_API_BASE_URL: '${VITE_API_BASE_URL:-http://localhost:3333}'
       VITE_GUARA_CHAT_ENDPOINT: '${VITE_GUARA_CHAT_ENDPOINT:-http://localhost:3333/api/ai/chat}'
     ports:
       - '5173:5173'
