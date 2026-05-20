@@ -348,25 +348,54 @@ mais barato (Gemini 1.5 Flash-8B, Haiku, ou até regex) poderia rejeitar
 `out_of_scope` em <500ms sem chamar o modelo caro. Estimativa: redução de
 30-40% no custo médio por chamada.
 
-### 3.2 Qualidade do retrieval RAG (descoberto durante validação)
+### 3.2 Qualidade do retrieval RAG — RESOLVIDO (issue #37)
 
-O smoke test do cenário "Qual o prazo da Ouvidoria responder?" continua
-falhando após a mudança de chunk size. O Art. 15 §1º está indexado, mas
-o embedding query/document não casa semanticamente.
+**Status**: fechado em 2026-05-19 com 18/18 PASS na suíte de regressão
+(6 queries normativas × 3 rodadas consecutivas, zero FAIL).
 
-Estratégias possíveis, ordenadas por custo/benefício:
+**Diagnóstico real**, descoberto durante a investigação:
 
-1. **Aumentar `RAG_TOP_K`** (hoje 4) para 8-10 — mais barato, primeiro a
-   tentar. O modelo final filtra os chunks irrelevantes.
-2. **Query rewriting**: antes do retrieve, perguntar ao LLM "reformule esta
-   pergunta em termos jurídicos formais". Dobra a latência da etapa de
-   retrieval mas melhora muito o recall.
-3. **Reranker leve**: BM25 sobre os top-20 do vector store. Captura keyword
-   match sem custo de LLM extra.
-4. **Hybrid search**: combinar similaridade vetorial + busca full-text do
-   Postgres. `pgvector` + `tsvector` no mesmo banco torna isso simples.
-5. **Trocar o modelo de embedding**: `text-embedding-004` (Google) ou
-   OpenAI `text-embedding-3-large` podem ter melhor recall em PT-BR.
+A regressão original (\"Sinto muito, mas não encontrei o prazo...\") tinha
+duas causas independentes empilhadas:
+
+1. **`GOOGLE_CHAT_MODEL=models/gemini-3-flash` retornava 404** — o modelo
+   não existe na API do Google. Dois `try/catch` silenciosos (no provider
+   Gemini e no use case) engoliam o erro e devolviam `NEUTRAL_FALLBACK_RESPONSE`
+   sem nenhum log. Toda chamada parecia 200 OK em ~1s, simulando \"o bot
+   não soube responder\" quando a stack inteira estava quebrada. Corrigido
+   em PR #41: troca pra `gemini-2.5-flash` (free tier ~1.5k RPD; `gemini-3.5-flash`
+   é só 20 RPD/dia, inviável pra dev) + `request.log.error/warn` no controller.
+2. **Header propagation ausente no splitter** — `RecursiveCharacterTextSplitter`
+   com `chunkOverlap=0` cortava entre `#### Art. X` e `§ 1º ...`. O LLM
+   recebia o §1º sem o artigo pai e ou (a) chutava um número errado, ou
+   (b) cumpria a regra anti-alucinação e citava só `§ 1º (Resolução CONSUN...)`
+   sem o `Art. X` — ambos reprovam o critério de cita literal.
+
+**Estratégia adotada** (combinação mínima que passou 18/18):
+
+- `GOOGLE_CHAT_MODEL` default → `models/gemini-2.5-flash` (ajustável via
+  `.env` em prod).
+- `RAG_CHUNK_OVERLAP` default `0 → 300` — garante header em chunks vizinhos
+  mesmo quando o splitter custom falhar em algum caso.
+- `RAG_TOP_K` default `4 → 8` — recall mais largo; o LLM filtra ruído.
+- **Header-aware splitter custom** em `ai-api/src/infra/ingestion/text-splitter.ts`:
+  parseia markdown headers (`#` a `######`), mantém um stack hierárquico, e
+  PREPENDE o caminho completo (`# Doc / ## Capítulo / ### Seção / #### Art. X`)
+  em cada chunk filho. Para docs sem headers (PDFs convertidos sem estrutura),
+  cai pro `RecursiveCharacterTextSplitter` puro.
+- **Regra anti-alucinação no prompt**: \"só cite 'Art. X' se 'Art. X' aparecer
+  literalmente no mesmo trecho que você está reproduzindo\".
+- Script de regressão reproduzível em `ai-api/scripts/rag-regression.ts`
+  (parametrizado por `AI_API_BASE_URL` + `AI_API_KEY`, define \"estável\" como
+  6 × 3 = 18/18 PASS).
+
+**Trade-off final**: ficamos com as 4 estratégias mais baratas da lista
+original (overlap, top_k, prompt, header propagation) — sem precisar de
+query rewriting, BM25 reranker, hybrid search ou trocar o modelo de embedding.
+A propagação de header é a peça-chave: faz com que cada chunk vetorial seja
+auto-suficiente para o LLM atribuir o §X ao Art. Y correto. Custo de
+ingestão: ~2x chunks no banco (241 vs 173 sem propagação), todos com prefixo
+de ~150 chars de header.
 
 ### 3.3 Persistência do audit log em tabela
 
