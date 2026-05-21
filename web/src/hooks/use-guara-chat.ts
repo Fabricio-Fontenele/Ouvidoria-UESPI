@@ -1,47 +1,106 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { SendGuaraMessage } from '../application/guara-chat/send-guara-message'
-import type { GuaraChatContext, GuaraMessage } from '../application/guara-chat/guara-chat-types'
+import type {
+  GuaraChatDraft,
+  GuaraChatHistoryItem,
+  GuaraChatIntent,
+  GuaraChatMissingField,
+  GuaraMessage,
+} from '../application/guara-chat/guara-chat-types'
+import { clearChatMessages, readChatMessages, writeChatMessages } from '../infrastructure/guara-chat/guara-chat-storage'
 import { useGuaraChatService } from './use-guara-chat-service'
 
 interface UseGuaraChatParams {
-  context: GuaraChatContext
   initialMessages: GuaraMessage[]
 }
 
-export function useGuaraChat({ context, initialMessages }: UseGuaraChatParams) {
+interface UseGuaraChatResult {
+  clearConversation: () => void
+  error: string | null
+  isSending: boolean
+  messages: GuaraMessage[]
+  missingFields: GuaraChatMissingField[]
+  pendingDraft: GuaraChatDraft | null
+  pendingIntent: GuaraChatIntent | null
+  sendMessage: (message: string) => Promise<void>
+  shouldOpenManifestationDraft: boolean
+}
+
+function buildHistory(messages: GuaraMessage[]): GuaraChatHistoryItem[] {
+  return messages.map((message) => ({
+    content: message.text,
+    role: message.author === 'guara' ? 'assistant' : 'user',
+  }))
+}
+
+export function useGuaraChat({ initialMessages }: UseGuaraChatParams): UseGuaraChatResult {
   const guaraChatService = useGuaraChatService()
   const [error, setError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
-  const [messages, setMessages] = useState<GuaraMessage[]>(initialMessages)
+  const [pendingDraft, setPendingDraft] = useState<GuaraChatDraft | null>(null)
+  const [pendingIntent, setPendingIntent] = useState<GuaraChatIntent | null>(null)
+  const [missingFields, setMissingFields] = useState<GuaraChatMissingField[]>([])
+  const [shouldOpenManifestationDraft, setShouldOpenManifestationDraft] = useState(false)
 
-  const sendGuaraMessage = useMemo(() => {
-    return new SendGuaraMessage(guaraChatService)
-  }, [guaraChatService])
+  const initialMessagesRef = useRef(initialMessages)
 
-  const sendMessage = async (message: string) => {
-    const userMessage: GuaraMessage = {
-      author: 'user',
-      id: crypto.randomUUID(),
-      text: message.trim(),
+  useEffect(() => {
+    initialMessagesRef.current = initialMessages
+  }, [initialMessages])
+
+  const [messages, setMessages] = useState<GuaraMessage[]>(() => {
+    const stored = readChatMessages()
+
+    if (stored !== null && stored.length > 0) {
+      return stored
     }
 
-    if (userMessage.text.length === 0) {
+    return initialMessages
+  })
+
+  useEffect(() => {
+    writeChatMessages(messages)
+  }, [messages])
+
+  const sendGuaraMessage = useMemo(() => new SendGuaraMessage(guaraChatService), [guaraChatService])
+
+  const sendMessage = async (message: string) => {
+    const trimmed = message.trim()
+
+    if (trimmed.length === 0 || isSending) {
       return
     }
 
+    const userMessage: GuaraMessage = {
+      author: 'user',
+      id: crypto.randomUUID(),
+      text: trimmed,
+    }
+
+    const nextMessages = [...messages, userMessage]
+
     setError(null)
     setIsSending(true)
-    setMessages((currentMessages) => [...currentMessages, userMessage])
+    setMessages(nextMessages)
 
     try {
       const output = await sendGuaraMessage.execute({
-        context,
-        message: userMessage.text,
-        previousMessages: [...messages, userMessage],
+        history: buildHistory(messages),
+        message: trimmed,
       })
 
-      setMessages((currentMessages) => [...currentMessages, output.message])
+      const assistantMessage: GuaraMessage = {
+        author: 'guara',
+        id: crypto.randomUUID(),
+        text: output.answer,
+      }
+
+      setMessages([...nextMessages, assistantMessage])
+      setPendingDraft(output.draft)
+      setPendingIntent(output.intent)
+      setMissingFields(output.missingFields)
+      setShouldOpenManifestationDraft(output.shouldOpenManifestationDraft)
     } catch {
       setError('Não foi possível enviar a mensagem. Tente novamente em instantes.')
     } finally {
@@ -49,10 +108,25 @@ export function useGuaraChat({ context, initialMessages }: UseGuaraChatParams) {
     }
   }
 
+  const clearConversation = () => {
+    setMessages(initialMessagesRef.current)
+    setPendingDraft(null)
+    setPendingIntent(null)
+    setMissingFields([])
+    setShouldOpenManifestationDraft(false)
+    setError(null)
+    clearChatMessages()
+  }
+
   return {
+    clearConversation,
     error,
     isSending,
     messages,
+    missingFields,
+    pendingDraft,
+    pendingIntent,
     sendMessage,
+    shouldOpenManifestationDraft,
   }
 }

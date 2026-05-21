@@ -5,6 +5,7 @@ import type { AuthService } from '../application/auth/auth-service'
 import type { AuthSession, SignInCredentials, SignUpCredentials } from '../application/auth/auth-types'
 import { SignIn } from '../application/auth/sign-in'
 import { SignUp } from '../application/auth/sign-up'
+import { clearChatMessages, clearPendingDraft } from '../infrastructure/guara-chat/guara-chat-storage'
 import { AuthContext } from './auth-context'
 
 function resolveAuthError(error: unknown) {
@@ -83,6 +84,8 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
 
   const signOut = useCallback(async () => {
     await service.signOut()
+    clearChatMessages()
+    clearPendingDraft()
     setSession(null)
     setError(null)
   }, [service])
