@@ -1,20 +1,29 @@
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from 'react'
+import type { ChangeEvent } from 'react'
 
 import { manifestantOnlyRoles } from '../app/access-policy'
 import { buildEvaluationHref, getSearchParams, routes } from '../app/routes'
 import type { Catalog } from '../application/catalog/catalog-types'
 import type {
+  ManifestationAttachmentInfo,
   ManifestationDetail,
   ManifestationHistoryEntry,
   ManifestationHistoryEntryType,
   ManifestationMessageEntry,
   ManifestationMessageSenderType,
 } from '../application/manifestations/manifestation-detail-contract'
+import {
+  ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
+  canUploadAttachments,
+  getRemainingAttachmentSlots,
+  validateAttachmentFiles,
+} from '../application/manifestations/attachment-policy'
 import { canEvaluate, canSendMessage } from '../application/manifestations/manifestation-policy'
 import { getManifestationStatusContract } from '../application/manifestations/manifestation-status-contract'
 import { getManifestationTypeLabel } from '../application/manifestations/manifestation-type-contract'
 import { parseSystemMessagePayload } from '../application/manifestations/system-message-payload'
 import { FinalizeAction } from '../components/manifestations/finalize-action'
+import { formatFileSize } from '../components/forms/form-file-utils'
 import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
 import { Icon } from '../components/icons/icon'
 import type { IconName } from '../components/icons/icon'
@@ -143,36 +152,203 @@ function DescriptionCard({ detail }: { detail: ManifestationDetail }) {
   )
 }
 
-function AttachmentsHint({ detail }: { detail: ManifestationDetail }) {
-  if (detail.attachments.length === 0) {
-    return null
+function AttachmentListItem({
+  attachment,
+  detail,
+}: {
+  attachment: ManifestationAttachmentInfo
+  detail: ManifestationDetail
+}) {
+  const manifestationsService = useManifestationsService()
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleDownload() {
+    setIsDownloading(true)
+    setError(null)
+
+    try {
+      const downloadUrl = await manifestationsService.getAttachmentDownloadUrl({
+        attachmentId: attachment.id,
+        manifestationId: detail.id,
+      })
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer')
+    } catch (downloadError) {
+      const message =
+        downloadError instanceof Error ? downloadError.message : 'Não foi possível gerar o link de download.'
+      setError(message)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  return (
+    <li className="rounded-2xl border border-login-brown/10 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-home-blue/10 text-home-blue">
+          <Icon className="size-5" name="file-text" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-home-text">{attachment.originalName}</p>
+          <p className="mt-1 text-xs leading-5 text-home-brown">
+            {formatFileSize(attachment.sizeInBytes)} • {attachment.mimeType}
+          </p>
+        </div>
+      </div>
+      <button
+        className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-home-blue px-4 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+        disabled={isDownloading}
+        onClick={() => void handleDownload()}
+        type="button"
+      >
+        {isDownloading ? 'Gerando link...' : 'Baixar anexo'}
+        <Icon className="size-4" name="arrow-right" />
+      </button>
+      {error !== null ? (
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm leading-5 font-bold text-red-800" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </li>
+  )
+}
+
+function AttachmentsCard({ detail, onChanged }: { detail: ManifestationDetail; onChanged: () => void }) {
+  const manifestationsService = useManifestationsService()
+  const fieldId = useId()
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const remainingSlots = getRemainingAttachmentSlots(detail.attachments.length)
+  const uploadAllowed = canUploadAttachments(detail.status) && remainingSlots > 0
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? [])
+    const validation = validateAttachmentFiles(files, detail.attachments.length)
+
+    if (!validation.valid) {
+      event.target.value = ''
+      setSelectedFiles([])
+      setError(validation.message)
+      return
+    }
+
+    setSelectedFiles(files)
+    setError(null)
+  }
+
+  async function handleUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const validation = validateAttachmentFiles(selectedFiles, detail.attachments.length)
+
+    if (!validation.valid) {
+      setError(validation.message)
+      return
+    }
+
+    setIsUploading(true)
+    setError(null)
+
+    try {
+      for (const file of selectedFiles) {
+        await manifestationsService.uploadAttachment({ file, manifestationId: detail.id })
+      }
+
+      setSelectedFiles([])
+      onChanged()
+    } catch (uploadError) {
+      const message = uploadError instanceof Error ? uploadError.message : 'Não foi possível enviar os anexos.'
+      setError(message)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   return (
     <section
-      aria-label="Anexos da manifestação"
+      aria-labelledby="manifestation-attachments-title"
       className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6"
     >
-      <div className="flex items-start gap-3">
-        <span className="grid size-10 place-items-center rounded-lg bg-home-blue/10 text-home-blue">
-          <Icon className="size-5" name="file-text" />
-        </span>
-        <div className="min-w-0">
-          <h3 className="text-base font-bold text-home-text">
-            {detail.attachments.length} anexo{detail.attachments.length === 1 ? '' : 's'}
-          </h3>
-          <p className="mt-1 text-sm leading-6 text-home-brown">
-            O download dos anexos estará disponível em uma próxima fatia desta integração.
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-home-text" id="manifestation-attachments-title">
+            Anexos
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-home-brown">
+            {detail.attachments.length} de 5 anexo{detail.attachments.length === 1 ? '' : 's'} enviados.
           </p>
-          <ul className="mt-3 space-y-1 text-sm text-home-brown">
-            {detail.attachments.map((attachment) => (
-              <li className="truncate" key={attachment.id}>
-                • {attachment.originalName}
-              </li>
-            ))}
-          </ul>
         </div>
+        <span className="rounded-full bg-home-chip px-4 py-2 text-sm font-bold text-home-brown">
+          {remainingSlots} vaga{remainingSlots === 1 ? '' : 's'}
+        </span>
       </div>
+
+      {detail.attachments.length === 0 ? (
+        <p className="mt-5 rounded-2xl bg-home-chip/70 px-5 py-4 text-sm leading-6 text-home-brown">
+          Nenhum anexo enviado ainda.
+        </p>
+      ) : (
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+          {detail.attachments.map((attachment) => (
+            <AttachmentListItem attachment={attachment} detail={detail} key={attachment.id} />
+          ))}
+        </ul>
+      )}
+
+      {canUploadAttachments(detail.status) ? (
+        <form
+          className="mt-6 rounded-[28px] border border-login-brown/10 bg-white p-4 shadow-sm"
+          onSubmit={handleUpload}
+        >
+          <label
+            aria-disabled={!uploadAllowed}
+            className="flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-home-chip bg-home-action/35 px-4 py-4 text-center text-sm leading-5 text-home-brown transition duration-150 hover:border-home-blue focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-home-blue aria-disabled:cursor-not-allowed aria-disabled:opacity-65"
+            htmlFor={fieldId}
+          >
+            <Icon className="mb-2 size-5 text-home-blue" name="upload-cloud" />
+            {uploadAllowed ? 'Selecionar anexos' : 'Limite de anexos atingido'}
+            <input
+              accept={ACCEPTED_ATTACHMENT_INPUT_ACCEPT}
+              className="sr-only"
+              disabled={!uploadAllowed || isUploading}
+              id={fieldId}
+              multiple
+              onChange={handleFileChange}
+              type="file"
+            />
+          </label>
+
+          {selectedFiles.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {selectedFiles.map((file) => (
+                <li className="truncate rounded-xl bg-home-action/50 px-3 py-2 text-sm text-home-text" key={file.name}>
+                  {file.name} • {formatFileSize(file.size)}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <button
+            className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+            disabled={isUploading || selectedFiles.length === 0}
+            type="submit"
+          >
+            {isUploading ? 'Enviando...' : 'Enviar anexos'}
+            <Icon className="size-4" name="upload-cloud" />
+          </button>
+
+          {error !== null ? (
+            <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </form>
+      ) : (
+        <p className="mt-5 rounded-2xl bg-home-chip/70 px-5 py-4 text-sm leading-6 text-home-brown">
+          Esta manifestação não recebe novos anexos no status atual.
+        </p>
+      )}
     </section>
   )
 }
@@ -463,10 +639,11 @@ export function ManifestationDetailsPage() {
     }
 
     let isMounted = true
-    setStatus('loading')
-    setError(null)
 
     async function load(manifestationId: string) {
+      setStatus('loading')
+      setError(null)
+
       try {
         const next = await manifestationsService.getById(manifestationId)
         if (!isMounted) {
@@ -545,7 +722,7 @@ export function ManifestationDetailsPage() {
             <div className="mt-8 space-y-10">
               <SummaryCard catalog={catalog} detail={detail} />
               <DescriptionCard detail={detail} />
-              <AttachmentsHint detail={detail} />
+              <AttachmentsCard detail={detail} onChanged={refetch} />
               <TimelineCard detail={detail} />
               <MessagesCard detail={detail} />
               <MessageComposer detail={detail} onSent={refetch} />

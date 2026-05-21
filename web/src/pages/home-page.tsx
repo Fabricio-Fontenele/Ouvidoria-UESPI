@@ -324,10 +324,11 @@ export function HomePage() {
 
   useEffect(() => {
     let isMounted = true
-    setListStatus('loading')
-    setListError(null)
 
     async function loadItems() {
+      setListStatus('loading')
+      setListError(null)
+
       try {
         const fetched = await manifestationsService.list(1)
 

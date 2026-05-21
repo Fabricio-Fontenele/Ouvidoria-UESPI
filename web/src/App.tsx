@@ -9,6 +9,7 @@ import { ManifestationFormPage } from './pages/manifestation-form-page'
 import { OmbudsmanManifestationDetailsPage } from './pages/ombudsman-manifestation-details-page'
 import { OmbudsmanHomePage } from './pages/ombudsman-home-page'
 import { SignPage } from './pages/sign-page'
+import { TrackPage } from './pages/track-page'
 
 function App() {
   const normalizedPath = getCurrentPath()
@@ -51,6 +52,10 @@ function App() {
 
   if (normalizedPath === routes.sign) {
     return <SignPage />
+  }
+
+  if (normalizedPath === routes.track) {
+    return <TrackPage />
   }
 
   return <LandingPage />

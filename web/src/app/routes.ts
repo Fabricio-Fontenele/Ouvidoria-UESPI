@@ -11,6 +11,7 @@ export const routes = {
   ombudsmanManifestation: '/ombudsman/manifestation',
   ombudsmanHome: '/ombudsman/home',
   sign: '/sign',
+  track: '/track',
 } as const
 
 export type AppRoute = (typeof routes)[keyof typeof routes]
@@ -55,6 +56,10 @@ export function buildGuaraNewManifestationHref() {
 
 export function buildManifestationDetailsHref(id: string) {
   return `${routes.manifestation}?id=${id}`
+}
+
+export function buildTrackHref() {
+  return routes.track
 }
 
 export function buildOmbudsmanManifestationDetailsHref(protocol: string) {

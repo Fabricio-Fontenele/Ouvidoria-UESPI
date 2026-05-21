@@ -45,6 +45,7 @@ const publicMenuItems: MenuItem[] = [
   { href: '#o-que-e', icon: 'info', label: 'O que é' },
   { href: '#tipos', icon: 'file-text', label: 'Tipos de manifestação' },
   { href: '#como-funciona', icon: 'braces', label: 'Como funciona' },
+  { href: routes.track, icon: 'search', label: 'Consultar manifestação' },
   { href: routes.login, icon: 'user', label: 'Acessar sistema' },
   { href: '#faq', icon: 'help', label: 'FAQ' },
 ]

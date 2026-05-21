@@ -2,6 +2,7 @@ import type { ManifestationDetail, ManifestationMessageEntry } from './manifesta
 import type { ManifestationStatus } from './manifestation-status-contract'
 import type { ManifestationSummary } from './manifestation-summary-contract'
 import type { ManifestationType } from './manifestation-type-contract'
+import type { TrackedManifestationDetail } from './tracked-manifestation-contract'
 
 export interface CreateManifestationInput {
   administrativeUnitId: string
@@ -42,11 +43,43 @@ export interface EvaluateInput {
   rating: number
 }
 
+export interface UploadManifestationAttachmentInput {
+  file: File
+  manifestationId: string
+}
+
+export interface GetManifestationAttachmentDownloadUrlInput {
+  attachmentId: string
+  manifestationId: string
+}
+
+export interface TrackManifestationInput {
+  accessCode: string
+  protocol: string
+}
+
+export interface UploadTrackedManifestationAttachmentInput extends TrackManifestationInput {
+  file: File
+}
+
+export interface GetTrackedManifestationAttachmentDownloadUrlInput extends TrackManifestationInput {
+  attachmentId: string
+}
+
+export interface AttachmentDownloadUrlResult {
+  downloadUrl: string
+}
+
 export interface ManifestationsService {
   addMessage(input: AddMessageInput): Promise<ManifestationMessageEntry>
   create(input: CreateManifestationInput): Promise<CreateManifestationResult>
   evaluate(input: EvaluateInput): Promise<void>
   finalize(manifestationId: string): Promise<void>
+  getAttachmentDownloadUrl(input: GetManifestationAttachmentDownloadUrlInput): Promise<string>
   getById(id: string): Promise<ManifestationDetail>
+  getTrackedAttachmentDownloadUrl(input: GetTrackedManifestationAttachmentDownloadUrlInput): Promise<string>
+  getTrackedDetails(input: TrackManifestationInput): Promise<TrackedManifestationDetail>
   list(page?: number): Promise<ManifestationSummary[]>
+  uploadAttachment(input: UploadManifestationAttachmentInput): Promise<void>
+  uploadTrackedAttachment(input: UploadTrackedManifestationAttachmentInput): Promise<void>
 }

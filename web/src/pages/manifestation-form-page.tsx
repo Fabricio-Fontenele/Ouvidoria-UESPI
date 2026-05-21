@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useId, useMemo, useState } from 'react'
+import type { ChangeEvent } from 'react'
 import type {
   FieldError,
   FieldErrors,
@@ -10,8 +11,12 @@ import type {
 } from 'react-hook-form'
 import { useForm, useWatch } from 'react-hook-form'
 
-import { routes } from '../app/routes'
 import { manifestantOnlyRoles } from '../app/access-policy'
+import { routes } from '../app/routes'
+import {
+  ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
+  validateAttachmentFiles,
+} from '../application/manifestations/attachment-policy'
 import {
   getManifestationFormDefaultValues,
   manifestationFormSchema,
@@ -19,6 +24,7 @@ import {
 import type { ManifestationFormData } from '../application/manifestations/manifestation-form-contract'
 import { manifestationTypeContracts } from '../application/manifestations/manifestation-type-contract'
 import guaraMascot from '../assets/guara-mascot.png'
+import { formatFileSize } from '../components/forms/form-file-utils'
 import { Icon } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
@@ -153,7 +159,7 @@ function TextareaField({
   )
 }
 
-function SectionHeading({ icon, title }: { icon: 'file-text' | 'shield'; title: string }) {
+function SectionHeading({ icon, title }: { icon: 'file-text' | 'shield' | 'upload-cloud'; title: string }) {
   return (
     <h2 className="flex items-center gap-2 text-sm leading-5 font-bold tracking-[0.035em] text-[#0d47a1] uppercase">
       <Icon className="size-4" name={icon} />
@@ -166,9 +172,16 @@ export function ManifestationFormPage() {
   const formId = useId()
   const manifestationsService = useManifestationsService()
   const { catalog, error: catalogError, status: catalogStatus } = useCatalog()
-  const [submittedManifestation, setSubmittedManifestation] = useState<{ id: string; protocol: string } | null>(null)
+  const [submittedManifestation, setSubmittedManifestation] = useState<{
+    accessCode: string | null
+    id: string
+    protocol: string
+    uploadWarning?: string
+  } | null>(null)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [submissionValidationMessage, setSubmissionValidationMessage] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const form = useForm<ManifestationFormData>({
     defaultValues: getManifestationFormDefaultValues(),
     mode: 'onSubmit',
@@ -176,6 +189,7 @@ export function ManifestationFormPage() {
     resolver: zodResolver(manifestationFormSchema),
   })
   const selectedCampusId = useWatch({ control: form.control, name: 'campusId' })
+  const isAnonymous = useWatch({ control: form.control, name: 'isAnonymous' })
   const hasSubmitErrors = form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0
   const typeError = getFieldError(form.formState.errors, 'type')?.message
   const campusError = getFieldError(form.formState.errors, 'campusId')?.message
@@ -183,7 +197,27 @@ export function ManifestationFormPage() {
   const involvedPeopleError = getFieldError(form.formState.errors, 'involvedPeople')?.message
   const descriptionError = getFieldError(form.formState.errors, 'description')?.message
 
-  const campuses = catalog?.campuses ?? []
+  function handleAttachmentChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? [])
+    const validation = validateAttachmentFiles(files, 0)
+
+    if (!validation.valid) {
+      event.target.value = ''
+      setSelectedFiles([])
+      setAttachmentError(validation.message)
+      return
+    }
+
+    setSelectedFiles(files)
+    setAttachmentError(null)
+  }
+
+  function handleRemoveAttachment(indexToRemove: number) {
+    setSelectedFiles((current) => current.filter((_, index) => index !== indexToRemove))
+    setAttachmentError(null)
+  }
+
+  const campuses = useMemo(() => catalog?.campuses ?? [], [catalog])
   const administrativeUnitsForCampus = useMemo(() => {
     const campus = campuses.find((entry) => entry.id === selectedCampusId)
     return campus?.administrativeUnits ?? []
@@ -216,6 +250,14 @@ export function ManifestationFormPage() {
   const handleSubmit: SubmitHandler<ManifestationFormData> = async (values) => {
     setSubmissionError(null)
     setSubmissionValidationMessage(null)
+    setAttachmentError(null)
+
+    const attachmentValidation = validateAttachmentFiles(selectedFiles, 0)
+
+    if (!attachmentValidation.valid) {
+      setAttachmentError(attachmentValidation.message)
+      return
+    }
 
     const involvedPeople =
       values.involvedPeople === undefined || values.involvedPeople === '' ? null : values.involvedPeople
@@ -230,7 +272,36 @@ export function ManifestationFormPage() {
         type: values.type,
       })
 
-      setSubmittedManifestation({ id: result.manifestation.id, protocol: result.manifestation.protocol })
+      let uploadWarning: string | undefined
+
+      try {
+        for (const file of selectedFiles) {
+          if (result.accessCode === null) {
+            await manifestationsService.uploadAttachment({
+              file,
+              manifestationId: result.manifestation.id,
+            })
+          } else {
+            await manifestationsService.uploadTrackedAttachment({
+              accessCode: result.accessCode,
+              file,
+              protocol: result.manifestation.protocol,
+            })
+          }
+        }
+      } catch (uploadError) {
+        uploadWarning =
+          uploadError instanceof Error
+            ? `A manifestação foi registrada, mas nem todos os anexos foram enviados: ${uploadError.message}`
+            : 'A manifestação foi registrada, mas nem todos os anexos foram enviados.'
+      }
+
+      setSubmittedManifestation({
+        accessCode: result.accessCode,
+        id: result.manifestation.id,
+        protocol: result.manifestation.protocol,
+        uploadWarning,
+      })
     } catch (creationError) {
       const message =
         creationError instanceof Error
@@ -241,7 +312,14 @@ export function ManifestationFormPage() {
   }
 
   if (submittedManifestation !== null) {
-    return <ManifestationSubmissionSuccess id={submittedManifestation.id} protocol={submittedManifestation.protocol} />
+    return (
+      <ManifestationSubmissionSuccess
+        accessCode={submittedManifestation.accessCode}
+        id={submittedManifestation.id}
+        protocol={submittedManifestation.protocol}
+        uploadWarning={submittedManifestation.uploadWarning}
+      />
+    )
   }
 
   const catalogIsLoading = catalogStatus === 'loading' || catalogStatus === 'idle'
@@ -418,9 +496,69 @@ export function ManifestationFormPage() {
               <section className="rounded-lg border border-[#ebebeb] bg-[#f7f7f8] p-6" aria-labelledby="privacy-title">
                 <SectionHeading icon="shield" title="Configurações de sigilo" />
                 <p className="mt-3 text-sm leading-5 text-[#43474e]" id="privacy-title">
-                  Esta fatia integra apenas o envio identificado. O rastreio anônimo será habilitado em uma próxima
-                  etapa.
+                  Escolha se deseja registrar a manifestação vinculada à sua conta ou apenas com protocolo e código de
+                  acesso.
                 </p>
+
+                <label className="mt-5 flex items-start gap-3 rounded-lg border border-[rgba(114,119,127,0.25)] bg-white p-4 text-sm leading-6 text-[#43474e]">
+                  <input className="mt-1 size-4 accent-[#0d47a1]" type="checkbox" {...form.register('isAnonymous')} />
+                  <span>
+                    <span className="block font-bold text-[#1d1b1b]">Registrar como manifestação anônima</span>
+                    <span className="mt-1 block">
+                      O protocolo e o código de acesso serão exibidos uma única vez após o envio.
+                    </span>
+                  </span>
+                </label>
+              </section>
+
+              <section className="rounded-lg border border-[#ebebeb] bg-white p-6 shadow-[0_1px_1px_rgba(0,0,0,0.05)] sm:p-8">
+                <SectionHeading icon="upload-cloud" title="Anexos" />
+                <p className="mt-3 text-sm leading-5 text-[#43474e]">
+                  Você pode enviar até 5 arquivos em PDF, JPG, PNG ou WEBP, com até 10 MB cada.
+                </p>
+
+                <label
+                  className="mt-5 flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[rgba(114,119,127,0.3)] bg-[#f7f7f8] px-4 py-5 text-center text-sm leading-5 text-[#5b403d] transition duration-150 hover:border-[#0d47a1] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#0d47a1]"
+                  htmlFor={`${formId}-attachments`}
+                >
+                  <Icon className="mb-2 size-6 text-[#0d47a1]" name="upload-cloud" />
+                  Selecionar anexos
+                  <input
+                    accept={ACCEPTED_ATTACHMENT_INPUT_ACCEPT}
+                    className="sr-only"
+                    id={`${formId}-attachments`}
+                    multiple
+                    onChange={handleAttachmentChange}
+                    type="file"
+                  />
+                </label>
+
+                {attachmentError !== null ? <FieldMessage variant="error">{attachmentError}</FieldMessage> : null}
+
+                {selectedFiles.length > 0 ? (
+                  <ul className="mt-4 space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <li
+                        className="flex items-center gap-3 rounded-lg border border-[rgba(114,119,127,0.22)] bg-[#f7f7f8] px-3 py-2 text-sm text-[#43474e]"
+                        key={`${file.name}-${file.size}`}
+                      >
+                        <Icon className="size-4 shrink-0 text-[#0d47a1]" name="file-text" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-bold text-[#1d1b1b]">{file.name}</span>
+                          <span className="block text-xs">{formatFileSize(file.size)}</span>
+                        </span>
+                        <button
+                          aria-label={`Remover ${file.name}`}
+                          className="grid size-8 shrink-0 place-items-center rounded-full text-[#5b403d] transition duration-150 hover:bg-[#e8eefb] hover:text-[#0d47a1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0d47a1]"
+                          onClick={() => handleRemoveAttachment(index)}
+                          type="button"
+                        >
+                          <Icon className="size-4" name="x" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </section>
 
               <div className="flex flex-col items-center gap-5">
@@ -429,7 +567,13 @@ export function ManifestationFormPage() {
                   disabled={form.formState.isSubmitting || catalogIsLoading || catalogIsBroken}
                   type="submit"
                 >
-                  {form.formState.isSubmitting ? 'Enviando' : 'Registrar'}
+                  {form.formState.isSubmitting
+                    ? selectedFiles.length > 0
+                      ? 'Enviando registro e anexos'
+                      : 'Enviando'
+                    : isAnonymous
+                      ? 'Registrar anonimamente'
+                      : 'Registrar'}
                   <Icon className="size-4" name="send" />
                 </button>
                 <p className="max-w-md text-center text-xs leading-[18px] text-[#43474e]">

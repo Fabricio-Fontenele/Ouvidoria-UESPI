@@ -26,10 +26,11 @@ export function CatalogProvider({ children, service }: { children: ReactNode; se
 
   useEffect(() => {
     let isMounted = true
-    setStatus('loading')
-    setError(null)
 
     async function loadCatalog() {
+      setStatus('loading')
+      setError(null)
+
       try {
         const nextCatalog = await service.getCatalog()
 

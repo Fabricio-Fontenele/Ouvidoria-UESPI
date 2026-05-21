@@ -131,9 +131,16 @@ export async function apiFetch<TResponse>(path: string, options: ApiFetchOptions
   const code = deriveErrorCode(payload, response.status)
   const message = deriveErrorMessage(payload, response.status)
 
-  if (response.status === 401) {
+  if (response.status === 401 && auth !== 'none') {
     clearAuthToken()
   }
 
   throw new ApiHttpError({ code, message, status: response.status })
+}
+
+export async function publicApiFetch<TResponse>(
+  path: string,
+  options: Omit<ApiFetchOptions, 'auth'> = {},
+): Promise<TResponse> {
+  return apiFetch<TResponse>(path, { ...options, auth: 'none' })
 }

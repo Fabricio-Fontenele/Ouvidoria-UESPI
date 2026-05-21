@@ -27,16 +27,27 @@ Implementado:
 - **Vitest no workspace `web/`** (env node, só helpers puros): suítes para route builders, manifestation-policy e parser de sistema.
 - **Seed dev**: `ouvidor@uespi.br` e `admin@uespi.br`, senha `Senha123`, upsert idempotente por email.
 
+## Slice 3 — Anexos identificados + rastreio público anônimo
+
+Implementado:
+
+- **Política pura de anexos** em `web/src/application/manifestations/attachment-policy.ts`: limite de 5 anexos, 10 MB por arquivo, MIME whitelist e regra de upload por status centralizados.
+- **Tipos separados para rastreio público** (`TrackedManifestationDetail` / `TrackedManifestationAttachmentInfo`), sem reaproveitar o detalhe interno autenticado.
+- **Serviço HTTP expandido**: upload/download identificado, detalhe público de rastreio, upload/download anônimo por `protocol + accessCode`, com `FormData` e chamadas públicas sem Bearer.
+- **Criação com anexos**: `ManifestationFormPage` permite envio identificado ou anônimo, valida anexos antes do submit e sobe os arquivos sequencialmente depois do `POST /manifestations`.
+- **Sucesso anônimo seguro**: `ManifestationSubmissionSuccess` mostra protocolo e `accessCode` apenas no retorno da criação, com aviso explícito de que o código não será exibido novamente.
+- **Detalhe identificado com anexos reais**: lista anexos retornados pelo backend, gera signed URL para download e permite novos uploads enquanto a manifestação aceita interação.
+- **Rota pública `/track`**: consulta por protocolo + código de acesso, lista anexos públicos e permite upload/download anônimo sem gravar o código em URL, storage ou estado global.
+- **Testes do `web/`**: política de anexos, rota pública e `HttpManifestationsService` cobrindo `FormData`, campos multipart e ausência manual de `Content-Type`.
+
 ## Pendências (próximas slices)
 
 Em ordem sugerida:
 
-1. **Anexos** — upload (`POST /manifestations/:id/attachments`, multipart, 1 arquivo por request, até 5, MIME whitelist) e download via signed URL (`POST .../download-url`). Hoje o detalhe só mostra contagem + nomes; o download não funciona. A versão anônima (`/track/attachments`) entra na mesma slice.
-2. **Rastreio anônimo público** — `POST /manifestations/track` + `POST .../track/details`. Reabilita o envio anônimo no `ManifestationFormPage` (hoje fixado em `isAnonymous=false`), capturando o `accessCode` retornado uma única vez no momento da criação.
-3. **Fluxo Ombudsman / Admin** — `OmbudsmanHomePage` e `OmbudsmanManifestationDetailsPage` ainda usam mocks. Plugar `GET /admin/manifestations`, `GET /admin/manifestations/:id`, `POST /:id/answer`, `PATCH /:id/status`. Os contratos da slice 2 (tolerantes a `unknown`) são reaproveitados.
-4. **Chat Guará** — `HttpGuaraChatService` ainda fala com endpoint fake. Reescrever para `POST /ai/messages` (history, intent, draft, missingFields, shouldOpenManifestationDraft). Unificar `VITE_GUARA_CHAT_ENDPOINT` com `VITE_API_BASE_URL`.
-5. **Backend `/me`** — depois do login (sem cadastro), `user.name` e `user.email` ficam `null` no FE; só temos `sub` e `role` do JWT. Resolver no backend e atualizar `HttpAuthService.getSession`.
-6. **Modal de confirmação no finalize** — hoje `window.confirm`, isolado em `FinalizeAction` para troca futura sem impacto.
+1. **Fluxo Ombudsman / Admin** — `OmbudsmanHomePage` e `OmbudsmanManifestationDetailsPage` ainda usam mocks. Plugar `GET /admin/manifestations`, `GET /admin/manifestations/:id`, `POST /:id/answer`, `PATCH /:id/status` e download administrativo de anexos.
+2. **Chat Guará** — `HttpGuaraChatService` ainda fala com endpoint fake. Reescrever para `POST /ai/messages` (history, intent, draft, missingFields, shouldOpenManifestationDraft). Unificar `VITE_GUARA_CHAT_ENDPOINT` com `VITE_API_BASE_URL`.
+3. **Backend `/me`** — depois do login (sem cadastro), `user.name` e `user.email` ficam `null` no FE; só temos `sub` e `role` do JWT. Resolver no backend e atualizar `HttpAuthService.getSession`.
+4. **Modal de confirmação no finalize** — hoje `window.confirm`, isolado em `FinalizeAction` para troca futura sem impacto.
 
 ## Notas operacionais
 

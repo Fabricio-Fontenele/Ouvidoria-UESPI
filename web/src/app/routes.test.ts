@@ -4,6 +4,7 @@ import {
   buildEvaluationHref,
   buildManifestationDetailsHref,
   buildManifestationFormHref,
+  buildTrackHref,
   normalizeProtocol,
   protocolForQuery,
   routes,
@@ -33,6 +34,12 @@ describe('routes', () => {
   describe('buildManifestationDetailsHref', () => {
     it('builds an URL with the id as query param', () => {
       expect(buildManifestationDetailsHref('abc-123')).toBe(`${routes.manifestation}?id=abc-123`)
+    })
+  })
+
+  describe('buildTrackHref', () => {
+    it('returns the public tracking route without query params', () => {
+      expect(buildTrackHref()).toBe(routes.track)
     })
   })
 
