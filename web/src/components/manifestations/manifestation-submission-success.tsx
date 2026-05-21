@@ -16,8 +16,10 @@ interface InfoCard {
 }
 
 interface ManifestationSubmissionSuccessProps {
+  accessCode: string | null
   id: string
   protocol: string
+  uploadWarning?: string
 }
 
 const infoCards: InfoCard[] = [
@@ -36,8 +38,15 @@ const infoCards: InfoCard[] = [
   },
 ]
 
-export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSubmissionSuccessProps) {
+export function ManifestationSubmissionSuccess({
+  accessCode,
+  id,
+  protocol,
+  uploadWarning,
+}: ManifestationSubmissionSuccessProps) {
   const [copyStatus, setCopyStatus] = useState<'copied' | 'error' | 'idle'>('idle')
+  const [accessCodeCopyStatus, setAccessCodeCopyStatus] = useState<'copied' | 'error' | 'idle'>('idle')
+  const isAnonymous = accessCode !== null
 
   const handleCopyProtocol = async () => {
     try {
@@ -49,6 +58,23 @@ export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSu
       setCopyStatus('copied')
     } catch {
       setCopyStatus('error')
+    }
+  }
+
+  const handleCopyAccessCode = async () => {
+    if (accessCode === null) {
+      return
+    }
+
+    try {
+      if (navigator.clipboard === undefined) {
+        throw new Error('Clipboard indisponível')
+      }
+
+      await navigator.clipboard.writeText(accessCode)
+      setAccessCodeCopyStatus('copied')
+    } catch {
+      setAccessCodeCopyStatus('error')
     }
   }
 
@@ -76,12 +102,19 @@ export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSu
               Sua solicitação foi registrada com sucesso.
             </p>
 
+            {uploadWarning !== undefined ? (
+              <p className="mt-5 rounded-lg bg-amber-50 px-4 py-3 text-center text-sm leading-6 font-bold text-amber-800">
+                {uploadWarning}
+              </p>
+            ) : null}
+
             <div className="mt-7 w-full overflow-hidden rounded-xl border border-[#e4beba]/20 bg-white p-6 shadow-[0_10px_30px_-5px_rgba(26,28,29,0.08)] sm:p-8">
               <p className="text-center text-xs leading-4 font-bold tracking-[0.1em] text-[#5b403d] uppercase">
                 Código do protocolo
               </p>
 
-              <div className="mt-3 flex items-center justify-center gap-3">
+              <div className="mt-3 grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
+                <span aria-hidden="true" />
                 <strong className="min-w-0 text-center font-mono text-2xl leading-8 font-bold tracking-[0.05em] break-all text-[#2b5bb5] sm:break-normal">
                   {protocol}
                 </strong>
@@ -96,7 +129,34 @@ export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSu
               </div>
             </div>
 
-            <p className="mt-2 text-center text-lg leading-7 text-[#5b403d]">Guarde o número de protocolo.</p>
+            {isAnonymous ? (
+              <div className="mt-4 w-full overflow-hidden rounded-xl border border-[#ffdeac] bg-[#fff8ec] p-6 shadow-[0_10px_30px_-5px_rgba(26,28,29,0.08)] sm:p-8">
+                <p className="text-center text-xs leading-4 font-bold tracking-[0.1em] text-[#5b403d] uppercase">
+                  Código de acesso
+                </p>
+
+                <div className="mt-3 grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
+                  <span aria-hidden="true" />
+                  <strong className="min-w-0 text-center font-mono text-2xl leading-8 font-bold tracking-[0.05em] break-all text-[#2b5bb5] sm:break-normal">
+                    {accessCode}
+                  </strong>
+                  <button
+                    aria-label="Copiar código de acesso"
+                    className="grid size-11 shrink-0 place-items-center rounded-lg text-[#2b5bb5] transition duration-150 hover:bg-[#2b5bb5]/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
+                    onClick={() => void handleCopyAccessCode()}
+                    type="button"
+                  >
+                    <Icon className="size-5" name="copy" />
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <p className="mt-2 text-center text-lg leading-7 text-[#5b403d]">
+              {isAnonymous
+                ? 'Guarde este protocolo e este código de acesso. Eles serão necessários para consultar a manifestação. Por segurança, o sistema não exibirá este código novamente.'
+                : 'Guarde o número de protocolo.'}
+            </p>
 
             <p
               aria-live="polite"
@@ -109,6 +169,20 @@ export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSu
               {copyStatus === 'copied' ? 'Protocolo copiado.' : null}
               {copyStatus === 'error' ? 'Não foi possível copiar. Selecione o protocolo manualmente.' : null}
             </p>
+
+            {isAnonymous ? (
+              <p
+                aria-live="polite"
+                className={cx(
+                  'mt-1 min-h-5 text-center text-sm leading-5 font-semibold',
+                  accessCodeCopyStatus === 'error' ? 'text-[#ba1a1a]' : 'text-[#2b5bb5]',
+                )}
+                role="status"
+              >
+                {accessCodeCopyStatus === 'copied' ? 'Código de acesso copiado.' : null}
+                {accessCodeCopyStatus === 'error' ? 'Não foi possível copiar. Selecione o código manualmente.' : null}
+              </p>
+            ) : null}
           </section>
 
           <section
@@ -129,13 +203,25 @@ export function ManifestationSubmissionSuccess({ id, protocol }: ManifestationSu
             ))}
           </section>
 
-          <a
-            className="mt-7 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg bg-[#2b5bb5] px-6 text-base leading-6 font-bold text-white no-underline transition duration-150 hover:bg-[#234d9d] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
-            href={buildManifestationDetailsHref(id)}
-          >
-            <Icon className="size-5" name="file-text" />
-            Abrir manifestação
-          </a>
+          {isAnonymous ? null : (
+            <a
+              className="mt-7 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg bg-[#2b5bb5] px-6 text-base leading-6 font-bold text-white no-underline transition duration-150 hover:bg-[#234d9d] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
+              href={buildManifestationDetailsHref(id)}
+            >
+              <Icon className="size-5" name="file-text" />
+              Abrir manifestação
+            </a>
+          )}
+
+          {isAnonymous ? (
+            <a
+              className="mt-7 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg bg-[#2b5bb5] px-6 text-base leading-6 font-bold text-white no-underline transition duration-150 hover:bg-[#234d9d] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
+              href={routes.track}
+            >
+              <Icon className="size-5" name="search" />
+              Consultar manifestação
+            </a>
+          ) : null}
 
           <a
             className="mt-3 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg border-2 border-[#2b5bb5]/20 px-6 text-base leading-6 font-bold text-[#2b5bb5] no-underline transition duration-150 hover:bg-[#2b5bb5]/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"

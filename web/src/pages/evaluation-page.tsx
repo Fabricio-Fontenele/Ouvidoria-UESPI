@@ -122,10 +122,11 @@ export function EvaluationPage() {
     }
 
     let isMounted = true
-    setDetailStatus('loading')
-    setDetailError(null)
 
     async function load(manifestationId: string) {
+      setDetailStatus('loading')
+      setDetailError(null)
+
       try {
         const next = await manifestationsService.getById(manifestationId)
         if (!isMounted) {
