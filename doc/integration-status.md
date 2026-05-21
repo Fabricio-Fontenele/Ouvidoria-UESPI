@@ -40,14 +40,32 @@ Implementado:
 - **Rota pública `/track`**: consulta por protocolo + código de acesso, lista anexos públicos e permite upload/download anônimo sem gravar o código em URL, storage ou estado global.
 - **Testes do `web/`**: política de anexos, rota pública e `HttpManifestationsService` cobrindo `FormData`, campos multipart e ausência manual de `Content-Type`.
 
+## Slice 4 — Fluxo Ombudsman / Admin contra `/admin/*`
+
+Implementado:
+
+- **Vocabulário ombudsman alinhado ao backend**: enums `pending`/`resolved` saíram. Páginas usam `ManifestationStatus` (`in_analysis`/`answered`/`finalized`/`canceled`) e `ManifestationType` canônicos, com labels derivadas dos contracts compartilhados. `OmbudsmanManifestationSummary` virou `ManifestationSummary`.
+- **Serviço HTTP ombudsman** em `web/src/infrastructure/ombudsman/http-ombudsman-service.ts` com `list`, `getById`, `answer`, `updateStatus` e `getAttachmentDownloadUrl`. `list` retorna `OmbudsmanListResult { manifestations, page, totalPages?, totalItems? }` — shape preserva paginação para quando o backend expuser metadados. `answer` e `updateStatus` retornam `void`; a UI usa refetch como fonte de verdade.
+- **Política administrativa** em `web/src/application/ombudsman/ombudsman-policy.ts`: `canAnswer` (`in_analysis | answered`), `canFinalize` conservador (`answered` apenas) e `canCancel` (`in_analysis | answered`).
+- **Componentes compartilhados manifestante ↔ ombudsman**: `ManifestationSummaryCard`, `ManifestationTimelineCard`, `ManifestationMessagesThread` (perspectiva `manifestant`/`institutional`) e `ManifestationAttachmentsList`. O detalhe do manifestante foi refatorado para consumir os mesmos componentes — uma mudança em timeline/thread/anexos passa por um único lugar.
+- **`OmbudsmanHomePage` contra `GET /admin/manifestations`**: filtros por status/tipo/data refazem o fetch; data passa por `buildLocalDayRange` (helper testado) antes de virar `from`/`to` em ISO UTC. Cards mostram campus/unidade pelo catálogo, tipo via contract, data via `formatBrazilianShortDate`. Link “Abrir demanda” usa `?id=<uuid>`.
+- **`OmbudsmanManifestationDetailsPage` contra `GET /admin/manifestations/:id`**: lookup por `?id=`, banner “link em formato antigo” para `?protocol=`. Composer chama `POST /answer`; ações secundárias **Finalizar** e **Cancelar** chamam `PATCH /status` com `window.confirm`. Anexos com botão Baixar usando a signed URL administrativa. Não há UI de upload administrativo (contrato não expõe).
+- **Métricas dashboard**: cards mantidos com valor `—` e aviso explícito de que aguardam endpoint de métricas administrativas — não derivamos da página atual para não enganar o usuário.
+- **Mapper compartilhado** em `web/src/infrastructure/manifestations/manifestation-detail-mapper.ts` — usado tanto pelo `HttpManifestationsService` quanto pelo `HttpOmbudsmanService`.
+- **Testes do `web/`**: `http-ombudsman-service.test.ts` (URL/query/headers, narrowing via mapper, void de answer/updateStatus), `ombudsman-policy.test.ts` (matriz por status) e `date-utils.test.ts` (`buildLocalDayRange` + `formatBrazilianShortDate`).
+
 ## Pendências (próximas slices)
 
 Em ordem sugerida:
 
-1. **Fluxo Ombudsman / Admin** — `OmbudsmanHomePage` e `OmbudsmanManifestationDetailsPage` ainda usam mocks. Plugar `GET /admin/manifestations`, `GET /admin/manifestations/:id`, `POST /:id/answer`, `PATCH /:id/status` e download administrativo de anexos.
-2. **Chat Guará** — `HttpGuaraChatService` ainda fala com endpoint fake. Reescrever para `POST /ai/messages` (history, intent, draft, missingFields, shouldOpenManifestationDraft). Unificar `VITE_GUARA_CHAT_ENDPOINT` com `VITE_API_BASE_URL`.
-3. **Backend `/me`** — depois do login (sem cadastro), `user.name` e `user.email` ficam `null` no FE; só temos `sub` e `role` do JWT. Resolver no backend e atualizar `HttpAuthService.getSession`.
-4. **Modal de confirmação no finalize** — hoje `window.confirm`, isolado em `FinalizeAction` para troca futura sem impacto.
+1. **Chat Guará** — `HttpGuaraChatService` ainda fala com endpoint fake. Reescrever para `POST /ai/messages` (history, intent, draft, missingFields, shouldOpenManifestationDraft). Unificar `VITE_GUARA_CHAT_ENDPOINT` com `VITE_API_BASE_URL`.
+2. **Endpoint de métricas administrativas** — backend ainda não expõe agregados; cards do dashboard ombudsman mostram `—`. Depende do backend criar a rota.
+   2b. **`updatedAt` no `ManifestationListItemDTO`** — backend já mantém `updatedAt` no Prisma, mas o summary só serializa `createdAt`. Expor para o FE trocar o label “Aberta em” do card ombudsman por “Última atualização”.
+3. **Paginação real no `GET /admin/manifestations`** — backend só devolve `{ manifestations }` hoje. Quando expuser `totalPages`/`totalItems`, o `OmbudsmanListResult` já suporta os campos e a UI ganha “Próxima/Anterior”.
+4. **Filtros de campus/unidade na listagem ombudsman** — selects cascateados reusando `useCatalog`. Backend já aceita `campusId`/`administrativeUnitId`.
+5. **Backend `/me`** — depois do login (sem cadastro), `user.name` e `user.email` ficam `null` no FE; só temos `sub` e `role` do JWT. Resolver no backend e atualizar `HttpAuthService.getSession`.
+6. ~~**Modal de confirmação no finalize / cancelar**~~ — feito. `ConfirmDialog` (`web/src/components/feedback/confirm-dialog.tsx`) usado por `FinalizeAction` (manifestante) e `StatusActions` (ombudsman), com variantes de tom (`success`/`danger`), foco no botão Cancelar e fechamento por Escape/backdrop.
+7. **Cancelar/Desistir pelo autor antes da resposta** — backend só permite o autor encerrar em `answered` (regra de domínio `finalizeByAuthor()` em `src/domain/entities/manifestation.ts`). Hoje, se o manifestante quer desistir antes da ouvidoria responder, não há caminho — manifestação fica em `in_analysis` ou depende de cancelamento administrativo. Slice futura: adicionar `cancelByAuthor()` no agregado + `POST /manifestations/:id/cancel` + UI separada no detalhe manifestante (botão "Desistir desta manifestação", outlined em `home-brown`, visível só em `in_analysis`). Mantém `Encerrar` (`answered → finalized`, libera avaliação) e `Desistir` (`in_analysis → canceled`) como ações distintas com semântica clara.
 
 ## Notas operacionais
 
