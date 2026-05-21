@@ -1,3 +1,9 @@
+---
+title: 'FAQ — Guará, o assistente virtual da Ouvidoria UESPI'
+document_type: 'faq'
+subject: 'Perguntas frequentes sobre a Ouvidoria da UESPI e o assistente virtual Guará'
+---
+
 # FAQ — Guará, o assistente virtual da Ouvidoria UESPI
 
 ## 1. Sinônimos de manifestação
