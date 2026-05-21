@@ -62,8 +62,8 @@ export function buildTrackHref() {
   return routes.track
 }
 
-export function buildOmbudsmanManifestationDetailsHref(protocol: string) {
-  return `${routes.ombudsmanManifestation}?protocol=${protocolForQuery(protocol)}`
+export function buildOmbudsmanManifestationDetailsHref(id: string) {
+  return `${routes.ombudsmanManifestation}?id=${id}`
 }
 
 export function buildManifestationFormHref(protocol?: string | null) {

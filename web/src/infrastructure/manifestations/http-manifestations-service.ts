@@ -1,13 +1,6 @@
 import type {
-  ManifestationAttachmentInfo,
   ManifestationDetail,
-  ManifestationHistoryEntry,
   ManifestationMessageEntry,
-} from '../../application/manifestations/manifestation-detail-contract'
-import {
-  narrowAttachmentUploaderType,
-  narrowHistoryEntryType,
-  narrowMessageSenderType,
 } from '../../application/manifestations/manifestation-detail-contract'
 import type { ManifestationSummary } from '../../application/manifestations/manifestation-summary-contract'
 import type {
@@ -30,6 +23,9 @@ import type {
 import { mapTrackedManifestationDetail } from '../../application/manifestations/tracked-manifestation-contract'
 import { apiFetch, publicApiFetch } from '../http/api-client'
 
+import type { RawManifestationDetail, RawMessageEntry } from './manifestation-detail-mapper'
+import { mapManifestationDetail, mapMessageEntry } from './manifestation-detail-mapper'
+
 interface ListResponse {
   manifestations: ManifestationSummary[]
 }
@@ -44,56 +40,6 @@ interface MessageResponse {
 
 interface TrackedDetailResponse {
   manifestation: RawTrackedManifestationDetail
-}
-
-interface RawManifestationDetail extends Omit<ManifestationDetail, 'attachments' | 'history' | 'messages'> {
-  attachments: RawAttachmentInfo[]
-  history: RawHistoryEntry[]
-  messages: RawMessageEntry[]
-}
-
-interface RawHistoryEntry extends Omit<ManifestationHistoryEntry, 'actorType' | 'type'> {
-  actorType: string
-  type: string
-}
-
-interface RawMessageEntry extends Omit<ManifestationMessageEntry, 'senderType'> {
-  senderType: string
-}
-
-interface RawAttachmentInfo extends Omit<ManifestationAttachmentInfo, 'uploadedByType'> {
-  uploadedByType: string
-}
-
-function mapHistoryEntry(entry: RawHistoryEntry): ManifestationHistoryEntry {
-  return {
-    ...entry,
-    actorType: narrowMessageSenderType(entry.actorType),
-    type: narrowHistoryEntryType(entry.type),
-  }
-}
-
-function mapMessageEntry(entry: RawMessageEntry): ManifestationMessageEntry {
-  return {
-    ...entry,
-    senderType: narrowMessageSenderType(entry.senderType),
-  }
-}
-
-function mapAttachmentInfo(attachment: RawAttachmentInfo): ManifestationAttachmentInfo {
-  return {
-    ...attachment,
-    uploadedByType: narrowAttachmentUploaderType(attachment.uploadedByType),
-  }
-}
-
-function mapManifestationDetail(raw: RawManifestationDetail): ManifestationDetail {
-  return {
-    ...raw,
-    attachments: raw.attachments.map(mapAttachmentInfo),
-    history: raw.history.map(mapHistoryEntry),
-    messages: raw.messages.map(mapMessageEntry),
-  }
 }
 
 export class HttpManifestationsService implements ManifestationsService {
