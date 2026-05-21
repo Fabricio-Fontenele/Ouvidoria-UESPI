@@ -1,35 +1,39 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { buildOmbudsmanManifestationDetailsHref } from '../app/routes'
 import { FILTER_ALL_VALUE, ombudsmanAreaRoles } from '../app/access-policy'
 import type { DateFilterValue, FilterAllValue } from '../app/access-policy'
-import { parseBrazilianShortDateLabel } from '../app/date-utils'
-import { searchManifestations } from '../application/manifestations/search-manifestations'
+import { buildLocalDayRange, formatBrazilianShortDate } from '../app/date-utils'
+import { buildOmbudsmanManifestationDetailsHref } from '../app/routes'
+import type { Catalog } from '../application/catalog/catalog-types'
 import {
-  getOmbudsmanManifestationStatusContract,
-  ombudsmanManifestationStatusContracts,
-} from '../application/ombudsman/ombudsman-manifestation-contract'
-import type {
-  OmbudsmanManifestationStatus,
-  OmbudsmanManifestationSummary,
-} from '../application/ombudsman/ombudsman-manifestation-contract'
+  getManifestationStatusContract,
+  manifestationStatusContracts,
+} from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
+import {
+  getManifestationTypeLabel,
+  manifestationTypeContracts,
+} from '../application/manifestations/manifestation-type-contract'
+import type { ManifestationType } from '../application/manifestations/manifestation-type-contract'
+import { searchManifestations } from '../application/manifestations/search-manifestations'
+import type { OmbudsmanListFilters } from '../application/ombudsman/ombudsman-service'
 import { Icon } from '../components/icons/icon'
 import type { IconName } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
+import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
+import { useCatalog } from '../hooks/use-catalog'
+import { makeOmbudsmanService } from '../infrastructure/ombudsman/ombudsman-service-factory'
 import { cx } from '../utils/cx'
 
-type StatusFilter = FilterAllValue | OmbudsmanManifestationStatus
+type StatusFilter = FilterAllValue | ManifestationStatus
+type TypeFilter = FilterAllValue | ManifestationType
 type DateFilter = DateFilterValue
-type TextFilter = FilterAllValue | string
+type LoadStatus = 'loading' | 'ready' | 'error'
 
-interface DashboardMetric {
-  anchorId: string
-  caption: string
-  icon: IconName
-  iconClassName: string
+interface FilterSelectOption {
   label: string
-  trend: string
   value: string
 }
 
@@ -37,7 +41,7 @@ interface FilterSelectProps {
   id: string
   label: string
   onChange: (value: string) => void
-  options: Array<{ label: string; value: string }>
+  options: FilterSelectOption[]
   value: string
 }
 
@@ -48,60 +52,29 @@ interface DateFilterInputProps {
   value: DateFilter
 }
 
-const dashboardMetrics: DashboardMetric[] = [
-  {
-    anchorId: 'pendentes',
-    caption: 'Aguardam primeira triagem',
-    icon: 'clock',
-    iconClassName: 'text-home-blue',
-    label: 'Pendentes',
-    trend: 'priorizar hoje',
-    value: '12',
-  },
+const dashboardMetricCards: Array<{ anchorId: string; caption: string; icon: IconName; iconClassName: string; label: string }> = [
   {
     anchorId: 'em-analise',
-    caption: 'Com equipe responsável',
-    icon: 'info',
+    caption: 'Aguardam triagem ou resposta',
+    icon: 'clock',
     iconClassName: 'text-home-blue',
-    trend: 'em acompanhamento',
     label: 'Em análise',
-    value: '45',
   },
   {
-    anchorId: 'resolvidas',
-    caption: 'Concluídas no histórico',
-    icon: 'check-circle',
+    anchorId: 'respondidas',
+    caption: 'Respostas administrativas registradas',
+    icon: 'message-circle',
     iconClassName: 'text-home-blue',
-    label: 'Resolvidas',
-    trend: 'fluxo estável',
-    value: '189',
-  },
-]
-
-const ombudsmanManifestations: OmbudsmanManifestationSummary[] = [
-  {
-    area: 'Administração Superior',
-    description: 'Solicitação de revisão do fluxo administrativo para atendimento acadêmico.',
-    manifestationType: 'Sugestão',
-    protocol: '#2024-0775',
-    status: 'in_analysis',
-    updatedAt: '02 Set, 2024',
+    label: 'Respondidas',
   },
   {
-    area: 'Infraestrutura e TI',
-    description: 'Relato de instabilidade nos sistemas institucionais durante o atendimento ao discente.',
-    manifestationType: 'Reclamação',
-    protocol: '#2024-0776',
-    status: 'pending',
-    updatedAt: '01 Set, 2024',
+    anchorId: 'finalizadas',
+    caption: 'Manifestações encerradas no histórico',
+    icon: 'check-circle',
+    iconClassName: 'text-home-success',
+    label: 'Finalizadas',
   },
 ]
-
-const statusBadgeClassNames: Record<OmbudsmanManifestationStatus, string> = {
-  in_analysis: 'bg-home-warning/20 text-home-brown',
-  pending: 'bg-home-blue/10 text-home-blue',
-  resolved: 'bg-home-success/15 text-home-success',
-}
 
 const metricCardClasses = [
   'group relative overflow-hidden rounded-lg border border-login-brown/10 bg-home-surface',
@@ -111,49 +84,50 @@ const metricCardClasses = [
 ]
 
 const manifestationCardClasses = [
-  'group relative w-full overflow-hidden rounded-lg border bg-home-surface px-5 py-5 shadow-login-card',
+  'group relative w-full min-w-0 overflow-hidden rounded-lg border bg-home-surface px-5 py-5 shadow-login-card',
   'transition duration-150 hover:-translate-y-0.5 hover:shadow-landing-card sm:px-6 sm:py-6 md:px-7',
 ]
 
-const statusVisuals: Record<
-  OmbudsmanManifestationStatus,
-  {
-    accentClassName: string
-    barClassName: string
-    icon: IconName
-    iconClassName: string
-    label: string
-    summary: string
+function buildAreaLabel(catalog: Catalog | null, manifestation: ManifestationSummary) {
+  const campus = catalog?.campuses.find((entry) => entry.id === manifestation.campusId)
+  const unit = campus?.administrativeUnits.find((entry) => entry.id === manifestation.administrativeUnitId)
+
+  if (campus === undefined || unit === undefined) {
+    return 'Unidade não identificada'
   }
-> = {
-  in_analysis: {
-    accentClassName: 'border-home-warning-strong/45',
-    barClassName: 'bg-home-warning-strong',
-    icon: 'info',
-    iconClassName: 'bg-home-warning/20 text-home-brown',
-    label: 'Em acompanhamento',
-    summary: 'Requer resposta da área responsável.',
-  },
-  pending: {
-    accentClassName: 'border-home-blue/30',
-    barClassName: 'bg-home-blue',
-    icon: 'clock',
-    iconClassName: 'bg-home-blue/10 text-home-blue',
-    label: 'Triagem pendente',
-    summary: 'Precisa de conferência inicial.',
-  },
-  resolved: {
-    accentClassName: 'border-home-success/35',
-    barClassName: 'bg-home-success',
-    icon: 'check-circle',
-    iconClassName: 'bg-home-success/15 text-home-success',
-    label: 'Concluída',
-    summary: 'Resposta final registrada.',
-  },
+
+  return `${campus.label} — ${unit.label}`
 }
 
-function getUniqueOptions(items: string[]) {
-  return [...new Set(items)].map((item) => ({ label: item, value: item }))
+function buildFiltersForRequest({
+  statusFilter,
+  typeFilter,
+  dateFilter,
+}: {
+  statusFilter: StatusFilter
+  typeFilter: TypeFilter
+  dateFilter: DateFilter
+}): OmbudsmanListFilters {
+  const filters: OmbudsmanListFilters = { page: 1 }
+
+  if (statusFilter !== FILTER_ALL_VALUE) {
+    filters.status = statusFilter
+  }
+
+  if (typeFilter !== FILTER_ALL_VALUE) {
+    filters.type = typeFilter
+  }
+
+  if (dateFilter !== FILTER_ALL_VALUE) {
+    const range = buildLocalDayRange(dateFilter)
+
+    if (range !== null) {
+      filters.from = range.from
+      filters.to = range.to
+    }
+  }
+
+  return filters
 }
 
 function MetricCards() {
@@ -163,8 +137,13 @@ function MetricCards() {
         Indicadores das demandas
       </h2>
 
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
-        {dashboardMetrics.map((metric) => (
+      <p className="rounded-2xl bg-home-action/60 px-4 py-3 text-sm leading-6 text-home-brown">
+        Aguardando endpoint de métricas administrativas. Os totais abaixo serão preenchidos assim que o backend expuser
+        os indicadores agregados.
+      </p>
+
+      <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
+        {dashboardMetricCards.map((metric) => (
           <div className={metricCardClasses.join(' ')} id={metric.anchorId} key={metric.label}>
             <div className="absolute inset-x-0 top-0 h-1 bg-home-blue/80 opacity-0 transition duration-150 group-hover:opacity-100" />
             <dt className="flex items-start justify-between gap-3">
@@ -177,11 +156,9 @@ function MetricCards() {
               </span>
             </dt>
             <dd className="mt-5 flex items-end justify-between gap-3">
-              <span className="text-4xl leading-none font-black tabular-nums text-home-text md:text-5xl">
-                {metric.value}
-              </span>
+              <span className="text-4xl leading-none font-black tabular-nums text-home-text md:text-5xl">—</span>
               <span className="rounded-full bg-home-action px-3 py-1 text-[11px] leading-4 font-bold text-home-brown">
-                {metric.trend}
+                em breve
               </span>
             </dd>
           </div>
@@ -201,7 +178,7 @@ function SearchField({ onSearchChange, search }: { onSearchChange: (value: strin
           className="min-w-0 bg-transparent text-sm leading-none text-home-text outline-none placeholder:text-home-muted"
           id="ombudsman-manifestation-search"
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Buscar por protocolo, tipo, área ou descrição..."
+          placeholder="Buscar por protocolo ou descrição..."
           type="search"
           value={search}
         />
@@ -227,9 +204,11 @@ function FilterSelect({ id, label, onChange, options, value }: FilterSelectProps
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
-        <option value={FILTER_ALL_VALUE}>{label}</option>
+        <option className="bg-home-surface text-home-text" value={FILTER_ALL_VALUE}>
+          {label}
+        </option>
         {options.map((option) => (
-          <option key={`${id}-${option.value}`} value={option.value}>
+          <option className="bg-home-surface text-home-text" key={`${id}-${option.value}`} value={option.value}>
             {option.label}
           </option>
         ))}
@@ -261,14 +240,15 @@ function DateFilterInput({ id, label, onChange, value }: DateFilterInputProps) {
   )
 }
 
-function StatusBadge({ status }: { status: OmbudsmanManifestationStatus }) {
-  const statusContract = getOmbudsmanManifestationStatusContract(status)
+function StatusBadge({ status }: { status: ManifestationStatus }) {
+  const statusContract = getManifestationStatusContract(status)
+  const statusStyle = getManifestationStatusStyle(status)
 
   return (
     <span
       className={cx(
         'inline-flex min-h-8 items-center rounded-lg px-4 text-xs leading-4 font-black tracking-[0.08em] uppercase',
-        statusBadgeClassNames[status],
+        statusStyle.badgeClassName,
       )}
     >
       {statusContract.viewLabel}
@@ -285,21 +265,28 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ManifestationCard({ manifestation }: { manifestation: OmbudsmanManifestationSummary }) {
+function ManifestationCard({
+  catalog,
+  manifestation,
+}: {
+  catalog: Catalog | null
+  manifestation: ManifestationSummary
+}) {
+  const statusStyle = getManifestationStatusStyle(manifestation.status)
+  const areaLabel = buildAreaLabel(catalog, manifestation)
+  const typeLabel = getManifestationTypeLabel(manifestation.type)
+  const createdAtLabel = formatBrazilianShortDate(manifestation.createdAt)
   const protocolId = manifestation.protocol.replace(/[^a-z0-9]/gi, '')
-  const statusVisual = statusVisuals[manifestation.status]
 
   return (
     <article
       aria-labelledby={`${protocolId}-title`}
-      className={cx(manifestationCardClasses.join(' '), statusVisual.accentClassName)}
+      className={cx(manifestationCardClasses.join(' '), 'border-l-4', statusStyle.accentClassName)}
     >
-      <div aria-hidden="true" className={cx('absolute inset-y-0 left-0 w-1 opacity-70', statusVisual.barClassName)} />
-
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid min-w-0 grid-cols-[40px_1fr] gap-3">
-          <span className={cx('grid size-10 place-items-center rounded-lg', statusVisual.iconClassName)}>
-            <Icon className="size-5" name={statusVisual.icon} />
+          <span className={cx('grid size-10 place-items-center rounded-lg', statusStyle.iconClassName)}>
+            <Icon className="size-5" name="info" />
           </span>
           <div className="min-w-0">
             <p className="text-xs leading-4 font-black tracking-[0.1em] text-home-blue uppercase">Manifestação</p>
@@ -313,25 +300,22 @@ function ManifestationCard({ manifestation }: { manifestation: OmbudsmanManifest
         </div>
       </div>
 
-      <p className="mt-4 line-clamp-2 text-sm leading-6 text-home-brown">{manifestation.description}</p>
+      <p className="mt-4 line-clamp-2 text-sm leading-6 text-home-brown break-words">{manifestation.description}</p>
 
       <dl className="mt-5 grid grid-cols-1 gap-4 rounded-lg bg-home-action/75 px-4 py-4 sm:grid-cols-2">
-        <DetailItem label="Tipo" value={manifestation.manifestationType} />
-        <DetailItem label="Atualização" value={manifestation.updatedAt} />
-        <div className="sm:col-span-2">
-          <DetailItem label="Área responsável" value={manifestation.area} />
-        </div>
+        <DetailItem label="Tipo" value={typeLabel} />
+        <DetailItem label="Área responsável" value={areaLabel} />
       </dl>
 
       <div className="mt-5 flex flex-col gap-4 border-t border-login-brown/10 pt-5 min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between">
         <div className="min-w-0">
-          <p className="text-sm leading-5 font-black text-home-text">{statusVisual.label}</p>
-          <p className="mt-1 text-sm leading-5 text-home-brown">{statusVisual.summary}</p>
+          <p className="text-[11px] leading-4 font-black tracking-[0.08em] text-home-brown/60 uppercase">Aberta em</p>
+          <p className="mt-1 text-sm leading-5 font-semibold text-home-text">{createdAtLabel}</p>
         </div>
         <a
           aria-label={`Abrir manifestação ${manifestation.protocol}`}
           className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href={buildOmbudsmanManifestationDetailsHref(manifestation.protocol)}
+          href={buildOmbudsmanManifestationDetailsHref(manifestation.id)}
         >
           Abrir demanda
           <Icon className="size-4" name="chevron-right" />
@@ -341,41 +325,64 @@ function ManifestationCard({ manifestation }: { manifestation: OmbudsmanManifest
   )
 }
 
-function matchesFilters(
-  manifestation: OmbudsmanManifestationSummary,
-  statusFilter: StatusFilter,
-  typeFilter: TextFilter,
-  dateFilter: DateFilter,
-) {
-  return (
-    (statusFilter === FILTER_ALL_VALUE || manifestation.status === statusFilter) &&
-    (typeFilter === FILTER_ALL_VALUE || manifestation.manifestationType === typeFilter) &&
-    (dateFilter === FILTER_ALL_VALUE || parseBrazilianShortDateLabel(manifestation.updatedAt) === dateFilter)
-  )
-}
-
 export function OmbudsmanHomePage() {
+  const ombudsmanService = useMemo(() => makeOmbudsmanService(), [])
+  const { catalog } = useCatalog()
+  const [manifestations, setManifestations] = useState<ManifestationSummary[]>([])
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading')
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<DateFilter>(FILTER_ALL_VALUE)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(FILTER_ALL_VALUE)
-  const [typeFilter, setTypeFilter] = useState<TextFilter>(FILTER_ALL_VALUE)
-  const typeOptions = useMemo(
-    () => getUniqueOptions(ombudsmanManifestations.map((manifestation) => manifestation.manifestationType)),
-    [],
-  )
-  const statusOptions = ombudsmanManifestationStatusContracts.map((status) => ({
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(FILTER_ALL_VALUE)
+
+  const statusOptions: FilterSelectOption[] = manifestationStatusContracts.map((status) => ({
     label: status.filterLabel,
     value: status.value,
   }))
+  const typeOptions: FilterSelectOption[] = manifestationTypeContracts.map((type) => ({
+    label: type.label,
+    value: type.value,
+  }))
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function load() {
+      setLoadStatus('loading')
+      setLoadError(null)
+
+      try {
+        const result = await ombudsmanService.list(
+          buildFiltersForRequest({ dateFilter, statusFilter, typeFilter }),
+        )
+
+        if (!isMounted) {
+          return
+        }
+
+        setManifestations(result.manifestations)
+        setLoadStatus('ready')
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+        const message = error instanceof Error ? error.message : 'Não foi possível carregar as manifestações.'
+        setLoadError(message)
+        setLoadStatus('error')
+      }
+    }
+
+    void load()
+
+    return () => {
+      isMounted = false
+    }
+  }, [dateFilter, ombudsmanService, statusFilter, typeFilter])
+
   const filteredManifestations = useMemo(
-    () =>
-      searchManifestations(
-        ombudsmanManifestations.filter((manifestation) =>
-          matchesFilters(manifestation, statusFilter, typeFilter, dateFilter),
-        ),
-        search,
-      ),
-    [dateFilter, search, statusFilter, typeFilter],
+    () => searchManifestations(manifestations, search),
+    [manifestations, search],
   )
 
   const handleClearFilters = () => {
@@ -394,8 +401,7 @@ export function OmbudsmanHomePage() {
               Dashboard de Demandas
             </h1>
             <p className="mt-4 max-w-xl text-base leading-[26px] text-home-brown">
-              Facilite a gestão das manifestações com o nosso sistema! Combine organização, produtividade e eficiência
-              num só lugar.
+              Acompanhe e atue nas manifestações da Ouvidoria. Use os filtros para priorizar o que precisa de resposta.
             </p>
           </header>
 
@@ -424,35 +430,57 @@ export function OmbudsmanHomePage() {
                 <FilterSelect
                   id="ombudsman-type-filter"
                   label="Tipo"
-                  onChange={setTypeFilter}
+                  onChange={(value) => setTypeFilter(value as TypeFilter)}
                   options={typeOptions}
                   value={typeFilter}
                 />
-                <DateFilterInput id="ombudsman-date-filter" label="Data" onChange={setDateFilter} value={dateFilter} />
+                <DateFilterInput
+                  id="ombudsman-date-filter"
+                  label="Data"
+                  onChange={setDateFilter}
+                  value={dateFilter}
+                />
               </div>
             </div>
 
-            {filteredManifestations.length > 0 ? (
-              <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                {filteredManifestations.map((manifestation) => (
-                  <ManifestationCard key={manifestation.protocol} manifestation={manifestation} />
-                ))}
+            {loadStatus === 'loading' ? (
+              <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 text-center text-sm leading-6 text-home-brown">
+                Carregando manifestações...
               </div>
-            ) : (
+            ) : null}
+
+            {loadStatus === 'error' ? (
               <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
-                <h2 className="text-xl leading-7 font-bold text-home-text">Nenhuma manifestação encontrada</h2>
+                <h2 className="text-xl leading-7 font-bold text-home-text">Não foi possível carregar as manifestações</h2>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
-                  Ajuste a busca ou limpe os filtros para voltar à lista de demandas da Ouvidoria.
+                  {loadError ?? 'Tente novamente em alguns instantes.'}
                 </p>
-                <button
-                  className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-                  onClick={handleClearFilters}
-                  type="button"
-                >
-                  Limpar filtros
-                </button>
               </div>
-            )}
+            ) : null}
+
+            {loadStatus === 'ready' ? (
+              filteredManifestations.length > 0 ? (
+                <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+                  {filteredManifestations.map((manifestation) => (
+                    <ManifestationCard catalog={catalog} key={manifestation.id} manifestation={manifestation} />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
+                  <h2 className="text-xl leading-7 font-bold text-home-text">Nenhuma manifestação encontrada</h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
+                    Ajuste a busca ou limpe os filtros para voltar à lista de demandas da Ouvidoria.
+                  </p>
+                  <button
+                    className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+                    onClick={handleClearFilters}
+                    type="button"
+                  >
+                    Limpar filtros
+                  </button>
+                </div>
+              )
+            ) : null}
           </section>
         </main>
 
