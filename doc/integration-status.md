@@ -54,18 +54,34 @@ Implementado:
 - **Mapper compartilhado** em `web/src/infrastructure/manifestations/manifestation-detail-mapper.ts` — usado tanto pelo `HttpManifestationsService` quanto pelo `HttpOmbudsmanService`.
 - **Testes do `web/`**: `http-ombudsman-service.test.ts` (URL/query/headers, narrowing via mapper, void de answer/updateStatus), `ombudsman-policy.test.ts` (matriz por status) e `date-utils.test.ts` (`buildLocalDayRange` + `formatBrazilianShortDate`).
 
+## Slice 5 — Chat Guará contra `POST /ai/messages`
+
+Implementado:
+
+- **`HttpGuaraChatService` real** em `web/src/infrastructure/guara-chat/http-guara-chat-service.ts`: agora usa `publicApiFetch` contra `${VITE_API_BASE_URL}/ai/messages`, sem `Authorization`. Trim + validações client-side (mensagem 1..4000 caracteres, history sliceado para os últimos 20 turnos, roles fora de `user|assistant` descartados). Erros HTTP viram `GuaraChatRequestError`. `DemoGuaraChatService` foi removido — o backend já tem `FakeAiGateway` para dev offline.
+- **Contrato alinhado**: `SendGuaraMessageInput { history, message }` e `SendGuaraMessageOutput { answer, intent, shouldOpenManifestationDraft, draft, missingFields, confidence }`. Tipos canônicos em `web/src/application/guara-chat/guara-chat-types.ts`.
+- **Normalizador puro** em `web/src/infrastructure/guara-chat/guara-chat-response-normalizer.ts`: narrowa intent fora do union para `unknown`, confidence fora de `[0,1]` para `null`, type fora do enum para `null` (e draft fully-null vira `null`), filtra `missingFields` para o subset válido e força `shouldOpenManifestationDraft = false` quando intent não é `manifestation_draft_ready` ou faltam campos.
+- **Policy de capabilities** em `web/src/application/guara-chat/guara-chat-policy.ts`: `getGuaraChatCapabilities(user)` e `canApplyDraft(capabilities, draft)`. Anônimo + `manifestant` → `allowedDraftTypes: ['report']`; `ombudsman`/`admin` → `canCreateDraft: false`. CTA de abrir manifestação no chat só aparece quando `canApplyDraft` aprova.
+- **`/guara` em modo restrito (público)**: `GuaraPage` deixou de redirecionar para login/login. Página acessível a anônimos, manifestants e perfis administrativos (esses dois últimos veem o banner por papel). Botão **Limpar conversa** no header do painel.
+- **Persistência da conversa** em `sessionStorage` (`guara-chat:messages`) com hidratação no mount e limpeza no `signOut` (`AuthProvider`). Em parse error / shape error, a chave é descartada silenciosamente.
+- **Handoff chat → form** via `sessionStorage` one-shot (`guara-chat:pending-draft`): `ChatPanel` faz `stashPendingDraft(draft)` + `navigateTo(routes.manifestationForm)`. `ManifestationFormPage` chama `consumePendingDraft()` no mount (uma única vez) e usa o draft como base para `form.reset()` quando o catálogo carregar.
+- **Helper de defaults** em `getManifestationFormDefaultValuesFromDraft`: valida `type` contra o enum, valida `campusId` no catálogo, valida que `administrativeUnitId` pertence ao campus (caso contrário zera), e força `isAnonymous = !isAuthenticated`.
+- **Gate de acesso ao form** (novo): `ManifestationFormPage` deixa de exigir auth quando há draft consumido. Política: usuário autenticado → entrada livre; usuário anônimo com draft → entrada permitida, banner explicativo, `isAnonymous` travado em `true`; usuário anônimo sem draft → redirect para `/login`. Liberar `/guara` publicamente **não** abriu o form para visita direta.
+- **Missing fields inline**: quando o backend devolve `intent === 'manifestation_candidate'`, o chat lista os campos faltantes (`type`/`campusId`/`administrativeUnitId`/`description`) com labels PT abaixo da última resposta.
+- **`.env.example`**: removido `VITE_GUARA_CHAT_ENDPOINT`. `VITE_API_BASE_URL` passa a ser a única configuração relevante para o chat.
+- **Testes do `web/`**: `guara-chat-policy.test.ts` (matriz role × draft), `guara-chat-response-normalizer.test.ts` (defesas de narrowing), `guara-chat-storage.test.ts` (round trip + parse error + one-shot do draft), `http-guara-chat-service.test.ts` (URL/body/sem Authorization/erros) e `manifestation-form-contract.test.ts` (helper de defaults a partir do draft).
+
 ## Pendências (próximas slices)
 
 Em ordem sugerida:
 
-1. **Chat Guará** — `HttpGuaraChatService` ainda fala com endpoint fake. Reescrever para `POST /ai/messages` (history, intent, draft, missingFields, shouldOpenManifestationDraft). Unificar `VITE_GUARA_CHAT_ENDPOINT` com `VITE_API_BASE_URL`.
-2. **Endpoint de métricas administrativas** — backend ainda não expõe agregados; cards do dashboard ombudsman mostram `—`. Depende do backend criar a rota.
-   2b. **`updatedAt` no `ManifestationListItemDTO`** — backend já mantém `updatedAt` no Prisma, mas o summary só serializa `createdAt`. Expor para o FE trocar o label “Aberta em” do card ombudsman por “Última atualização”.
-3. **Paginação real no `GET /admin/manifestations`** — backend só devolve `{ manifestations }` hoje. Quando expuser `totalPages`/`totalItems`, o `OmbudsmanListResult` já suporta os campos e a UI ganha “Próxima/Anterior”.
-4. **Filtros de campus/unidade na listagem ombudsman** — selects cascateados reusando `useCatalog`. Backend já aceita `campusId`/`administrativeUnitId`.
-5. **Backend `/me`** — depois do login (sem cadastro), `user.name` e `user.email` ficam `null` no FE; só temos `sub` e `role` do JWT. Resolver no backend e atualizar `HttpAuthService.getSession`.
-6. ~~**Modal de confirmação no finalize / cancelar**~~ — feito. `ConfirmDialog` (`web/src/components/feedback/confirm-dialog.tsx`) usado por `FinalizeAction` (manifestante) e `StatusActions` (ombudsman), com variantes de tom (`success`/`danger`), foco no botão Cancelar e fechamento por Escape/backdrop.
-7. **Cancelar/Desistir pelo autor antes da resposta** — backend só permite o autor encerrar em `answered` (regra de domínio `finalizeByAuthor()` em `src/domain/entities/manifestation.ts`). Hoje, se o manifestante quer desistir antes da ouvidoria responder, não há caminho — manifestação fica em `in_analysis` ou depende de cancelamento administrativo. Slice futura: adicionar `cancelByAuthor()` no agregado + `POST /manifestations/:id/cancel` + UI separada no detalhe manifestante (botão "Desistir desta manifestação", outlined em `home-brown`, visível só em `in_analysis`). Mantém `Encerrar` (`answered → finalized`, libera avaliação) e `Desistir` (`in_analysis → canceled`) como ações distintas com semântica clara.
+1. **Endpoint de métricas administrativas** — backend ainda não expõe agregados; cards do dashboard ombudsman mostram `—`. Depende do backend criar a rota.
+   1b. **`updatedAt` no `ManifestationListItemDTO`** — backend já mantém `updatedAt` no Prisma, mas o summary só serializa `createdAt`. Expor para o FE trocar o label “Aberta em” do card ombudsman por “Última atualização”.
+2. **Paginação real no `GET /admin/manifestations`** — backend só devolve `{ manifestations }` hoje. Quando expuser `totalPages`/`totalItems`, o `OmbudsmanListResult` já suporta os campos e a UI ganha “Próxima/Anterior”.
+3. **Filtros de campus/unidade na listagem ombudsman** — selects cascateados reusando `useCatalog`. Backend já aceita `campusId`/`administrativeUnitId`.
+4. **Backend `/me`** — depois do login (sem cadastro), `user.name` e `user.email` ficam `null` no FE; só temos `sub` e `role` do JWT. Resolver no backend e atualizar `HttpAuthService.getSession`.
+5. ~~**Modal de confirmação no finalize / cancelar**~~ — feito. `ConfirmDialog` (`web/src/components/feedback/confirm-dialog.tsx`) usado por `FinalizeAction` (manifestante) e `StatusActions` (ombudsman), com variantes de tom (`success`/`danger`), foco no botão Cancelar e fechamento por Escape/backdrop.
+6. **Cancelar/Desistir pelo autor antes da resposta** — backend só permite o autor encerrar em `answered` (regra de domínio `finalizeByAuthor()` em `src/domain/entities/manifestation.ts`). Hoje, se o manifestante quer desistir antes da ouvidoria responder, não há caminho — manifestação fica em `in_analysis` ou depende de cancelamento administrativo. Slice futura: adicionar `cancelByAuthor()` no agregado + `POST /manifestations/:id/cancel` + UI separada no detalhe manifestante (botão "Desistir desta manifestação", outlined em `home-brown`, visível só em `in_analysis`). Mantém `Encerrar` (`answered → finalized`, libera avaliação) e `Desistir` (`in_analysis → canceled`) como ações distintas com semântica clara.
 
 ## Notas operacionais
 
