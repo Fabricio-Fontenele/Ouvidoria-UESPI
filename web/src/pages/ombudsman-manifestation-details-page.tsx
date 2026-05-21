@@ -122,7 +122,8 @@ function AnswerComposer({
         Enviar resposta administrativa
       </h3>
       <p className="mt-2 text-sm leading-6 text-home-brown">
-        Sua resposta é registrada no histórico e o status transita para “Respondida” quando a manifestação está em análise.
+        Sua resposta é registrada no histórico e o status transita para “Respondida” quando a manifestação está em
+        análise.
       </p>
 
       <form className="mt-4 grid gap-4" onSubmit={(event) => void handleSubmit(event)}>

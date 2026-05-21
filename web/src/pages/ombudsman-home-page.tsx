@@ -52,7 +52,13 @@ interface DateFilterInputProps {
   value: DateFilter
 }
 
-const dashboardMetricCards: Array<{ anchorId: string; caption: string; icon: IconName; iconClassName: string; label: string }> = [
+const dashboardMetricCards: Array<{
+  anchorId: string
+  caption: string
+  icon: IconName
+  iconClassName: string
+  label: string
+}> = [
   {
     anchorId: 'em-analise',
     caption: 'Aguardam triagem ou resposta',
@@ -353,9 +359,7 @@ export function OmbudsmanHomePage() {
       setLoadError(null)
 
       try {
-        const result = await ombudsmanService.list(
-          buildFiltersForRequest({ dateFilter, statusFilter, typeFilter }),
-        )
+        const result = await ombudsmanService.list(buildFiltersForRequest({ dateFilter, statusFilter, typeFilter }))
 
         if (!isMounted) {
           return
@@ -380,10 +384,7 @@ export function OmbudsmanHomePage() {
     }
   }, [dateFilter, ombudsmanService, statusFilter, typeFilter])
 
-  const filteredManifestations = useMemo(
-    () => searchManifestations(manifestations, search),
-    [manifestations, search],
-  )
+  const filteredManifestations = useMemo(() => searchManifestations(manifestations, search), [manifestations, search])
 
   const handleClearFilters = () => {
     setDateFilter(FILTER_ALL_VALUE)
@@ -434,12 +435,7 @@ export function OmbudsmanHomePage() {
                   options={typeOptions}
                   value={typeFilter}
                 />
-                <DateFilterInput
-                  id="ombudsman-date-filter"
-                  label="Data"
-                  onChange={setDateFilter}
-                  value={dateFilter}
-                />
+                <DateFilterInput id="ombudsman-date-filter" label="Data" onChange={setDateFilter} value={dateFilter} />
               </div>
             </div>
 
@@ -451,7 +447,9 @@ export function OmbudsmanHomePage() {
 
             {loadStatus === 'error' ? (
               <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
-                <h2 className="text-xl leading-7 font-bold text-home-text">Não foi possível carregar as manifestações</h2>
+                <h2 className="text-xl leading-7 font-bold text-home-text">
+                  Não foi possível carregar as manifestações
+                </h2>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
                   {loadError ?? 'Tente novamente em alguns instantes.'}
                 </p>

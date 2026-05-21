@@ -53,13 +53,9 @@ function MessageBubble({
   perspective: MessagesPerspective
 }) {
   const isOwn =
-    perspective === 'manifestant'
-      ? isManifestantSender(message.senderType)
-      : isInstitutionalSender(message.senderType)
+    perspective === 'manifestant' ? isManifestantSender(message.senderType) : isInstitutionalSender(message.senderType)
   const isCounterpart =
-    perspective === 'manifestant'
-      ? isInstitutionalSender(message.senderType)
-      : isManifestantSender(message.senderType)
+    perspective === 'manifestant' ? isInstitutionalSender(message.senderType) : isManifestantSender(message.senderType)
   const isSystem = isSystemSender(message.senderType)
   const senderLabel = getSenderLabel(message.senderType, perspective)
   const systemPayload = isSystem ? parseSystemMessagePayload(message.content) : null
@@ -104,11 +100,7 @@ interface ManifestationMessagesThreadProps {
   perspective: MessagesPerspective
 }
 
-export function ManifestationMessagesThread({
-  emptyMessage,
-  messages,
-  perspective,
-}: ManifestationMessagesThreadProps) {
+export function ManifestationMessagesThread({ emptyMessage, messages, perspective }: ManifestationMessagesThreadProps) {
   const resolvedEmptyMessage =
     emptyMessage ??
     (perspective === 'manifestant'

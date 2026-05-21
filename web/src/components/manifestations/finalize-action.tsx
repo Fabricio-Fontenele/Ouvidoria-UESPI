@@ -51,10 +51,7 @@ export function FinalizeAction({ detail, onFinalized }: FinalizeActionProps) {
       </button>
 
       {error !== null ? (
-        <p
-          className="w-full rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800"
-          role="alert"
-        >
+        <p className="w-full rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
           {error}
         </p>
       ) : null}

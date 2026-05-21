@@ -96,11 +96,7 @@ export function ManifestationAttachmentsList({
       ) : (
         <ul className="mt-5 grid gap-3 sm:grid-cols-2">
           {attachments.map((attachment) => (
-            <AttachmentRow
-              attachment={attachment}
-              key={attachment.id}
-              onResolveDownloadUrl={onResolveDownloadUrl}
-            />
+            <AttachmentRow attachment={attachment} key={attachment.id} onResolveDownloadUrl={onResolveDownloadUrl} />
           ))}
         </ul>
       )}
