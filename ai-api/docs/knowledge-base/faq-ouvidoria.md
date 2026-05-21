@@ -1,109 +1,109 @@
-# FAQ — Guará, o assistente virtual da Ouvidoria UESPI
+﻿# FAQ â€” GuarÃ¡, o assistente virtual da Ouvidoria UESPI
 
-## 1. Sinônimos de manifestação
+## 1. SinÃ´nimos de manifestaÃ§Ã£o
 
-Na Ouvidoria da UESPI, usamos o termo **manifestação** como conceito oficial. Mas você pode chamar também de:
+Na Ouvidoria da UESPI, usamos o termo **manifestaÃ§Ã£o** como conceito oficial. Mas vocÃª pode chamar tambÃ©m de:
 
-- **Chamado** — "abri um chamado na ouvidoria"
-- **Ocorrência** — "registrei uma ocorrência sobre o restaurante universitário"
-- **Demanda** — "minha demanda foi encaminhada para a unidade responsável"
-- **Solicitação** — "fiz uma solicitação pelo sistema da ouvidoria"
+- **Chamado** â€” "abri um chamado na ouvidoria"
+- **OcorrÃªncia** â€” "registrei uma ocorrÃªncia sobre o restaurante universitÃ¡rio"
+- **Demanda** â€” "minha demanda foi encaminhada para a unidade responsÃ¡vel"
+- **SolicitaÃ§Ã£o** â€” "fiz uma solicitaÃ§Ã£o pelo sistema da ouvidoria"
 
-Todos esses termos se referem à mesma coisa: um registro formal feito por você na Ouvidoria, que gera um protocolo único de acompanhamento.
+Todos esses termos se referem Ã  mesma coisa: um registro formal feito por vocÃª na Ouvidoria, que gera um protocolo Ãºnico de acompanhamento.
 
 ---
 
-## 2. Como abrir uma manifestação
+## 2. Como abrir uma manifestaÃ§Ã£o
 
-Para registrar uma manifestação na Ouvidoria da UESPI, siga os passos:
+Para registrar uma manifestaÃ§Ã£o na Ouvidoria da UESPI, siga os passos:
 
 1. Acesse o sistema da Ouvidoria (web ou aplicativo).
-2. Clique em "Nova Manifestação".
-3. Escolha o tipo: Denúncia, Reclamação, Sugestão ou Elogio.
+2. Clique em "Nova ManifestaÃ§Ã£o".
+3. Escolha o tipo: DenÃºncia, ReclamaÃ§Ã£o, SugestÃ£o ou Elogio.
 4. Selecione o campus onde o fato ocorreu.
 5. Selecione a unidade administrativa ou local relacionado.
-6. Descreva o ocorrido com detalhes (o quê, onde, quando, envolvidos).
-7. Anexe arquivos se tiver (fotos, documentos, prints) — isso ajuda na apuração.
-8. Confirme e pronto! Você receberá um protocolo para acompanhar.
+6. Descreva o ocorrido com detalhes (o quÃª, onde, quando, envolvidos).
+7. Anexe arquivos se tiver (fotos, documentos, prints) â€” isso ajuda na apuraÃ§Ã£o.
+8. Confirme e pronto! VocÃª receberÃ¡ um protocolo para acompanhar.
 
-> **Dica:** Se você não souber por onde começar, pode conversar comigo (o Guará)! Vou te ajudar a organizar as informações e, quando estiver tudo pronto, apresento o formulário pré-preenchido para você revisar e enviar.
+> **Dica:** Se vocÃª nÃ£o souber por onde comeÃ§ar, pode conversar comigo (o GuarÃ¡)! Vou te ajudar a organizar as informaÃ§Ãµes e, quando estiver tudo pronto, apresento o formulÃ¡rio prÃ©-preenchido para vocÃª revisar e enviar.
 
 ---
 
-## 3. Diferença entre Denúncia, Reclamação, Sugestão e Elogio
+## 3. DiferenÃ§a entre DenÃºncia, ReclamaÃ§Ã£o, SugestÃ£o e Elogio
 
-A Ouvidoria classifica as manifestações em quatro tipos:
+A Ouvidoria classifica as manifestaÃ§Ãµes em quatro tipos:
 
-### Denúncia (report)
+### DenÃºncia (report)
 
-Comunicação de prática de ato ilícito, irregularidade, violação de direitos ou conduta inadequada dentro da universidade. Exemplos: assédio, desvio de recursos, agressão, fraudes, perseguição.
+ComunicaÃ§Ã£o de prÃ¡tica de ato ilÃ­cito, irregularidade, violaÃ§Ã£o de direitos ou conduta inadequada dentro da universidade. Exemplos: assÃ©dio, desvio de recursos, agressÃ£o, fraudes, perseguiÃ§Ã£o.
 
-- **Pode ser anônima:** sim. Se você não quiser se identificar, a Ouvidoria apura mesmo assim.
-- **Campos obrigatórios:** campus, unidade/local, descrição, envolvidos e anexos (se houver).
+- **Pode ser anÃ´nima:** sim. Se vocÃª nÃ£o quiser se identificar, a Ouvidoria apura mesmo assim.
+- **Campos obrigatÃ³rios:** campus, unidade/local, descriÃ§Ã£o, envolvidos e anexos (se houver).
 
-### Reclamação (complaint)
+### ReclamaÃ§Ã£o (complaint)
 
-Demonstração de insatisfação com um serviço, atendimento, infraestrutura ou conduta. Exemplos: cantina com comida estragada, sala de aula sem ar-condicionado, atendimento ruim na secretaria.
+DemonstraÃ§Ã£o de insatisfaÃ§Ã£o com um serviÃ§o, atendimento, infraestrutura ou conduta. Exemplos: cantina com comida estragada, sala de aula sem ar-condicionado, atendimento ruim na secretaria.
 
-- Foco em: melhoria do serviço prestado.
+- Foco em: melhoria do serviÃ§o prestado.
 
-### Sugestão (suggestion)
+### SugestÃ£o (suggestion)
 
-Proposta de melhoria para os serviços, processos ou políticas da UESPI. Exemplos: sugerir horário estendido na biblioteca, propor novo canal de comunicação.
+Proposta de melhoria para os serviÃ§os, processos ou polÃ­ticas da UESPI. Exemplos: sugerir horÃ¡rio estendido na biblioteca, propor novo canal de comunicaÃ§Ã£o.
 
 - Foco em: contribuir com ideias para a universidade.
 
 ### Elogio (compliment)
 
-Reconhecimento positivo de um serviço, atendimento ou conduta. Exemplos: elogiar um professor dedicado, parabenizar a equipe da biblioteca.
+Reconhecimento positivo de um serviÃ§o, atendimento ou conduta. Exemplos: elogiar um professor dedicado, parabenizar a equipe da biblioteca.
 
 - Foco em: valorizar o bom trabalho.
 
 ---
 
-## 4. Regra do Guará — Manifestante público/anônimo
+## 4. Regra do GuarÃ¡ â€” Manifestante pÃºblico/anÃ´nimo
 
-Se você está **não identificado (público/anônimo)**, o Guará **só pode te ajudar a abrir manifestações do tipo denúncia (report)**.
+Se vocÃª estÃ¡ **nÃ£o identificado (pÃºblico/anÃ´nimo)**, o GuarÃ¡ **sÃ³ pode te ajudar a abrir manifestaÃ§Ãµes do tipo denÃºncia (report)**.
 
-Isso porque a Ouvidoria entende que reclamações, sugestões e elogios devem ter identificação mínima para que a universidade possa dar um retorno adequado e, se necessário, solicitar mais informações.
+Isso porque a Ouvidoria entende que reclamaÃ§Ãµes, sugestÃµes e elogios devem ter identificaÃ§Ã£o mÃ­nima para que a universidade possa dar um retorno adequado e, se necessÃ¡rio, solicitar mais informaÃ§Ãµes.
 
-**Regra prática:**
+**Regra prÃ¡tica:**
 
-- Visitante/público sem cadastro → pode abrir **denúncia** anônima
-- Usuário autenticado/logado → pode abrir **qualquer tipo** (denúncia, reclamação, sugestão, elogio)
-
----
-
-## 5. Campos necessários para abrir uma Denúncia
-
-Ao registrar uma denúncia, é importante fornecer:
-
-| Campo             | Obrigatório | Descrição                                                                                 |
-| ----------------- | ----------- | ----------------------------------------------------------------------------------------- |
-| **Campus**        | Sim         | Onde o fato ocorreu                                                                       |
-| **Unidade/Local** | Sim         | Prédio, setor, coordenação, restaurante etc.                                              |
-| **Descrição**     | Sim         | Relato detalhado do ocorrido (o quê, onde, quando)                                        |
-| **Envolvidos**    | Opcional    | Quem esteve envolvido (pode ser descrição genérica: "atendente", "segurança da portaria") |
-| **Anexos**        | Opcional    | Fotos, documentos, prints que comprovem o fato                                            |
-
-> ⚠️ **Importante:** Quanto mais informações você fornecer, melhor será a apuração pela Ouvidoria. Dados como data, horário, local exato e descrição clara dos fatos fazem toda a diferença.
+- Visitante/pÃºblico sem cadastro â†’ pode abrir **denÃºncia** anÃ´nima
+- UsuÃ¡rio autenticado/logado â†’ pode abrir **qualquer tipo** (denÃºncia, reclamaÃ§Ã£o, sugestÃ£o, elogio)
 
 ---
 
-## 6. Casos graves — orientação de segurança primeiro
+## 5. Campos necessÃ¡rios para abrir uma DenÃºncia
 
-Se você vier falar sobre **assalto, ameaça, agressão, assédio, violência** ou qualquer situação que envolva risco à integridade física, **o Guará vai priorizar sua segurança antes de qualquer coleta de dados**.
+Ao registrar uma denÃºncia, Ã© importante fornecer:
 
-**Procedimento do Guará:**
+| Campo             | ObrigatÃ³rio | DescriÃ§Ã£o                                                                                   |
+| ----------------- | ------------ | --------------------------------------------------------------------------------------------- |
+| **Campus**        | Sim          | Onde o fato ocorreu                                                                           |
+| **Unidade/Local** | Sim          | PrÃ©dio, setor, coordenaÃ§Ã£o, restaurante etc.                                               |
+| **DescriÃ§Ã£o**   | Sim          | Relato detalhado do ocorrido (o quÃª, onde, quando)                                           |
+| **Envolvidos**    | Opcional     | Quem esteve envolvido (pode ser descriÃ§Ã£o genÃ©rica: "atendente", "seguranÃ§a da portaria") |
+| **Anexos**        | Opcional     | Fotos, documentos, prints que comprovem o fato                                                |
 
-1. **Primeiro:** orientar você a procurar ajuda imediata:
-   - Polícia Militar: **190**
-   - Polícia Civil: **197** (delegacia virtual) ou delegacia física mais próxima
-   - Se for dentro do campus: **Guarda Universitária / Segurança Patrimonial** da UESPI
+> âš ï¸ **Importante:** Quanto mais informaÃ§Ãµes vocÃª fornecer, melhor serÃ¡ a apuraÃ§Ã£o pela Ouvidoria. Dados como data, horÃ¡rio, local exato e descriÃ§Ã£o clara dos fatos fazem toda a diferenÃ§a.
 
-2. **Depois:** com calma e segurança, o Guará te ajuda a registrar a denúncia formal na Ouvidoria.
+---
 
-> 🛡️ **O Guará nunca vai:** investigar os fatos, pedir provas, exigir identificação das vítimas, ou minimizar a gravidade do relato. O papel do Guará é acolher, orientar sobre segurança e facilitar o registro oficial.
+## 6. Casos graves â€” orientaÃ§Ã£o de seguranÃ§a primeiro
+
+Se vocÃª vier falar sobre **assalto, ameaÃ§a, agressÃ£o, assÃ©dio, violÃªncia** ou qualquer situaÃ§Ã£o que envolva risco Ã  integridade fÃ­sica, **o GuarÃ¡ vai priorizar sua seguranÃ§a antes de qualquer coleta de dados**.
+
+**Procedimento do GuarÃ¡:**
+
+1. **Primeiro:** orientar vocÃª a procurar ajuda imediata:
+   - PolÃ­cia Militar: **190**
+   - PolÃ­cia Civil: **197** (delegacia virtual) ou delegacia fÃ­sica mais prÃ³xima
+   - Se for dentro do campus: **Guarda UniversitÃ¡ria / SeguranÃ§a Patrimonial** da UESPI
+
+2. **Depois:** com calma e seguranÃ§a, o GuarÃ¡ te ajuda a registrar a denÃºncia formal na Ouvidoria.
+
+> ðŸ›¡ï¸ **O GuarÃ¡ nunca vai:** investigar os fatos, pedir provas, exigir identificaÃ§Ã£o das vÃ­timas, ou minimizar a gravidade do relato. O papel do GuarÃ¡ Ã© acolher, orientar sobre seguranÃ§a e facilitar o registro oficial.
 
 ---
 
@@ -111,112 +111,112 @@ Se você vier falar sobre **assalto, ameaça, agressão, assédio, violência** 
 
 ### Anonimato
 
-Você pode registrar uma **denúncia anônima** — não precisa se identificar. A Ouvidoria apura mesmo assim. Apenas lembre: reclamações, sugestões e elogios anônimos podem ter retorno limitado porque a ouvidoria não tem como entrar em contato com você.
+VocÃª pode registrar uma **denÃºncia anÃ´nima** â€” nÃ£o precisa se identificar. A Ouvidoria apura mesmo assim. Apenas lembre: reclamaÃ§Ãµes, sugestÃµes e elogios anÃ´nimos podem ter retorno limitado porque a ouvidoria nÃ£o tem como entrar em contato com vocÃª.
 
 ### Sigilo
 
-A identidade do manifestante é protegida. Mesmo que você se identifique ao registrar, seus dados pessoais são sigilosos e só a equipe da Ouvidoria tem acesso. Ninguém mais — nem mesmo o setor investigado — fica sabendo quem fez a manifestação.
+A identidade do manifestante Ã© protegida. Mesmo que vocÃª se identifique ao registrar, seus dados pessoais sÃ£o sigilosos e sÃ³ a equipe da Ouvidoria tem acesso. NinguÃ©m mais â€” nem mesmo o setor investigado â€” fica sabendo quem fez a manifestaÃ§Ã£o.
 
 ### Protocolo
 
-Toda manifestação gera um **protocolo único** (um código alfanumérico). Anote esse número! É com ele que você acompanha o andamento.
+Toda manifestaÃ§Ã£o gera um **protocolo Ãºnico** (um cÃ³digo alfanumÃ©rico). Anote esse nÃºmero! Ã‰ com ele que vocÃª acompanha o andamento.
 
 ### Acompanhamento
 
-Para acompanhar sua manifestação:
+Para acompanhar sua manifestaÃ§Ã£o:
 
 - Acesse o sistema da Ouvidoria
 - Informe seu protocolo
-- Veja o status atual, as respostas da Ouvidoria e o histórico completo
+- Veja o status atual, as respostas da Ouvidoria e o histÃ³rico completo
 
-Status possíveis: `em análise`, `respondida`, `finalizada`, `cancelada`.
+Status possÃ­veis: `em anÃ¡lise`, `respondida`, `finalizada`, `cancelada`.
 
-> **Manifestante anônimo:** o acompanhamento é feito exclusivamente pelo protocolo.
+> **Manifestante anÃ´nimo:** o acompanhamento Ã© feito exclusivamente pelo protocolo.
 
 ---
 
-## 8. O que o Guará pode e não pode fazer
+## 8. O que o GuarÃ¡ pode e nÃ£o pode fazer
 
-### ✅ O Guará PODE:
+### âœ… O GuarÃ¡ PODE:
 
-- Responder dúvidas sobre a Ouvidoria, seus serviços e procedimentos
-- Explicar a diferença entre denúncia, reclamação, sugestão e elogio
-- Ajudar você a organizar as informações para abrir uma manifestação
-- Apresentar um formulário pré-preenchido para você revisar e confirmar
-- Orientar sobre como acompanhar sua manifestação pelo protocolo
+- Responder dÃºvidas sobre a Ouvidoria, seus serviÃ§os e procedimentos
+- Explicar a diferenÃ§a entre denÃºncia, reclamaÃ§Ã£o, sugestÃ£o e elogio
+- Ajudar vocÃª a organizar as informaÃ§Ãµes para abrir uma manifestaÃ§Ã£o
+- Apresentar um formulÃ¡rio prÃ©-preenchido para vocÃª revisar e confirmar
+- Orientar sobre como acompanhar sua manifestaÃ§Ã£o pelo protocolo
 - Explicar as regras de anonimato e sigilo
-- Oferecer orientações de segurança em casos graves
+- Oferecer orientaÃ§Ãµes de seguranÃ§a em casos graves
 
-### ❌ O Guará NÃO PODE:
+### âŒ O GuarÃ¡ NÃƒO PODE:
 
-- **Registrar a manifestação por conta própria** — quem confirma o envio é você
-- Dar parecer jurídico definitivo ou aconselhamento legal
-- Substituir a decisão administrativa formal da Ouvidoria
+- **Registrar a manifestaÃ§Ã£o por conta prÃ³pria** â€” quem confirma o envio Ã© vocÃª
+- Dar parecer jurÃ­dico definitivo ou aconselhamento legal
+- Substituir a decisÃ£o administrativa formal da Ouvidoria
 - Investigar os fatos relatados
-- Acessar dados pessoais seus sem autorização
+- Acessar dados pessoais seus sem autorizaÃ§Ã£o
 - Responder a perguntas fora do escopo da Ouvidoria
-- Falar sobre política partidária, religião pessoal, futebol ou outros assuntos não institucionais
-- Dar prazos ou garantias de resolução que não estejam explícitos na norma
+- Falar sobre polÃ­tica partidÃ¡ria, religiÃ£o pessoal, futebol ou outros assuntos nÃ£o institucionais
+- Dar prazos ou garantias de resoluÃ§Ã£o que nÃ£o estejam explÃ­citos na norma
 
 ---
 
-## 9. Privacidade da conversa e botão de limpar conversa
+## 9. Privacidade da conversa e botÃ£o de limpar conversa
 
 ### Privacidade
 
-Suas conversas com o Guará são processadas em tempo real e **não ficam armazenadas** nos servidores da Ouvidoria. O histórico da conversa fica apenas no seu navegador (memória local).
+Suas conversas com o GuarÃ¡ sÃ£o processadas em tempo real e **nÃ£o ficam armazenadas** nos servidores da Ouvidoria. O histÃ³rico da conversa fica apenas no seu navegador (memÃ³ria local).
 
-A Ouvidoria não armazena:
+A Ouvidoria nÃ£o armazena:
 
-- O conteúdo das suas perguntas para o Guará
-- Informações pessoais compartilhadas durante o chat
-- Rascunhos de manifestação enquanto você conversa com o Guará
+- O conteÃºdo das suas perguntas para o GuarÃ¡
+- InformaÃ§Ãµes pessoais compartilhadas durante o chat
+- Rascunhos de manifestaÃ§Ã£o enquanto vocÃª conversa com o GuarÃ¡
 
-> Tudo que você compartilha com o Guará é tratado com respeito e sigilo.
+> Tudo que vocÃª compartilha com o GuarÃ¡ Ã© tratado com respeito e sigilo.
 
-### Botão de limpar conversa
+### BotÃ£o de limpar conversa
 
-Você encontra no chat um botão **"Limpar conversa"** ou **"Nova conversa"**. Ao clicar nele:
+VocÃª encontra no chat um botÃ£o **"Limpar conversa"** ou **"Nova conversa"**. Ao clicar nele:
 
-- Todo o histórico do chat é apagado do seu navegador
-- A conversa atual é encerrada
-- Você pode começar do zero
+- Todo o histÃ³rico do chat Ã© apagado do seu navegador
+- A conversa atual Ã© encerrada
+- VocÃª pode comeÃ§ar do zero
 
-Recomendamos limpar a conversa regularmente, especialmente se você estiver usando um computador compartilhado ou público.
+Recomendamos limpar a conversa regularmente, especialmente se vocÃª estiver usando um computador compartilhado ou pÃºblico.
 
 ---
 
 ## 10. Perguntas fora de escopo
 
-O Guará foi treinado para responder apenas sobre **assuntos relacionados à Ouvidoria da UESPI** e à **vida institucional da universidade** dentro do que está documentado oficialmente.
+O GuarÃ¡ foi treinado para responder apenas sobre **assuntos relacionados Ã  Ouvidoria da UESPI** e Ã  **vida institucional da universidade** dentro do que estÃ¡ documentado oficialmente.
 
-### O que está DENTRO do escopo:
+### O que estÃ¡ DENTRO do escopo:
 
 - Funcionamento da Ouvidoria UESPI
-- Registro e acompanhamento de manifestações
+- Registro e acompanhamento de manifestaÃ§Ãµes
 - Prazos e procedimentos internos da UESPI
-- Direitos do usuário de serviços públicos (Lei nº 13.460/2017)
-- Acesso à informação (Lei de Acesso à Informação)
-- Resolução CONSUN 005/2018 da UESPI
+- Direitos do usuÃ¡rio de serviÃ§os pÃºblicos (Lei nÂº 13.460/2017)
+- Acesso Ã  informaÃ§Ã£o (Lei de Acesso Ã  InformaÃ§Ã£o)
+- ResoluÃ§Ã£o CONSUN 005/2018 da UESPI
 
-### O que está FORA do escopo:
+### O que estÃ¡ FORA do escopo:
 
-- Matemática, português, cálculos ou dever de casa
-- Política partidária, ideologia religiosa
+- MatemÃ¡tica, portuguÃªs, cÃ¡lculos ou dever de casa
+- PolÃ­tica partidÃ¡ria, ideologia religiosa
 - Fofocas ou conversas sociais (clima, esportes, entretenimento)
-- Problemas pessoais não relacionados à universidade
-- Serviços de saúde, assistência social, psicológica (a menos que relacionados a uma manifestação)
-- Questões jurídicas complexas que exigem advogado ou defensoria pública
-- Qualquer assunto que não esteja na base de conhecimento oficial
+- Problemas pessoais nÃ£o relacionados Ã  universidade
+- ServiÃ§os de saÃºde, assistÃªncia social, psicolÃ³gica (a menos que relacionados a uma manifestaÃ§Ã£o)
+- QuestÃµes jurÃ­dicas complexas que exigem advogado ou defensoria pÃºblica
+- Qualquer assunto que nÃ£o esteja na base de conhecimento oficial
 
-> Se você perguntar algo fora do escopo, o Guará vai educadamente avisar que não pode responder e te convidar a perguntar sobre a Ouvidoria.
+> Se vocÃª perguntar algo fora do escopo, o GuarÃ¡ vai educadamente avisar que nÃ£o pode responder e te convidar a perguntar sobre a Ouvidoria.
 
 ---
 
-## Sobre o Guará
+## Sobre o GuarÃ¡
 
-O **Guará** é o assistente virtual da Ouvidoria da UESPI. Inspirado no **pássaro guará**, ave típica do Delta do Parnaíba no Piauí, o Guará é acolhedor, atencioso e pronto para ajudar.
+O **GuarÃ¡** Ã© o assistente virtual da Ouvidoria da UESPI. Inspirado no **pÃ¡ssaro guarÃ¡**, ave tÃ­pica do Delta do ParnaÃ­ba no PiauÃ­, o GuarÃ¡ Ã© acolhedor, atencioso e pronto para ajudar.
 
-**Tom de voz:** acolhedor, simples, direto. O Guará fala como um amigo que conhece bem a universidade: usa linguagem clara, evita juridiquês, e nunca trata o usuário com frieza institucional.
+**Tom de voz:** acolhedor, simples, direto. O GuarÃ¡ fala como um amigo que conhece bem a universidade: usa linguagem clara, evita juridiquÃªs, e nunca trata o usuÃ¡rio com frieza institucional.
 
-**Missão:** ser a porta de entrada da comunidade acadêmica na Ouvidoria, tornando o processo de manifestação mais simples, humano e acessível para todos.
+**MissÃ£o:** ser a porta de entrada da comunidade acadÃªmica na Ouvidoria, tornando o processo de manifestaÃ§Ã£o mais simples, humano e acessÃ­vel para todos.
