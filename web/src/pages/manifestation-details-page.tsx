@@ -3,14 +3,9 @@ import type { ChangeEvent } from 'react'
 
 import { manifestantOnlyRoles } from '../app/access-policy'
 import { buildEvaluationHref, getSearchParams, routes } from '../app/routes'
-import type { Catalog } from '../application/catalog/catalog-types'
 import type {
   ManifestationAttachmentInfo,
   ManifestationDetail,
-  ManifestationHistoryEntry,
-  ManifestationHistoryEntryType,
-  ManifestationMessageEntry,
-  ManifestationMessageSenderType,
 } from '../application/manifestations/manifestation-detail-contract'
 import {
   ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
@@ -19,31 +14,19 @@ import {
   validateAttachmentFiles,
 } from '../application/manifestations/attachment-policy'
 import { canEvaluate, canSendMessage } from '../application/manifestations/manifestation-policy'
-import { getManifestationStatusContract } from '../application/manifestations/manifestation-status-contract'
-import { getManifestationTypeLabel } from '../application/manifestations/manifestation-type-contract'
-import { parseSystemMessagePayload } from '../application/manifestations/system-message-payload'
 import { FinalizeAction } from '../components/manifestations/finalize-action'
+import { ManifestationAttachmentsList } from '../components/manifestations/manifestation-attachments-list'
+import { ManifestationMessagesThread } from '../components/manifestations/manifestation-messages-thread'
+import { ManifestationSummaryCard } from '../components/manifestations/manifestation-summary-card'
+import { ManifestationTimelineCard } from '../components/manifestations/manifestation-timeline-card'
 import { formatFileSize } from '../components/forms/form-file-utils'
-import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
 import { Icon } from '../components/icons/icon'
-import type { IconName } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
 import { useCatalog } from '../hooks/use-catalog'
 import { useManifestationsService } from '../hooks/use-manifestations-service'
-import { cx } from '../utils/cx'
-import { formatBrDate, formatBrDateTime } from '../utils/format-date'
 
 type LoadStatus = 'loading' | 'ready' | 'error'
-
-const historyIconByType: Record<ManifestationHistoryEntryType, IconName> = {
-  administrative_answered: 'message-circle',
-  evaluation_recorded: 'star',
-  finalized_by_author: 'check-circle',
-  registered: 'file-text',
-  status_changed: 'info',
-  unknown: 'info',
-}
 
 function resolveQueryIds() {
   const params = getSearchParams()
@@ -51,17 +34,6 @@ function resolveQueryIds() {
     id: params.get('id'),
     legacyProtocol: params.get('protocol'),
   }
-}
-
-function buildAreaLabel(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
-  const campus = catalog?.campuses.find((entry) => entry.id === campusId)
-  const unit = campus?.administrativeUnits.find((entry) => entry.id === administrativeUnitId)
-
-  if (campus === undefined || unit === undefined) {
-    return 'Unidade não identificada'
-  }
-
-  return `${campus.label} — ${unit.label}`
 }
 
 function NotFoundCard({ description, title }: { description: string; title: string }) {
@@ -80,58 +52,6 @@ function NotFoundCard({ description, title }: { description: string; title: stri
   )
 }
 
-function SummaryCard({ catalog, detail }: { catalog: Catalog | null; detail: ManifestationDetail }) {
-  const statusContract = getManifestationStatusContract(detail.status)
-  const statusStyle = getManifestationStatusStyle(detail.status)
-  const areaLabel = buildAreaLabel(catalog, detail.campusId, detail.administrativeUnitId)
-  const typeLabel = getManifestationTypeLabel(detail.type)
-  const createdAtLabel = formatBrDate(detail.createdAt)
-
-  const items: Array<{ label: string; value: string }> = [
-    { label: 'Protocolo', value: detail.protocol },
-    { label: 'Tipo', value: typeLabel },
-    { label: 'Área', value: areaLabel },
-    { label: 'Registrada em', value: createdAtLabel },
-    { label: 'Status', value: statusContract.viewLabel },
-  ]
-
-  return (
-    <article
-      aria-labelledby="manifestation-detail-title"
-      className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6"
-    >
-      <div className="flex flex-col gap-4 rounded-[24px] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div className="min-w-0">
-          <p className="text-xs font-black tracking-[0.24em] text-home-blue uppercase">Manifestação</p>
-          <h1 className="mt-3 text-2xl leading-9 font-black text-home-text" id="manifestation-detail-title">
-            {detail.protocol}
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-home-brown">
-            {typeLabel} • {areaLabel}
-          </p>
-        </div>
-        <span
-          className={cx(
-            'inline-flex min-h-10 items-center justify-center rounded-lg px-4 text-base leading-6 font-black tracking-[0.04em] uppercase sm:min-h-12 sm:px-5 sm:text-lg',
-            statusStyle.badgeClassName,
-          )}
-        >
-          {statusContract.viewLabel}
-        </span>
-      </div>
-
-      <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-        {items.map((item) => (
-          <div className="rounded-3xl bg-home-action/50 p-4" key={item.label}>
-            <dt className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">{item.label}</dt>
-            <dd className="mt-2 text-lg leading-7 font-semibold text-home-text">{item.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </article>
-  )
-}
-
 function DescriptionCard({ detail }: { detail: ManifestationDetail }) {
   return (
     <section
@@ -141,86 +61,31 @@ function DescriptionCard({ detail }: { detail: ManifestationDetail }) {
       <h2 className="text-2xl font-black text-home-text" id="manifestation-description-title">
         Descrição da manifestação
       </h2>
-      <p className="mt-5 text-lg leading-7 text-home-text sm:text-xl">{detail.description}</p>
+      <p className="mt-5 text-lg leading-7 text-home-text sm:text-xl break-words whitespace-pre-line">
+        {detail.description}
+      </p>
       {detail.involvedPeople !== null && detail.involvedPeople.length > 0 ? (
         <div className="mt-6 rounded-2xl bg-home-action/40 p-4">
           <p className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">Pessoas envolvidas</p>
-          <p className="mt-2 text-base leading-6 text-home-text">{detail.involvedPeople}</p>
+          <p className="mt-2 text-base leading-6 text-home-text break-words">{detail.involvedPeople}</p>
         </div>
       ) : null}
     </section>
   )
 }
 
-function AttachmentListItem({
-  attachment,
-  detail,
-}: {
-  attachment: ManifestationAttachmentInfo
-  detail: ManifestationDetail
-}) {
-  const manifestationsService = useManifestationsService()
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleDownload() {
-    setIsDownloading(true)
-    setError(null)
-
-    try {
-      const downloadUrl = await manifestationsService.getAttachmentDownloadUrl({
-        attachmentId: attachment.id,
-        manifestationId: detail.id,
-      })
-      window.open(downloadUrl, '_blank', 'noopener,noreferrer')
-    } catch (downloadError) {
-      const message =
-        downloadError instanceof Error ? downloadError.message : 'Não foi possível gerar o link de download.'
-      setError(message)
-    } finally {
-      setIsDownloading(false)
-    }
-  }
-
-  return (
-    <li className="rounded-2xl border border-login-brown/10 bg-white p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-home-blue/10 text-home-blue">
-          <Icon className="size-5" name="file-text" />
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-home-text">{attachment.originalName}</p>
-          <p className="mt-1 text-xs leading-5 text-home-brown">
-            {formatFileSize(attachment.sizeInBytes)} • {attachment.mimeType}
-          </p>
-        </div>
-      </div>
-      <button
-        className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-home-blue px-4 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-        disabled={isDownloading}
-        onClick={() => void handleDownload()}
-        type="button"
-      >
-        {isDownloading ? 'Gerando link...' : 'Baixar anexo'}
-        <Icon className="size-4" name="arrow-right" />
-      </button>
-      {error !== null ? (
-        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm leading-5 font-bold text-red-800" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </li>
-  )
-}
-
-function AttachmentsCard({ detail, onChanged }: { detail: ManifestationDetail; onChanged: () => void }) {
+function AttachmentsUploadForm({ detail, onUploaded }: { detail: ManifestationDetail; onUploaded: () => void }) {
   const manifestationsService = useManifestationsService()
   const fieldId = useId()
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const remainingSlots = getRemainingAttachmentSlots(detail.attachments.length)
-  const uploadAllowed = canUploadAttachments(detail.status) && remainingSlots > 0
+  const uploadEnabled = canUploadAttachments(detail.status) && remainingSlots > 0
+
+  if (!canUploadAttachments(detail.status)) {
+    return null
+  }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? [])
@@ -256,7 +121,7 @@ function AttachmentsCard({ detail, onChanged }: { detail: ManifestationDetail; o
       }
 
       setSelectedFiles([])
-      onChanged()
+      onUploaded()
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : 'Não foi possível enviar os anexos.'
       setError(message)
@@ -267,243 +132,62 @@ function AttachmentsCard({ detail, onChanged }: { detail: ManifestationDetail; o
 
   return (
     <section
-      aria-labelledby="manifestation-attachments-title"
-      className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6"
+      aria-labelledby="manifestation-attachments-upload-title"
+      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-black text-home-text" id="manifestation-attachments-title">
-            Anexos
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-home-brown">
-            {detail.attachments.length} de 5 anexo{detail.attachments.length === 1 ? '' : 's'} enviados.
-          </p>
-        </div>
+        <h3 className="text-xl font-black text-home-text" id="manifestation-attachments-upload-title">
+          Enviar novos anexos
+        </h3>
         <span className="rounded-full bg-home-chip px-4 py-2 text-sm font-bold text-home-brown">
           {remainingSlots} vaga{remainingSlots === 1 ? '' : 's'}
         </span>
       </div>
 
-      {detail.attachments.length === 0 ? (
-        <p className="mt-5 rounded-2xl bg-home-chip/70 px-5 py-4 text-sm leading-6 text-home-brown">
-          Nenhum anexo enviado ainda.
-        </p>
-      ) : (
-        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-          {detail.attachments.map((attachment) => (
-            <AttachmentListItem attachment={attachment} detail={detail} key={attachment.id} />
-          ))}
-        </ul>
-      )}
-
-      {canUploadAttachments(detail.status) ? (
-        <form
-          className="mt-6 rounded-[28px] border border-login-brown/10 bg-white p-4 shadow-sm"
-          onSubmit={handleUpload}
+      <form className="mt-5" onSubmit={(event) => void handleUpload(event)}>
+        <label
+          aria-disabled={!uploadEnabled}
+          className="flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-home-chip bg-home-action/35 px-4 py-4 text-center text-sm leading-5 text-home-brown transition duration-150 hover:border-home-blue focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-home-blue aria-disabled:cursor-not-allowed aria-disabled:opacity-65"
+          htmlFor={fieldId}
         >
-          <label
-            aria-disabled={!uploadAllowed}
-            className="flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-home-chip bg-home-action/35 px-4 py-4 text-center text-sm leading-5 text-home-brown transition duration-150 hover:border-home-blue focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-home-blue aria-disabled:cursor-not-allowed aria-disabled:opacity-65"
-            htmlFor={fieldId}
-          >
-            <Icon className="mb-2 size-5 text-home-blue" name="upload-cloud" />
-            {uploadAllowed ? 'Selecionar anexos' : 'Limite de anexos atingido'}
-            <input
-              accept={ACCEPTED_ATTACHMENT_INPUT_ACCEPT}
-              className="sr-only"
-              disabled={!uploadAllowed || isUploading}
-              id={fieldId}
-              multiple
-              onChange={handleFileChange}
-              type="file"
-            />
-          </label>
+          <Icon className="mb-2 size-5 text-home-blue" name="upload-cloud" />
+          {uploadEnabled ? 'Selecionar anexos' : 'Limite de anexos atingido'}
+          <input
+            accept={ACCEPTED_ATTACHMENT_INPUT_ACCEPT}
+            className="sr-only"
+            disabled={!uploadEnabled || isUploading}
+            id={fieldId}
+            multiple
+            onChange={handleFileChange}
+            type="file"
+          />
+        </label>
 
-          {selectedFiles.length > 0 ? (
-            <ul className="mt-4 space-y-2">
-              {selectedFiles.map((file) => (
-                <li className="truncate rounded-xl bg-home-action/50 px-3 py-2 text-sm text-home-text" key={file.name}>
-                  {file.name} • {formatFileSize(file.size)}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          <button
-            className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-            disabled={isUploading || selectedFiles.length === 0}
-            type="submit"
-          >
-            {isUploading ? 'Enviando...' : 'Enviar anexos'}
-            <Icon className="size-4" name="upload-cloud" />
-          </button>
-
-          {error !== null ? (
-            <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </form>
-      ) : (
-        <p className="mt-5 rounded-2xl bg-home-chip/70 px-5 py-4 text-sm leading-6 text-home-brown">
-          Esta manifestação não recebe novos anexos no status atual.
-        </p>
-      )}
-    </section>
-  )
-}
-
-function describeHistoryEntry(entry: ManifestationHistoryEntry): string {
-  if (entry.description.length > 0) {
-    return entry.description
-  }
-
-  switch (entry.type) {
-    case 'registered':
-      return 'Manifestação registrada.'
-    case 'administrative_answered':
-      return 'A Ouvidoria respondeu à manifestação.'
-    case 'status_changed':
-      return 'O status da manifestação foi atualizado.'
-    case 'finalized_by_author':
-      return 'A manifestação foi finalizada pelo autor.'
-    case 'evaluation_recorded':
-      return 'A avaliação do atendimento foi registrada.'
-    default:
-      return 'Atualização do sistema.'
-  }
-}
-
-function TimelineCard({ detail }: { detail: ManifestationDetail }) {
-  return (
-    <section
-      aria-labelledby="manifestation-timeline-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h2 className="text-2xl font-black text-home-text" id="manifestation-timeline-title">
-        Linha do tempo
-      </h2>
-
-      {detail.history.length === 0 ? (
-        <p className="mt-5 rounded-2xl bg-home-chip/60 px-4 py-3 text-sm leading-6 text-home-brown">
-          Nenhuma atualização registrada ainda.
-        </p>
-      ) : (
-        <ol className="mt-5 space-y-4">
-          {detail.history.map((entry, index) => {
-            const icon = historyIconByType[entry.type]
-            const description = describeHistoryEntry(entry)
-            const detailLine =
-              entry.type === 'status_changed' && entry.fromStatus !== null && entry.toStatus !== null
-                ? `${getManifestationStatusContract(entry.fromStatus).viewLabel} → ${getManifestationStatusContract(entry.toStatus).viewLabel}`
-                : entry.type === 'evaluation_recorded' && entry.rating !== null
-                  ? `Nota: ${entry.rating}/5`
-                  : null
-
-            return (
-              <li className="flex items-start gap-4" key={`${entry.createdAt}-${index}`}>
-                <span className="mt-1 grid size-9 shrink-0 place-items-center rounded-full bg-home-blue/10 text-home-blue">
-                  <Icon className="size-4" name={icon} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm leading-6 font-semibold text-home-text">{description}</p>
-                  {detailLine !== null ? <p className="mt-1 text-sm leading-5 text-home-brown">{detailLine}</p> : null}
-                  <p className="mt-1 text-xs leading-5 text-home-brown/80">{formatBrDateTime(entry.createdAt)}</p>
-                </div>
+        {selectedFiles.length > 0 ? (
+          <ul className="mt-4 space-y-2">
+            {selectedFiles.map((file) => (
+              <li className="truncate rounded-xl bg-home-action/50 px-3 py-2 text-sm text-home-text" key={file.name}>
+                {file.name} • {formatFileSize(file.size)}
               </li>
-            )
-          })}
-        </ol>
-      )}
-    </section>
-  )
-}
-
-function getSenderLabel(senderType: ManifestationMessageSenderType): string {
-  switch (senderType) {
-    case 'manifestant':
-    case 'anonymous_manifestant':
-      return 'Você'
-    case 'ombudsman':
-      return 'Ouvidoria'
-    case 'admin':
-      return 'Administração'
-    case 'system':
-      return 'Sistema'
-    default:
-      return 'Atualização do sistema'
-  }
-}
-
-function MessageBubble({ message }: { message: ManifestationMessageEntry }) {
-  const isOwn = message.senderType === 'manifestant' || message.senderType === 'anonymous_manifestant'
-  const isInstitutional = message.senderType === 'ombudsman' || message.senderType === 'admin'
-  const isSystem = !isOwn && !isInstitutional
-  const senderLabel = getSenderLabel(message.senderType)
-  const systemPayload = isSystem ? parseSystemMessagePayload(message.content) : null
-  const contentToRender =
-    isSystem && systemPayload !== null ? `Atualização do sistema (${systemPayload.kind}).` : message.content
-
-  return (
-    <li className={cx('flex', isOwn ? 'justify-end' : isSystem ? 'justify-center' : 'justify-start')}>
-      <div
-        className={cx(
-          'max-w-[85%] rounded-[28px] px-5 py-4 text-base leading-7 shadow-sm',
-          isOwn && 'bg-home-blue text-white',
-          isInstitutional && 'bg-home-action/60 text-home-text',
-          isSystem && 'bg-home-chip/70 text-home-brown text-sm',
-        )}
-      >
-        <p
-          className={cx(
-            'text-xs font-bold tracking-[0.14em] uppercase',
-            isOwn ? 'text-white/80' : 'text-home-brown/80',
-          )}
-        >
-          {senderLabel}
-        </p>
-        <p className="mt-1 whitespace-pre-line">{contentToRender}</p>
-        <p
-          className={cx(
-            'mt-3 text-xs font-semibold tracking-[0.12em] uppercase',
-            isOwn ? 'text-white/70' : 'text-home-brown/70',
-          )}
-        >
-          {formatBrDateTime(message.createdAt)}
-        </p>
-      </div>
-    </li>
-  )
-}
-
-function MessagesCard({ detail }: { detail: ManifestationDetail }) {
-  return (
-    <section
-      aria-labelledby="manifestation-messages-title"
-      className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-black text-home-text" id="manifestation-messages-title">
-          Mensagens
-        </h2>
-        <span className="rounded-full bg-home-chip px-4 py-2 text-sm font-bold text-home-brown">
-          {detail.messages.length} mensage{detail.messages.length === 1 ? 'm' : 'ns'}
-        </span>
-      </div>
-
-      <div className="mt-5 rounded-[28px] border border-login-brown/10 bg-white p-4 shadow-sm">
-        {detail.messages.length === 0 ? (
-          <p className="rounded-[24px] border border-home-chip bg-home-chip/70 px-5 py-4 text-sm leading-6 text-home-brown">
-            Nenhuma mensagem trocada ainda. Quando a Ouvidoria responder, a conversa aparece aqui.
-          </p>
-        ) : (
-          <ul className="space-y-4">
-            {detail.messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
             ))}
           </ul>
-        )}
-      </div>
+        ) : null}
+
+        <button
+          className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+          disabled={isUploading || selectedFiles.length === 0}
+          type="submit"
+        >
+          {isUploading ? 'Enviando...' : 'Enviar anexos'}
+          <Icon className="size-4" name="upload-cloud" />
+        </button>
+
+        {error !== null ? (
+          <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </form>
     </section>
   )
 }
@@ -600,23 +284,15 @@ function EvaluationAction({ detail }: { detail: ManifestationDetail }) {
   }
 
   return (
-    <section className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h3 className="text-xl font-black text-home-text">Avalie o atendimento</h3>
-          <p className="mt-2 text-sm leading-6 text-home-brown">
-            Sua avaliação ajuda a Ouvidoria a melhorar o serviço. Leva menos de um minuto.
-          </p>
-        </div>
-        <a
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-home-blue px-5 text-sm font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-          href={buildEvaluationHref(detail.id)}
-        >
-          Avaliar atendimento
-          <Icon className="size-4" name="star" />
-        </a>
-      </div>
-    </section>
+    <div className="flex flex-col items-center gap-3">
+      <a
+        className="inline-flex w-full min-h-14 items-center justify-center gap-2 rounded-full border-2 border-home-blue bg-transparent px-6 text-sm font-bold tracking-wide text-home-blue no-underline transition duration-150 hover:bg-home-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+        href={buildEvaluationHref(detail.id)}
+      >
+        Avaliar atendimento
+        <Icon className="size-4" name="star" />
+      </a>
+    </div>
   )
 }
 
@@ -632,6 +308,20 @@ export function ManifestationDetailsPage() {
   const refetch = useCallback(() => {
     setReloadToken((current) => current + 1)
   }, [])
+
+  const resolveDownloadUrl = useCallback(
+    async (attachment: ManifestationAttachmentInfo) => {
+      if (detail === null) {
+        throw new Error('Detalhe da manifestação indisponível.')
+      }
+
+      return manifestationsService.getAttachmentDownloadUrl({
+        attachmentId: attachment.id,
+        manifestationId: detail.id,
+      })
+    },
+    [detail, manifestationsService],
+  )
 
   useEffect(() => {
     if (id === null) {
@@ -720,11 +410,15 @@ export function ManifestationDetailsPage() {
 
           {status === 'ready' && detail !== null ? (
             <div className="mt-8 space-y-10">
-              <SummaryCard catalog={catalog} detail={detail} />
+              <ManifestationSummaryCard catalog={catalog} detail={detail} />
               <DescriptionCard detail={detail} />
-              <AttachmentsCard detail={detail} onChanged={refetch} />
-              <TimelineCard detail={detail} />
-              <MessagesCard detail={detail} />
+              <ManifestationAttachmentsList
+                attachments={detail.attachments}
+                onResolveDownloadUrl={resolveDownloadUrl}
+              />
+              <AttachmentsUploadForm detail={detail} onUploaded={refetch} />
+              <ManifestationTimelineCard history={detail.history} />
+              <ManifestationMessagesThread messages={detail.messages} perspective="manifestant" />
               <MessageComposer detail={detail} onSent={refetch} />
               <FinalizeAction detail={detail} onFinalized={refetch} />
               <EvaluationAction detail={detail} />

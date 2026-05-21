@@ -263,7 +263,7 @@ function ManifestationCard({
   return (
     <article
       className={cx(
-        'rounded-lg border-l-4 bg-home-surface px-4 py-4 shadow-home-card sm:px-6 sm:py-5',
+        'min-w-0 rounded-lg border-l-4 bg-home-surface px-4 py-4 shadow-home-card sm:px-6 sm:py-5',
         statusStyle.accentClassName,
       )}
     >
@@ -289,8 +289,8 @@ function ManifestationCard({
             </span>
           </div>
 
-          <h3 className="mt-3 text-lg leading-[22.5px] font-bold text-home-text">{title}</h3>
-          <p className="mt-2 text-sm leading-5 text-home-brown">
+          <h3 className="mt-3 text-lg leading-[22.5px] font-bold text-home-text break-words">{title}</h3>
+          <p className="mt-2 text-sm leading-5 text-home-brown break-words">
             {typeLabel} • {areaLabel}
           </p>
         </div>
