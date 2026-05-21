@@ -12,12 +12,23 @@ import {
 import type { ManifestationSummary } from '../../application/manifestations/manifestation-summary-contract'
 import type {
   AddMessageInput,
+  AttachmentDownloadUrlResult,
   CreateManifestationInput,
   CreateManifestationResult,
   EvaluateInput,
+  GetManifestationAttachmentDownloadUrlInput,
+  GetTrackedManifestationAttachmentDownloadUrlInput,
   ManifestationsService,
+  TrackManifestationInput,
+  UploadManifestationAttachmentInput,
+  UploadTrackedManifestationAttachmentInput,
 } from '../../application/manifestations/manifestations-service'
-import { apiFetch } from '../http/api-client'
+import type {
+  RawTrackedManifestationDetail,
+  TrackedManifestationDetail,
+} from '../../application/manifestations/tracked-manifestation-contract'
+import { mapTrackedManifestationDetail } from '../../application/manifestations/tracked-manifestation-contract'
+import { apiFetch, publicApiFetch } from '../http/api-client'
 
 interface ListResponse {
   manifestations: ManifestationSummary[]
@@ -29,6 +40,10 @@ interface DetailResponse {
 
 interface MessageResponse {
   message: RawMessageEntry
+}
+
+interface TrackedDetailResponse {
+  manifestation: RawTrackedManifestationDetail
 }
 
 interface RawManifestationDetail extends Omit<ManifestationDetail, 'attachments' | 'history' | 'messages'> {
@@ -118,9 +133,39 @@ export class HttpManifestationsService implements ManifestationsService {
     })
   }
 
+  async getAttachmentDownloadUrl(input: GetManifestationAttachmentDownloadUrlInput): Promise<string> {
+    const response = await apiFetch<AttachmentDownloadUrlResult>(
+      `/manifestations/${input.manifestationId}/attachments/${input.attachmentId}/download-url`,
+      { method: 'POST' },
+    )
+
+    return response.downloadUrl
+  }
+
   async getById(id: string): Promise<ManifestationDetail> {
     const response = await apiFetch<DetailResponse>(`/manifestations/${id}`)
     return mapManifestationDetail(response.manifestation)
+  }
+
+  async getTrackedAttachmentDownloadUrl(input: GetTrackedManifestationAttachmentDownloadUrlInput): Promise<string> {
+    const response = await publicApiFetch<AttachmentDownloadUrlResult>(
+      `/manifestations/track/attachments/${input.attachmentId}/download-url`,
+      {
+        body: { accessCode: input.accessCode, protocol: input.protocol },
+        method: 'POST',
+      },
+    )
+
+    return response.downloadUrl
+  }
+
+  async getTrackedDetails(input: TrackManifestationInput): Promise<TrackedManifestationDetail> {
+    const response = await publicApiFetch<TrackedDetailResponse>('/manifestations/track/details', {
+      body: { accessCode: input.accessCode, protocol: input.protocol },
+      method: 'POST',
+    })
+
+    return mapTrackedManifestationDetail(response.manifestation)
   }
 
   async list(page = 1): Promise<ManifestationSummary[]> {
@@ -129,5 +174,27 @@ export class HttpManifestationsService implements ManifestationsService {
     })
 
     return response.manifestations
+  }
+
+  async uploadAttachment(input: UploadManifestationAttachmentInput): Promise<void> {
+    const body = new FormData()
+    body.set('file', input.file)
+
+    await apiFetch<unknown>(`/manifestations/${input.manifestationId}/attachments`, {
+      body,
+      method: 'POST',
+    })
+  }
+
+  async uploadTrackedAttachment(input: UploadTrackedManifestationAttachmentInput): Promise<void> {
+    const body = new FormData()
+    body.set('protocol', input.protocol)
+    body.set('accessCode', input.accessCode)
+    body.set('file', input.file)
+
+    await publicApiFetch<unknown>('/manifestations/track/attachments', {
+      body,
+      method: 'POST',
+    })
   }
 }
