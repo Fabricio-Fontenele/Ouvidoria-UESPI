@@ -1,3 +1,5 @@
+import type { ManifestationType } from '../manifestations/manifestation-type-contract'
+
 export type GuaraChatMode = 'general' | 'new-manifestation' | 'manifestation-detail'
 
 export type GuaraMessageAuthor = 'guara' | 'user'
@@ -13,12 +15,40 @@ export interface GuaraChatContext {
   protocol: string | null
 }
 
+export type GuaraChatTurnRole = 'user' | 'assistant'
+
+export interface GuaraChatHistoryItem {
+  role: GuaraChatTurnRole
+  content: string
+}
+
+export type GuaraChatIntent =
+  | 'institutional_question'
+  | 'manifestation_candidate'
+  | 'manifestation_draft_ready'
+  | 'out_of_scope'
+  | 'unknown'
+
+export type GuaraChatMissingField = 'type' | 'campusId' | 'administrativeUnitId' | 'description'
+
+export interface GuaraChatDraft {
+  type: ManifestationType | null
+  campusId: string | null
+  administrativeUnitId: string | null
+  description: string | null
+  involvedPeople: string | null
+}
+
 export interface SendGuaraMessageInput {
-  context: GuaraChatContext
+  history: GuaraChatHistoryItem[]
   message: string
-  previousMessages: GuaraMessage[]
 }
 
 export interface SendGuaraMessageOutput {
-  message: GuaraMessage
+  answer: string
+  intent: GuaraChatIntent
+  shouldOpenManifestationDraft: boolean
+  draft: GuaraChatDraft | null
+  missingFields: GuaraChatMissingField[]
+  confidence: number | null
 }

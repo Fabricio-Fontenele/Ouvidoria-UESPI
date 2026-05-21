@@ -16,13 +16,15 @@ export class SendGuaraMessage {
   }
 
   async execute(input: SendGuaraMessageInput): Promise<SendGuaraMessageOutput> {
-    if (input.message.trim().length === 0) {
+    const trimmedMessage = input.message.trim()
+
+    if (trimmedMessage.length === 0) {
       throw new EmptyGuaraMessageError()
     }
 
     return this.chatService.sendMessage({
-      ...input,
-      message: input.message.trim(),
+      history: input.history,
+      message: trimmedMessage,
     })
   }
 }
