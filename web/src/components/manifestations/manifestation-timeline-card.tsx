@@ -17,23 +17,19 @@ const historyIconByType: Record<ManifestationHistoryEntryType, IconName> = {
 }
 
 function describeHistoryEntry(entry: ManifestationHistoryEntry): string {
-  if (entry.description.length > 0) {
-    return entry.description
-  }
-
   switch (entry.type) {
     case 'registered':
       return 'Manifestação registrada.'
     case 'administrative_answered':
       return 'A Ouvidoria respondeu à manifestação.'
     case 'status_changed':
-      return 'O status da manifestação foi atualizado.'
+      return 'Status atualizado.'
     case 'finalized_by_author':
-      return 'A manifestação foi finalizada pelo autor.'
+      return 'Manifestação encerrada pelo autor.'
     case 'evaluation_recorded':
-      return 'A avaliação do atendimento foi registrada.'
+      return 'Avaliação do atendimento registrada.'
     default:
-      return 'Atualização do sistema.'
+      return entry.description.length > 0 ? entry.description : 'Atualização do sistema.'
   }
 }
 
