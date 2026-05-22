@@ -32,7 +32,7 @@ describe('getGuaraChatCapabilities', () => {
     const capabilities = getGuaraChatCapabilities(buildUser('manifestant'))
 
     expect(capabilities.canCreateDraft).toBe(true)
-    expect([...capabilities.allowedDraftTypes]).toEqual(['report'])
+    expect([...capabilities.allowedDraftTypes]).toEqual(['report', 'complaint', 'suggestion', 'compliment'])
   })
 
   it('returns administrative capabilities for ombudsman and admin', () => {
@@ -59,8 +59,17 @@ describe('canApplyDraft', () => {
     expect(canApplyDraft(capabilities, buildDraft({ type: 'report' }))).toBe(false)
   })
 
-  it('rejects drafts with type outside allowedDraftTypes', () => {
+  it('allows manifestant drafts of any type', () => {
     const capabilities = getGuaraChatCapabilities(buildUser('manifestant'))
+
+    expect(canApplyDraft(capabilities, buildDraft({ type: 'report' }))).toBe(true)
+    expect(canApplyDraft(capabilities, buildDraft({ type: 'complaint' }))).toBe(true)
+    expect(canApplyDraft(capabilities, buildDraft({ type: 'suggestion' }))).toBe(true)
+    expect(canApplyDraft(capabilities, buildDraft({ type: 'compliment' }))).toBe(true)
+  })
+
+  it('rejects non-report drafts for anonymous public visitors', () => {
+    const capabilities = getGuaraChatCapabilities(null)
 
     expect(canApplyDraft(capabilities, buildDraft({ type: 'complaint' }))).toBe(false)
     expect(canApplyDraft(capabilities, buildDraft({ type: 'suggestion' }))).toBe(false)

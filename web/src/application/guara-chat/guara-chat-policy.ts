@@ -15,7 +15,7 @@ const publicCapabilities: GuaraChatCapabilities = {
 }
 
 const manifestantCapabilities: GuaraChatCapabilities = {
-  allowedDraftTypes: ['report'],
+  allowedDraftTypes: ['report', 'complaint', 'suggestion', 'compliment'],
   canAskInstitutionalInfo: true,
   canCreateDraft: true,
 }
