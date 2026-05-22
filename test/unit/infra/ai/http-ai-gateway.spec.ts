@@ -7,6 +7,7 @@ import { HttpAiGateway } from '#src/infra/ai/http-ai-gateway.js'
 const baseInput: AiGatewayChatInput = {
   history: [],
   message: 'como abrir uma reclamação?',
+  userRole: null,
   campuses: [{ id: 'campus-1', label: 'Campus 1' }],
   administrativeUnits: [{ id: 'unit-1', label: 'Unidade 1', campusId: 'campus-1' }],
 }

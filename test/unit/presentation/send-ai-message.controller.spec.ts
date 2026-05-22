@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { SendAiMessageUseCase } from '#src/application/use-cases/send-ai-message/send-ai-message-use-case.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import {
   SendAiMessageController,
   type SendAiMessageBody,
@@ -33,7 +34,7 @@ describe('SendAiMessageController', () => {
     sut = new SendAiMessageController(useCase, validator)
   })
 
-  it('returns 200 with the AI response when validation succeeds', async () => {
+  it('returns 200 with the AI response and forwards userRole=null for anonymous callers', async () => {
     validator.validate.mockReturnValue({ success: true, data: validBody })
     useCase.execute.mockResolvedValue({
       answer: 'Entendi sua demanda.',
@@ -47,7 +48,28 @@ describe('SendAiMessageController', () => {
     const response = await sut.handle(baseRequest)
 
     expect(response.statusCode).toBe(200)
-    expect(useCase.execute.mock.calls[0]?.[0]).toStrictEqual(validBody)
+    expect(useCase.execute.mock.calls[0]?.[0]).toStrictEqual({ ...validBody, userRole: null })
+  })
+
+  it('forwards the authenticated user role into the use case', async () => {
+    validator.validate.mockReturnValue({ success: true, data: validBody })
+    useCase.execute.mockResolvedValue({
+      answer: 'ok',
+      intent: 'institutional_question',
+      shouldOpenManifestationDraft: false,
+      draft: null,
+      missingFields: [],
+      confidence: 0.5,
+    })
+
+    const authenticatedRequest: HttpRequest = {
+      ...baseRequest,
+      user: { id: 'user-1', role: UserRole.MANIFESTANT },
+    }
+
+    await sut.handle(authenticatedRequest)
+
+    expect(useCase.execute.mock.calls[0]?.[0]).toStrictEqual({ ...validBody, userRole: UserRole.MANIFESTANT })
   })
 
   it('returns 400 with the validation error and skips the use case when validation fails', async () => {

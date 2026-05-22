@@ -16,9 +16,16 @@ const administrativeUnitSchema = z.object({
   campusId: z.string().min(1),
 })
 
+const userRoleSchema = z
+  .enum(['manifestant', 'ombudsman', 'admin'])
+  .nullable()
+  .optional()
+  .transform((value) => value ?? null)
+
 export const sendAiMessageBodySchema = z.object({
   history: z.array(historyMessageSchema).max(20),
   message: z.string().trim().min(1).max(4000),
+  userRole: userRoleSchema,
   campuses: z.array(campusSchema).max(200),
   administrativeUnits: z.array(administrativeUnitSchema).max(2000),
 })

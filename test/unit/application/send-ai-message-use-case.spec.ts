@@ -6,6 +6,7 @@ import type { PublicCatalogDTO } from '#src/application/dto/catalog-dtos.js'
 import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import { SendAiMessageUseCase } from '#src/application/use-cases/send-ai-message/send-ai-message-use-case.js'
 import { ManifestationType } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 
 describe('SendAiMessageUseCase', () => {
   let aiGateway: DeepMockProxy<AiGateway>
@@ -20,6 +21,7 @@ describe('SendAiMessageUseCase', () => {
       },
     ],
     message: 'Foi na coordenação de sistemas em Parnaíba.',
+    userRole: null,
   }
 
   const publicCatalog: PublicCatalogDTO = {
@@ -104,6 +106,21 @@ describe('SendAiMessageUseCase', () => {
       missingFields: [],
       confidence: 0.92,
     })
+  })
+
+  it('forwards the userRole to the gateway for authenticated callers', async () => {
+    aiGateway.chat.mockResolvedValue({
+      answer: 'Resposta padrão.',
+      intent: 'institutional_question',
+      shouldOpenManifestationDraft: false,
+      draft: null,
+      missingFields: [],
+      confidence: 0.5,
+    })
+
+    await sut.execute({ ...input, userRole: UserRole.MANIFESTANT })
+
+    expect(aiGateway.chat.mock.calls[0]?.[0].userRole).toBe(UserRole.MANIFESTANT)
   })
 
   it('ignores gateway draft payloads outside manifestation intents', async () => {
@@ -325,7 +342,7 @@ describe('SendAiMessageUseCase', () => {
         { role: 'user' as const, content: 'c'.repeat(50) },
       ]
 
-      await useCaseWithBudget.execute({ history, message: 'next' })
+      await useCaseWithBudget.execute({ history, message: 'next', userRole: null })
 
       expect(aiGateway.chat.mock.calls[0]?.[0].history).toStrictEqual(history)
     })
@@ -340,7 +357,7 @@ describe('SendAiMessageUseCase', () => {
         { role: 'user' as const, content: 'C'.repeat(80) },
       ]
 
-      await useCaseWithBudget.execute({ history, message: 'next' })
+      await useCaseWithBudget.execute({ history, message: 'next', userRole: null })
 
       const forwarded = aiGateway.chat.mock.calls[0]?.[0].history ?? []
       expect(forwarded.length).toBeLessThan(history.length)

@@ -1,16 +1,17 @@
-import type { AiChatHistoryMessage } from '../../application/dtos/ai-chat-request.js'
+import type { AiChatHistoryMessage, AiChatUserRole } from '../../application/dtos/ai-chat-request.js'
 import type { CatalogContext } from '../../application/ports/catalog-context.js'
 import type { RetrievedChunk } from '../../application/ports/knowledge-retriever.js'
 
 interface BuildPromptInput {
   history: AiChatHistoryMessage[]
   message: string
+  userRole: AiChatUserRole
   contextChunks: RetrievedChunk[]
   catalog: CatalogContext
 }
 
 export class RagPromptBuilder {
-  build({ history, message, contextChunks, catalog }: BuildPromptInput): {
+  build({ history, message, userRole, contextChunks, catalog }: BuildPromptInput): {
     systemPrompt: string
     userPrompt: string
   } {
@@ -19,19 +20,23 @@ export class RagPromptBuilder {
       '',
       'Suas funções principais: (1) responder dúvidas sobre a Ouvidoria com base nos trechos oficiais do CONTEXTO e (2) ajudar o usuário a montar o rascunho (draft) de uma manifestação quando ele descrever um problema, sugestão, elogio ou denúncia.',
       '',
+      this.renderUserProfile(userRole),
+      '',
       'REGRAS IMPORTANTES:',
+      '',
+      '0. ANTES DE RESPONDER, releia a MENSAGEM ATUAL DO USUÁRIO e o HISTÓRICO e extraia TODAS as informações já fornecidas (campus, unidade/local, descrição, envolvidos). NUNCA peça novamente algo que o usuário já disse — isso é o erro mais grave que você pode cometer. As "Respostas recomendadas" do CONTEXTO são exemplos de TOM, não falas prontas para copiar literalmente. Sempre adapte usando o que o usuário já forneceu. Exemplo: se o usuário escreve "queria elogiar uma professora da computação em Parnaíba", você JÁ tem tipo=compliment, campus=Parnaíba, unidade=Computação — não pergunte de novo, só confirme o que entendeu e pergunte o que ainda falta (ex.: nome da professora).',
       '',
       '1. NUNCA registre uma manifestação por conta própria. Você apenas prepara um rascunho (draft) — quem confirma o envio é o próprio usuário.',
       '2. NÃO dê parecer jurídico, aconselhamento legal ou conclusões que pareçam "sentença". Se o CONTEXTO mencionar uma lei ou resolução, cite de forma natural e informativa, sem tom de "decisão judicial". Exemplo certo: "Segundo a Resolução CONSUN 005/2018, o prazo para resposta é de X dias úteis." Exemplo errado: "Com base no Art. 15, § 3º, o usuário tem o direito líquido e certo de...".',
-      '3. Se o usuário relatar assalto, ameaça, agressão, assédio, violência ou risco à integridade física: primeiro oriente a procurar ajuda imediata (Polícia 190, Guarda Universitária), depois ajude com o registro da denúncia.',
+      '3. Se o usuário relatar assalto, ameaça, agressão, assédio, violência ou risco à integridade física: PRIMEIRO acolha e oriente a procurar ajuda imediata (Polícia Militar 190, Polícia Civil 197, segurança do campus se houver), DEPOIS ajude com o registro da denúncia. Nunca peça campus/unidade antes de oferecer orientação de segurança.',
       '4. Responda SEMPRE em português do Brasil, com linguagem simples e acessível.',
       '5. Baseie suas respostas no CONTEXTO fornecido. Se a informação não estiver no CONTEXTO, diga que não sabe e sugira procurar a Ouvidoria.',
       '6. NÃO invente artigos de lei, prazos ou regras que não estejam no CONTEXTO.',
-      '7. Se o usuário não estiver identificado (público/anônimo), só ajude a abrir manifestações do tipo denúncia (report) — reclamações, sugestões e elogios exigem identificação.',
-      '8. Use EXATAMENTE os ids do CATÁLOGO para preencher `campusId` e `administrativeUnitId`.',
+      '7. Respeite o PERFIL DO USUÁRIO declarado acima ao decidir quais tipos de manifestação você pode preparar pelo chat. Anônimo: apenas denúncia. Manifestante autenticado: qualquer tipo. Ouvidor/admin: apenas modo informativo, não prepare draft.',
+      '8. Use EXATAMENTE os ids do CATÁLOGO para preencher `campusId` e `administrativeUnitId`. INFIRA o id quando o usuário descrever a unidade em palavras (ex.: "professor de computação" → procure no catálogo uma unidade cujo `label` contenha "Computação" ou "Ciência da Computação"; "secretaria" → procure por "Secretaria"; "PRAD" → "Pró-Reitoria de Administração"; "RU" ou "restaurante" → "Restaurante Universitário"). Só deixe `administrativeUnitId` como `null` se NENHUMA unidade do catálogo corresponder ao que o usuário descreveu — nesse caso, pergunte explicitamente qual unidade.',
       '9. `draft.type` aceita apenas: `report` (denúncia), `complaint` (reclamação), `suggestion` (sugestão), `compliment` (elogio).',
       '10. `draft.description` deve resumir os fatos com as palavras do usuário (o quê, onde, quando). Não invente.',
-      '11. `draft.involvedPeople` registre exatamente o que o usuário disse sobre envolvidos, mesmo que genérico ("a atendente", "o segurança"). Só use `null` se ninguém foi mencionado.',
+      '11. `draft.involvedPeople` registre exatamente o que o usuário disse sobre envolvidos, mesmo que genérico ("a atendente", "o segurança"). Se a manifestação se referir a uma pessoa específica (professor, servidor, atendente, coordenador, etc.) e o usuário NÃO informou o nome ou função, PERGUNTE de forma acolhedora antes de fechar o draft — exemplo: "Você lembra o nome do professor (ou o cargo/função dele) pra eu registrar nos envolvidos?". Só use `null` se ninguém foi mencionado.',
       '12. `missingFields` = campos obrigatórios vazios (`type`, `campusId`, `administrativeUnitId`, `description`). `involvedPeople` NÃO é obrigatório.',
       '13. `shouldOpenManifestationDraft` só é `true` se intent for `manifestation_draft_ready` E todos os campos obrigatórios estiverem preenchidos.',
       '14. `confidence` de 0 a 1. Se < 0.4, prefira `unknown` ou `out_of_scope`.',
@@ -58,6 +63,18 @@ export class RagPromptBuilder {
     const userPrompt = [this.renderHistory(history), '', `MENSAGEM ATUAL DO USUÁRIO:\n${message.trim()}`].join('\n')
 
     return { systemPrompt, userPrompt }
+  }
+
+  private renderUserProfile(userRole: AiChatUserRole): string {
+    switch (userRole) {
+      case 'manifestant':
+        return 'PERFIL DO USUÁRIO: manifestante autenticado. Pode abrir QUALQUER tipo de manifestação pelo chat (denúncia, reclamação, sugestão, elogio).'
+      case 'ombudsman':
+      case 'admin':
+        return `PERFIL DO USUÁRIO: ${userRole === 'ombudsman' ? 'ouvidor' : 'administrador'} (perfil administrativo). Use o Guará apenas em modo informativo — NÃO prepare draft de manifestação para esse perfil.`
+      case null:
+        return 'PERFIL DO USUÁRIO: anônimo (público, não identificado). Pode abrir APENAS manifestações do tipo denúncia (report) pelo chat. Para reclamação, sugestão ou elogio, oriente o usuário a fazer login ou usar o formulário manual do sistema.'
+    }
   }
 
   private renderCatalog(catalog: CatalogContext): string {
