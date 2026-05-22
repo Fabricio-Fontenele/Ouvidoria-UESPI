@@ -4,15 +4,12 @@ import { buildManifestationFormHref, getSearchParams, navigateTo, normalizeProto
 import guaraMascot from '../assets/guara-mascot.png'
 import { getGuaraInitialMessages, getGuaraSuggestions } from '../application/guara-chat/guara-chat-content'
 import type { GuaraChatSuggestion } from '../application/guara-chat/guara-chat-content'
-import {
-  canApplyDraft,
-  getGuaraChatCapabilities,
-  getMissingFieldLabel,
-} from '../application/guara-chat/guara-chat-policy'
+import { canApplyDraft, getGuaraChatCapabilities } from '../application/guara-chat/guara-chat-policy'
 import type { GuaraChatCapabilities } from '../application/guara-chat/guara-chat-policy'
-import type { GuaraChatMissingField, GuaraChatMode, GuaraMessage } from '../application/guara-chat/guara-chat-types'
+import type { GuaraChatMode, GuaraMessage } from '../application/guara-chat/guara-chat-types'
 import { getManifestationStatusContract } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
+import { ConfirmDialog } from '../components/feedback/confirm-dialog'
 import { Icon } from '../components/icons/icon'
 import { AppHeader } from '../components/layout/app-header'
 import { SiteFooter } from '../components/layout/site-footer'
@@ -145,23 +142,6 @@ function TypingIndicator() {
   )
 }
 
-function MissingFieldsHint({ fields }: { fields: GuaraChatMissingField[] }) {
-  if (fields.length === 0) {
-    return null
-  }
-
-  return (
-    <div className="mx-auto w-full max-w-[min(78%,42rem)] rounded-lg border border-landing-chip bg-landing-muted-surface px-4 py-3 text-xs leading-5 text-landing-brown">
-      <p className="font-bold text-landing-text">Ainda preciso destas informações:</p>
-      <ul className="mt-2 list-disc space-y-1 pl-4">
-        {fields.map((field) => (
-          <li key={field}>{getMissingFieldLabel(field)}</li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
 function DetailPanel({ protocol }: { protocol: string }) {
   const formHref = buildManifestationFormHref(protocol)
   const status = getManifestationStatusContract(manifestationDetailStatus)
@@ -244,24 +224,19 @@ interface ChatPanelProps {
 
 function ChatPanel({ capabilities, mode }: ChatPanelProps) {
   const [draft, setDraft] = useState('')
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false)
   const initialMessages = useMemo(() => getGuaraInitialMessages(mode), [mode])
   const suggestions = useMemo(() => getGuaraSuggestions(mode), [mode])
-  const {
-    clearConversation,
-    error,
-    isSending,
-    messages,
-    missingFields,
-    pendingDraft,
-    pendingIntent,
-    sendMessage,
-    shouldOpenManifestationDraft,
-  } = useGuaraChat({ initialMessages })
+  const { clearConversation, error, isSending, messages, pendingDraft, sendMessage, shouldOpenManifestationDraft } =
+    useGuaraChat({ initialMessages })
+
+  const handleConfirmClear = () => {
+    clearConversation()
+    setIsConfirmingClear(false)
+  }
 
   const canOpenManifestation =
     capabilities.canCreateDraft && shouldOpenManifestationDraft && canApplyDraft(capabilities, pendingDraft)
-  const showCandidateHint =
-    capabilities.canCreateDraft && pendingIntent === 'manifestation_candidate' && missingFields.length > 0
 
   const handleSubmit = async () => {
     const message = draft.trim()
@@ -312,13 +287,25 @@ function ChatPanel({ capabilities, mode }: ChatPanelProps) {
         </div>
         <button
           className="inline-flex shrink-0 items-center gap-2 rounded-full border border-landing-chip px-3 py-1.5 text-xs leading-5 font-bold text-landing-brown transition duration-150 hover:border-landing-blue hover:bg-landing-blue/10 hover:text-landing-blue focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
-          onClick={clearConversation}
+          disabled={messages.length === 0}
+          onClick={() => setIsConfirmingClear(true)}
           type="button"
         >
           <Icon className="size-3.5" name="x" />
           Limpar conversa
         </button>
       </div>
+
+      <ConfirmDialog
+        confirmLabel="Limpar conversa"
+        description="As mensagens trocadas com o Guará nesta aba serão removidas. Esta ação não afeta manifestações já registradas e não pode ser desfeita."
+        icon="x"
+        onCancel={() => setIsConfirmingClear(false)}
+        onConfirm={handleConfirmClear}
+        open={isConfirmingClear}
+        title="Limpar esta conversa?"
+        tone="danger"
+      />
 
       <div className="flex-1 overflow-y-auto bg-landing-muted-surface px-3 py-5 sm:px-5">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -332,7 +319,6 @@ function ChatPanel({ capabilities, mode }: ChatPanelProps) {
               <MessageBubble key={message.id} message={message} />
             ))}
           </ul>
-          {showCandidateHint ? <MissingFieldsHint fields={missingFields} /> : null}
           {isSending ? <TypingIndicator /> : null}
         </div>
       </div>
@@ -381,7 +367,13 @@ function ChatPanel({ capabilities, mode }: ChatPanelProps) {
             className="max-h-32 min-h-11 resize-none rounded-full bg-transparent px-4 py-3 text-sm leading-5 text-landing-text outline-none placeholder:text-landing-menu focus-visible:outline-none"
             id="guara-message"
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Mensagem"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault()
+                void handleSubmit()
+              }
+            }}
+            placeholder="Mensagem (Enter envia, Shift+Enter quebra linha)"
             rows={1}
             value={draft}
           />

@@ -370,6 +370,11 @@ Toda manifestação registrada gera um protocolo. O protocolo é o código usado
 - Perdi meu protocolo, e agora?
 - Vou receber resposta?
 - Como sei se minha manifestação foi respondida?
+- Após a manifestação, o que devo fazer?
+- E depois que eu enviar, o que acontece?
+- Tem algum modo de eu saber o resultado?
+- Tem como saber se minha manifestação foi vista?
+- Como sei se a Ouvidoria leu a manifestação?
 
 ## Resposta recomendada
 
@@ -378,6 +383,29 @@ Toda manifestação registrada gera um protocolo. O protocolo é o código usado
 ## Manifestação anônima
 
 > Em manifestações anônimas, o acompanhamento pode ser limitado e deve ocorrer conforme as opções disponíveis pelo protocolo.
+
+## Após o envio: o que fazer e como saber o resultado
+
+Depois de enviar uma manifestação, o usuário deve:
+
+1. guardar o protocolo gerado pelo sistema;
+2. acessar a área de acompanhamento no próprio sistema da Ouvidoria, consultando o protocolo;
+3. acompanhar o status da manifestação (em análise, respondida, finalizada ou cancelada);
+4. consultar o histórico do protocolo para verificar se já existe resposta administrativa registrada.
+
+A confirmação de que a manifestação foi recebida é o próprio protocolo: ele só é gerado quando o registro é aceito pelo sistema. A partir daí, o status indica em que ponto do atendimento ela está.
+
+## Resposta recomendada — “Após a manifestação, o que devo fazer? Tem como saber se foi vista ou o resultado?”
+
+> Depois do envio, o sistema gera um protocolo — ele é a confirmação de que a manifestação foi recebida. Guarde esse número e acompanhe pelo próprio sistema da Ouvidoria: lá você vê o status atual (em análise, respondida, finalizada ou cancelada) e o histórico do protocolo, incluindo respostas administrativas registradas. “Em análise” significa que já foi recebida e está sendo avaliada; “respondida” indica que há uma resposta registrada para consultar. Em manifestações anônimas, o acompanhamento pode ser mais limitado e depende das opções disponíveis pelo protocolo.
+
+## Cuidado
+
+O Guará não deve prometer prazo, garantia de retorno, punição da pessoa denunciada nem resultado específico do atendimento.
+
+Se o usuário perguntar quando virá a resposta:
+
+> Não tenho um prazo confirmado na minha base para esse caso. O acompanhamento deve ser feito pelo protocolo no sistema da Ouvidoria, onde ficam disponíveis o status e as respostas registradas.
 
 ---
 
@@ -395,6 +423,62 @@ O Guará pode explicar os status em linguagem simples.
 ## Resposta recomendada
 
 > “Em análise” significa que a manifestação está sendo avaliada. “Respondida” significa que houve resposta registrada. “Finalizada” indica encerramento do atendimento. “Cancelada” indica que a manifestação foi encerrada sem continuidade.
+
+## Onde a resposta fica disponível
+
+A resposta à manifestação fica registrada **no próprio sistema da Ouvidoria UESPI**, no histórico do protocolo. Quando a Ouvidoria ou o setor responsável registra uma resposta administrativa:
+
+- o status da manifestação muda para **respondida**;
+- a resposta passa a aparecer no histórico do protocolo, junto das mensagens trocadas;
+- o usuário autenticado consulta esse histórico acessando a manifestação pelo protocolo, dentro do sistema.
+
+O sistema **não envia a resposta por e-mail nem por SMS**. O canal oficial de retorno é o próprio sistema da Ouvidoria, acessado pelo protocolo.
+
+## Perguntas equivalentes
+
+- Como vejo a resposta da minha manifestação?
+- Como consigo visualizar a resposta?
+- A resposta chega por e-mail?
+- Vou receber um e-mail quando responderem?
+- A resposta fica no site?
+- Como ficará a resposta?
+- Onde aparece a resposta da Ouvidoria?
+
+## Resposta recomendada — “Como visualizo a resposta? Chega por e-mail ou fica no site?”
+
+> A resposta fica disponível no próprio sistema da Ouvidoria UESPI, no histórico do seu protocolo. Quando a Ouvidoria registra uma resposta, o status da manifestação muda para “respondida” e o texto da resposta aparece no histórico, junto das mensagens trocadas. Hoje o sistema não envia a resposta por e-mail nem SMS — para consultar, acesse o sistema com seu login e abra a manifestação pelo protocolo. Em manifestações anônimas, o acompanhamento depende das opções disponíveis pelo protocolo.
+
+## Prazo de resposta
+
+O prazo está previsto no **Art. 15, §1º da Resolução CONSUN nº 005/2018** da UESPI, em consonância com a **Lei nº 13.460/2017** (Lei do Usuário de Serviço Público):
+
+- A Ouvidoria deve encaminhar a decisão administrativa final ao usuário no **prazo de 30 dias**.
+- Esse prazo pode ser **prorrogado uma única vez, por igual período (mais 30 dias)**, mediante justificativa.
+- Se a manifestação estiver incompleta, a Ouvidoria pode solicitar **complementação em até 30 dias** a contar do recebimento; o usuário tem **20 dias** para responder, sob pena de arquivamento (Art. 15, §3º).
+- O pedido de complementação **interrompe uma única vez** o prazo de 30 dias, que passa a contar novamente a partir da resposta do usuário (Art. 15, §4º).
+
+## Perguntas equivalentes sobre prazo
+
+- Qual o prazo de resposta?
+- Demora muito?
+- Quanto tempo demora pra responder?
+- Em quantos dias respondem?
+- Quando vou receber retorno?
+- A Ouvidoria tem prazo legal para responder?
+
+## Resposta recomendada — “Qual o prazo? Demora muito?”
+
+> Pela Resolução CONSUN 005/2018 da UESPI (Art. 15, §1º), em linha com a Lei 13.460/2017, a Ouvidoria tem **30 dias** para encaminhar a decisão administrativa final, prazo que pode ser prorrogado uma única vez, mediante justificativa, por igual período — somando até 60 dias no total. Se a Ouvidoria precisar pedir alguma complementação, o prazo é interrompido uma vez e volta a contar a partir da sua resposta. O acompanhamento é feito pelo protocolo, dentro do sistema da Ouvidoria — o status muda para “respondida” quando o retorno é registrado.
+
+## Cuidado
+
+O Guará deve:
+
+- citar o prazo de 30 dias (prorrogável uma vez por igual período) com base na Resolução CONSUN 005/2018 e na Lei 13.460/2017;
+- explicar que o prazo pode ser interrompido por pedido de complementação;
+- **não** afirmar que existe envio automático por e-mail, SMS ou WhatsApp se isso não estiver confirmado na base;
+- **não** prometer notificação ativa quando houver resposta;
+- **não** garantir que toda manifestação será respondida exatamente em 30 dias, já que a norma autoriza prorrogação justificada.
 
 ---
 
@@ -604,11 +688,27 @@ Não inventar:
 
 O Guará só deve informar prazos se eles estiverem claramente definidos em norma ou documento oficial da base de conhecimento.
 
-Se não houver prazo confirmado, responder de forma segura.
+## Prazo de resposta a manifestações
 
-## Resposta recomendada
+Definido pelo **Art. 15, §1º da Resolução CONSUN nº 005/2018** da UESPI e pela **Lei nº 13.460/2017**:
 
-> Não tenho um prazo confirmado na minha base para esse caso. Após registrar a manifestação, acompanhe o andamento pelo protocolo no sistema da Ouvidoria.
+- **30 dias** para a Ouvidoria encaminhar a decisão administrativa final ao usuário;
+- prorrogação por **mais 30 dias**, uma única vez, mediante justificativa;
+- **complementação de informações:** se a Ouvidoria solicitar, o usuário tem **20 dias** para responder, sob pena de arquivamento (Art. 15, §3º);
+- o pedido de complementação **interrompe** uma vez o prazo de 30 dias (Art. 15, §4º);
+- a Ouvidoria pode solicitar informações a agentes públicos, que devem responder em **10 dias**, prorrogáveis uma vez (Art. 15, §2º).
+
+## Resposta recomendada — prazo de resposta à manifestação
+
+> O prazo é de até 30 dias para a Ouvidoria encaminhar a decisão administrativa final, conforme o Art. 15, §1º da Resolução CONSUN 005/2018 da UESPI e a Lei 13.460/2017. Esse prazo pode ser prorrogado uma única vez, por igual período, mediante justificativa.
+
+## Outros prazos
+
+Para outros tipos de prazo (recurso, acesso à informação, classificação de sigilo, etc.), consultar as normas específicas — Lei 13.460/2017, Decreto Estadual 15.188/2013 (Lei de Acesso à Informação) — antes de citar.
+
+## Resposta recomendada quando não houver norma específica
+
+> Não tenho um prazo confirmado na minha base para esse caso específico. Após registrar a manifestação, acompanhe o andamento pelo protocolo no sistema da Ouvidoria.
 
 ---
 
