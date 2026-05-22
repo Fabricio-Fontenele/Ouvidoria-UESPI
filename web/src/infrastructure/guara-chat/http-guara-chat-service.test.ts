@@ -35,7 +35,7 @@ describe('HttpGuaraChatService', () => {
     import.meta.env.VITE_API_BASE_URL = apiBaseUrl
   })
 
-  it('posts history and message to /ai/messages without Authorization', async () => {
+  it('posts history and message to /ai/messages without Authorization when anonymous', async () => {
     const service = new HttpGuaraChatService()
 
     await service.sendMessage({
@@ -60,6 +60,24 @@ describe('HttpGuaraChatService', () => {
       { content: 'oi', role: 'user' },
       { content: 'olá!', role: 'assistant' },
     ])
+  })
+
+  it('sends Authorization header when the user is authenticated', async () => {
+    vi.stubGlobal('window', {
+      sessionStorage: {
+        getItem: vi.fn().mockReturnValue('the-jwt-token'),
+        removeItem: vi.fn(),
+        setItem: vi.fn(),
+      },
+    })
+
+    const service = new HttpGuaraChatService()
+
+    await service.sendMessage({ history: [], message: 'oi' })
+
+    const [, init] = getFetchCall()
+    const headers = init?.headers as Headers
+    expect(headers.get('Authorization')).toBe('Bearer the-jwt-token')
   })
 
   it('trims message + history entries and slices history to last 20 items', async () => {

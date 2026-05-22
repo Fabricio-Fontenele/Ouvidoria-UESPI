@@ -5,7 +5,7 @@ import type {
   SendGuaraMessageOutput,
 } from '../../application/guara-chat/guara-chat-types'
 import { ApiHttpError } from '../http/api-error'
-import { publicApiFetch } from '../http/api-client'
+import { apiFetch } from '../http/api-client'
 import { normalizeGuaraChatResponse } from './guara-chat-response-normalizer'
 
 const MAX_MESSAGE_LENGTH = 4000
@@ -53,7 +53,7 @@ export class HttpGuaraChatService implements GuaraChatService {
     const history = sanitizeHistory(input.history)
 
     try {
-      const raw = await publicApiFetch<unknown>('/ai/messages', {
+      const raw = await apiFetch<unknown>('/ai/messages', {
         body: { history, message: trimmedMessage },
         method: 'POST',
       })
