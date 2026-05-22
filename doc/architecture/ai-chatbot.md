@@ -710,7 +710,7 @@ pnpm ingest / pnpm ingest:reset
 | Zod                         | Validação de schemas                                            | Implementado (em ambos os pacotes)   |
 | Fastify                     | Servidor HTTP                                                   | Implementado (backend + ai-api)      |
 | LangChain                   | Orquestração de IA                                              | Implementado (ai-api)                |
-| Gemini (2.5 Flash)          | Modelo LLM                                                      | Implementado (ai-api)                |
+| Gemini (3.0 Flash Preview)  | Modelo LLM                                                      | Implementado (ai-api)                |
 | Gemini Embedding (text-001) | Geração de embeddings                                           | Implementado (ai-api)                |
 | pgvector                    | Banco vetorial                                                  | Implementado (ai-api, PostgreSQL 17) |
 | HeaderAwareTextSplitter     | Divisão markdown-consciente em chunks com propagação de headers | Implementado (ai-api)                |
@@ -813,7 +813,7 @@ ai-api/src/
 
 ### Fluxo
 
-1. Recebe `AiChatRequest` (history, message, campuses, administrativeUnits).
+1. Recebe `AiChatRequest` (history, message, `userRole`, campuses, administrativeUnits). `userRole` é `'manifestant' | 'ombudsman' | 'admin' | null` (null = anônimo) e é injetado no system prompt pelo `RagPromptBuilder` para condicionar a política de tipos de manifestação permitidos pelo chat.
 2. Constrói `CatalogContext` a partir dos arrays recebidos.
 3. Recupera chunks relevantes via `KnowledgeRetriever.retrieve(query, retrievalTopK)`.
 4. Constrói prompts (system + user) via `RagPromptBuilder.build()`.
@@ -879,11 +879,12 @@ class PgVectorKnowledgeRetriever implements KnowledgeRetriever {
 
 Constrói o **system prompt** com:
 
-- Definição do papel (**Guará**, mascote da Ouvidoria UESPI — tom caloroso e acolhedor).
-- Regras invioláveis (não registrar manifestação, responder em português, usar contexto estritamente).
+- Definição do papel (**Guará**, inspirado no pássaro guará, ave típica do Delta do Parnaíba no Piauí — tom acolhedor, simples e direto, sem juridiquês).
+- Regras invioláveis (não registrar manifestação, responder em português, usar contexto estritamente, priorizar orientação de segurança em casos graves).
+- FAQ da Ouvidoria carregada no CONTEXTO com orientações sobre: tipos de manifestação, regras para público/anônimo, anonimato e sigilo, e limites de atuação do Guará.
 - Catálogo institucional renderizado (IDs e labels).
 - Chunks recuperados com atribuição de fonte.
-- Instruções de classificação de intent e extração de draft.
+- Instruções de classificação de intent e extração de draft — com ênfase em linguagem simples e não-jurídica.
 
 E o **user prompt** com:
 
@@ -910,23 +911,23 @@ function makeApiKeyAuth(expectedApiKey: string): FastifyPreHandler
 
 ## 6.7 Variáveis de Ambiente do ai-api
 
-| Variável                    | Padrão                      | Descrição                                                                        |
-| --------------------------- | --------------------------- | -------------------------------------------------------------------------------- |
-| `PORT`                      | `4000`                      | Porta do servidor                                                                |
-| `HOST`                      | `0.0.0.0`                   | Host do servidor                                                                 |
-| `GOOGLE_API_KEY`            | —                           | Chave da API Google (obrigatória)                                                |
-| `GOOGLE_CHAT_MODEL`         | `models/gemini-2.5-flash`   | Modelo Gemini para chat (atenção: `gemini-3.5-flash` tem só 20 RPD no free tier) |
-| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001` | Modelo Gemini para embeddings                                                    |
-| `GOOGLE_EMBEDDING_DIMS`     | `3072`                      | Dimensão dos embeddings                                                          |
-| `LLM_TEMPERATURE`           | `0.1`                       | Temperatura do LLM (0-1)                                                         |
-| `DATABASE_URL`              | —                           | URL do PostgreSQL com pgvector                                                   |
-| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`              | Nome da tabela de coleção vetorial                                               |
-| `KB_DIR`                    | `./docs/knowledge-base`     | Diretório dos documentos institucionais                                          |
-| `RAG_CHUNK_SIZE`            | `600`                       | Tamanho dos chunks para divisão (sweet spot empírico do `gemini-embedding-001`)  |
-| `RAG_CHUNK_OVERLAP`         | `300`                       | Sobreposição entre chunks (defesa adicional à propagação de headers)             |
-| `RAG_TOP_K`                 | `8`                         | Número de chunks recuperados por query                                           |
-| `AI_API_KEY`                | —                           | Chave para autenticação das requisições                                          |
-| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                     | Limite do body da requisição                                                     |
+| Variável                    | Padrão                      | Descrição                                                                       |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
+| `PORT`                      | `4000`                      | Porta do servidor                                                               |
+| `HOST`                      | `0.0.0.0`                   | Host do servidor                                                                |
+| `GOOGLE_API_KEY`            | —                           | Chave da API Google (obrigatória)                                               |
+| `GOOGLE_CHAT_MODEL`         | `models/gemini-2.5-flash`   | Modelo Gemini para chat (modelo stable de raciocínio + structured output)       |
+| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001` | Modelo Gemini para embeddings                                                   |
+| `GOOGLE_EMBEDDING_DIMS`     | `3072`                      | Dimensão dos embeddings                                                         |
+| `LLM_TEMPERATURE`           | `0.1`                       | Temperatura do LLM (0-1)                                                        |
+| `DATABASE_URL`              | —                           | URL do PostgreSQL com pgvector                                                  |
+| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`              | Nome da tabela de coleção vetorial                                              |
+| `KB_DIR`                    | `./docs/knowledge-base`     | Diretório dos documentos institucionais                                         |
+| `RAG_CHUNK_SIZE`            | `600`                       | Tamanho dos chunks para divisão (sweet spot empírico do `gemini-embedding-001`) |
+| `RAG_CHUNK_OVERLAP`         | `300`                       | Sobreposição entre chunks (defesa adicional à propagação de headers)            |
+| `RAG_TOP_K`                 | `8`                         | Número de chunks recuperados por query                                          |
+| `AI_API_KEY`                | —                           | Chave para autenticação das requisições                                         |
+| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                     | Limite do body da requisição                                                    |
 
 ---
 
@@ -1002,36 +1003,36 @@ Registradas em `src/main/config/env.ts`:
 
 ### Microserviço ai-api
 
-| Componente                                    | Caminho                                                                                 |
-| --------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Workspace package                             | `ai-api/package.json` (`@ouvidoria/ai-api`)                                             |
-| Configuração TypeScript                       | `ai-api/tsconfig.json`, `ai-api/tsconfig.test.json`                                     |
-| Configuração de testes                        | `ai-api/vitest.config.mts`                                                              |
-| Docker Compose (pgvector)                     | `ai-api/docker-compose.yml`                                                             |
-| Env sample                                    | `ai-api/.env.sample`                                                                    |
-| README e documentação                         | `ai-api/README.md`, `ai-api/docs/SMOKE_TEST.md`                                         |
-| Base de conhecimento (FAQ placeholder)        | `ai-api/docs/knowledge-base/faq-ouvidoria.md`                                           |
-| DTOs de request/response                      | `ai-api/src/application/dtos/`                                                          |
-| Portas (interfaces)                           | `ai-api/src/application/ports/` (`LlmProvider`, `KnowledgeRetriever`, `CatalogContext`) |
-| SendAiMessageUseCase (ai-api)                 | `ai-api/src/application/use-cases/`                                                     |
-| Gemini Structured Client                      | `ai-api/src/infra/llm/gemini-structured-client.ts`                                      |
-| PgVector retriever                            | `ai-api/src/infra/rag/pgvector-retriever.ts`                                            |
-| RAG prompt builder                            | `ai-api/src/infra/rag/rag-prompt-builder.ts`                                            |
-| Ingestion pipeline                            | `ai-api/src/infra/ingestion/` (loader, splitter, ingestor)                              |
-| Vector store (pgvector)                       | `ai-api/src/infra/vector-store/pgvector-store.ts`                                       |
-| Controller (ai-api)                           | `ai-api/src/presentation/controllers/`                                                  |
-| API Key auth middleware                       | `ai-api/src/presentation/middlewares/api-key-auth.ts`                                   |
-| Request validator                             | `ai-api/src/presentation/validators/`                                                   |
-| Env config (ai-api)                           | `ai-api/src/main/env.ts`                                                                |
-| Routes (ai-api)                               | `ai-api/src/main/routes.ts`                                                             |
-| Server (ai-api)                               | `ai-api/src/main/server.ts`                                                             |
-| Factory (ai-api)                              | `ai-api/src/main/factories/infrastructure.ts`                                           |
-| Teste do use case (ai-api, 8 testes)          | `ai-api/test/application/send-ai-message-use-case.spec.ts`                              |
-| Teste do schema de request (ai-api, 5 testes) | `ai-api/test/presentation/send-ai-message-schema.spec.ts`                               |
-| Teste do auth middleware (ai-api, 3 testes)   | `ai-api/test/presentation/api-key-auth.spec.ts`                                         |
-| Testes de rota (ai-api, 6+ testes)            | `ai-api/test/main/routes.spec.ts`                                                       |
-| Testes de env (ai-api, 5 testes)              | `ai-api/test/main/env.spec.ts`                                                          |
-| Testes de ingestão (ai-api, 4 testes)         | `ai-api/test/infra/ingestion/knowledge-base-ingestion.spec.ts`                          |
+| Componente                                    | Caminho                                                                                         |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Workspace package                             | `ai-api/package.json` (`@ouvidoria/ai-api`)                                                     |
+| Configuração TypeScript                       | `ai-api/tsconfig.json`, `ai-api/tsconfig.test.json`                                             |
+| Configuração de testes                        | `ai-api/vitest.config.mts`                                                                      |
+| Docker Compose (pgvector)                     | `ai-api/docker-compose.yml`                                                                     |
+| Env sample                                    | `ai-api/.env.sample`                                                                            |
+| README e documentação                         | `ai-api/README.md`, `ai-api/docs/SMOKE_TEST.md`                                                 |
+| Base de conhecimento (FAQ completa)           | `ai-api/docs/knowledge-base/faq-ouvidoria.md` (10 seções: tipos, anonimato, casos graves, etc.) |
+| DTOs de request/response                      | `ai-api/src/application/dtos/`                                                                  |
+| Portas (interfaces)                           | `ai-api/src/application/ports/` (`LlmProvider`, `KnowledgeRetriever`, `CatalogContext`)         |
+| SendAiMessageUseCase (ai-api)                 | `ai-api/src/application/use-cases/`                                                             |
+| Gemini Structured Client                      | `ai-api/src/infra/llm/gemini-structured-client.ts`                                              |
+| PgVector retriever                            | `ai-api/src/infra/rag/pgvector-retriever.ts`                                                    |
+| RAG prompt builder (tom não-jurídico)         | `ai-api/src/infra/rag/rag-prompt-builder.ts` (system prompt reformulado para linguagem simples) |
+| Ingestion pipeline                            | `ai-api/src/infra/ingestion/` (loader, splitter, ingestor)                                      |
+| Vector store (pgvector)                       | `ai-api/src/infra/vector-store/pgvector-store.ts`                                               |
+| Controller (ai-api)                           | `ai-api/src/presentation/controllers/`                                                          |
+| API Key auth middleware                       | `ai-api/src/presentation/middlewares/api-key-auth.ts`                                           |
+| Request validator                             | `ai-api/src/presentation/validators/`                                                           |
+| Env config (ai-api)                           | `ai-api/src/main/env.ts`                                                                        |
+| Routes (ai-api)                               | `ai-api/src/main/routes.ts`                                                                     |
+| Server (ai-api)                               | `ai-api/src/main/server.ts`                                                                     |
+| Factory (ai-api)                              | `ai-api/src/main/factories/infrastructure.ts`                                                   |
+| Teste do use case (ai-api, 8 testes)          | `ai-api/test/application/send-ai-message-use-case.spec.ts`                                      |
+| Teste do schema de request (ai-api, 5 testes) | `ai-api/test/presentation/send-ai-message-schema.spec.ts`                                       |
+| Teste do auth middleware (ai-api, 3 testes)   | `ai-api/test/presentation/api-key-auth.spec.ts`                                                 |
+| Testes de rota (ai-api, 6+ testes)            | `ai-api/test/main/routes.spec.ts`                                                               |
+| Testes de env (ai-api, 5 testes)              | `ai-api/test/main/env.spec.ts`                                                                  |
+| Testes de ingestão (ai-api, 4 testes)         | `ai-api/test/infra/ingestion/knowledge-base-ingestion.spec.ts`                                  |
 
 ## Pendente
 

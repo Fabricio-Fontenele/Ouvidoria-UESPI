@@ -1,7 +1,10 @@
 import type { CatalogAdministrativeUnitItemDTO, CatalogCampusItemDTO } from '#src/application/dto/catalog-dtos.js'
 import type { ManifestationType } from '#src/domain/entities/manifestation.js'
+import type { UserRole } from '#src/domain/entities/user.js'
 
 export type AiChatRole = 'assistant' | 'system' | 'user'
+
+export type AiChatUserRole = UserRole | null
 
 export type AiChatIntent =
   | 'institutional_question'
@@ -26,6 +29,7 @@ export interface AiDraftPayload {
 export interface AiGatewayChatInput {
   history: AiChatMessage[]
   message: string
+  userRole: AiChatUserRole
   campuses: CatalogCampusItemDTO[]
   administrativeUnits: CatalogAdministrativeUnitItemDTO[]
 }

@@ -1,4 +1,10 @@
-import type { AiChatIntent, AiChatMessage, AiDraftPayload, AiGateway } from '#src/application/ai/ai-gateway.js'
+import type {
+  AiChatIntent,
+  AiChatMessage,
+  AiChatUserRole,
+  AiDraftPayload,
+  AiGateway,
+} from '#src/application/ai/ai-gateway.js'
 import type {
   CatalogAdministrativeUnitItemDTO,
   CatalogCampusItemDTO,
@@ -20,6 +26,7 @@ type RequiredDraftField = (typeof REQUIRED_DRAFT_FIELDS)[number]
 export interface SendAiMessageInput {
   history: AiChatMessage[]
   message: string
+  userRole: AiChatUserRole
 }
 
 export interface SendAiMessageOutput {
@@ -38,7 +45,7 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
     private readonly historyMaxChars: number = 12_000,
   ) {}
 
-  async execute({ history, message }: SendAiMessageInput): Promise<SendAiMessageOutput> {
+  async execute({ history, message, userRole }: SendAiMessageInput): Promise<SendAiMessageOutput> {
     const { campuses, administrativeUnits } = this.flattenCatalog(await this.catalogRepository.listPublic())
 
     const truncatedHistory = this.truncateHistory(history, this.historyMaxChars)
@@ -46,6 +53,7 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
     const response = await this.aiGateway.chat({
       history: truncatedHistory,
       message,
+      userRole,
       campuses,
       administrativeUnits,
     })

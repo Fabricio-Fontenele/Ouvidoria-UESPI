@@ -22,6 +22,7 @@ describe('SendAiMessageUseCase', () => {
   const request = {
     history: [{ role: 'user' as const, content: 'Como acompanho meu protocolo?' }],
     message: 'Quero saber o prazo de resposta da ouvidoria.',
+    userRole: null,
     campuses: catalog.campuses,
     administrativeUnits: catalog.administrativeUnits,
   }
@@ -37,6 +38,7 @@ describe('SendAiMessageUseCase', () => {
       (input: {
         history: typeof request.history
         message: string
+        userRole: typeof request.userRole
         contextChunks: RetrievedChunk[]
         catalog: CatalogContext
       }) => { systemPrompt: string; userPrompt: string }
@@ -58,6 +60,7 @@ describe('SendAiMessageUseCase', () => {
         (input: {
           history: typeof request.history
           message: string
+          userRole: typeof request.userRole
           contextChunks: RetrievedChunk[]
           catalog: CatalogContext
         }) => { systemPrompt: string; userPrompt: string }
@@ -97,6 +100,7 @@ describe('SendAiMessageUseCase', () => {
     expect(promptBuild).toHaveBeenCalledWith({
       history: request.history,
       message: request.message,
+      userRole: null,
       contextChunks,
       catalog,
     })

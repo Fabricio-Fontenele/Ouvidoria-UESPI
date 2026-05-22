@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
+import type { GuaraChatDraft } from '../guara-chat/guara-chat-types'
 import { manifestationTypeValues } from './manifestation-type-contract'
+import type { ManifestationType } from './manifestation-type-contract'
 
 export const manifestationFormSchema = z.object({
   administrativeUnitId: z.string().min(1, 'Selecione a unidade administrativa.'),
@@ -31,4 +33,52 @@ export function getManifestationFormDefaultValues(): ManifestationFormData {
     isAnonymous: false,
     type: '' as ManifestationFormData['type'],
   }
+}
+
+export interface CatalogLookup {
+  campusExists: (campusId: string) => boolean
+  administrativeUnitBelongsToCampus: (campusId: string, administrativeUnitId: string) => boolean
+}
+
+interface DraftDefaultsOptions {
+  catalog: CatalogLookup
+  isAuthenticated: boolean
+}
+
+function isManifestationType(value: ManifestationType | null): value is ManifestationType {
+  return value !== null
+}
+
+export function getManifestationFormDefaultValuesFromDraft(
+  draft: GuaraChatDraft,
+  { catalog, isAuthenticated }: DraftDefaultsOptions,
+): ManifestationFormData {
+  const defaults = getManifestationFormDefaultValues()
+
+  if (isManifestationType(draft.type)) {
+    defaults.type = draft.type
+  }
+
+  if (typeof draft.campusId === 'string' && catalog.campusExists(draft.campusId)) {
+    defaults.campusId = draft.campusId
+
+    if (
+      typeof draft.administrativeUnitId === 'string' &&
+      catalog.administrativeUnitBelongsToCampus(draft.campusId, draft.administrativeUnitId)
+    ) {
+      defaults.administrativeUnitId = draft.administrativeUnitId
+    }
+  }
+
+  if (typeof draft.description === 'string' && draft.description.trim().length > 0) {
+    defaults.description = draft.description
+  }
+
+  if (typeof draft.involvedPeople === 'string' && draft.involvedPeople.trim().length > 0) {
+    defaults.involvedPeople = draft.involvedPeople
+  }
+
+  defaults.isAnonymous = !isAuthenticated
+
+  return defaults
 }

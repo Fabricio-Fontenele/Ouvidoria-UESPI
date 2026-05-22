@@ -16,6 +16,7 @@ interface RagPromptBuilderPort {
   build(input: {
     history: AiChatRequest['history']
     message: AiChatRequest['message']
+    userRole: AiChatRequest['userRole']
     contextChunks: Awaited<ReturnType<KnowledgeRetriever['retrieve']>>
     catalog: CatalogContext
   }): { systemPrompt: string; userPrompt: string }
@@ -44,6 +45,7 @@ export class SendAiMessageUseCase {
     const { systemPrompt, userPrompt } = promptBuilder.build({
       history: request.history,
       message: request.message,
+      userRole: request.userRole,
       contextChunks,
       catalog,
     })

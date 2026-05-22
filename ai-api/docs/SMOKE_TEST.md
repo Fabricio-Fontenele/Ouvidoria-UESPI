@@ -80,10 +80,13 @@ curl -s -X POST localhost:4000/ai/messages \
   -d '{
     "history": [],
     "message": "Como abrir uma reclamação na Ouvidoria da UESPI?",
+    "userRole": null,
     "campuses": [],
     "administrativeUnits": []
   }' | jq
 ```
+
+> `userRole` aceita `"manifestant"`, `"ombudsman"`, `"admin"` ou `null`. Quando omitido, é normalizado para `null` (anônimo). É usado pelo prompt para decidir quais tipos de manifestação podem virar draft pelo chat.
 
 **Esperado:**
 
@@ -107,6 +110,7 @@ curl -s -X POST localhost:4000/ai/messages \
   -d '{
     "history": [],
     "message": "Quero reclamar de um problema no restaurante universitário do campus Parnaíba.",
+    "userRole": "manifestant",
     "campuses": [
       { "id": "campus-parnaiba", "label": "Campus Parnaíba" }
     ],
@@ -116,7 +120,7 @@ curl -s -X POST localhost:4000/ai/messages \
   }' | jq
 ```
 
-**Esperado:** intent `manifestation_candidate` ou `manifestation_draft_ready` com `draft` preenchido apontando para os ids enviados.
+**Esperado:** intent `manifestation_candidate` ou `manifestation_draft_ready` com `draft` preenchido apontando para os ids enviados. Trocando `userRole` para `null` o draft deve ser recusado (Guará orienta login) já que reclamação não é permitida para anônimos.
 
 ## 7. Cenários negativos
 

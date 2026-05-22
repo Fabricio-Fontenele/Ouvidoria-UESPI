@@ -1,17 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
-import {
-  buildManifestationFormHref,
-  getAuthenticatedHomeRoute,
-  getSearchParams,
-  normalizeProtocol,
-  replaceWith,
-  routes,
-} from '../app/routes'
+import { buildManifestationFormHref, getSearchParams, navigateTo, normalizeProtocol, routes } from '../app/routes'
 import guaraMascot from '../assets/guara-mascot.png'
 import { getGuaraInitialMessages, getGuaraSuggestions } from '../application/guara-chat/guara-chat-content'
 import type { GuaraChatSuggestion } from '../application/guara-chat/guara-chat-content'
-import type { GuaraChatMode, GuaraMessage } from '../application/guara-chat/guara-chat-types'
+import {
+  canApplyDraft,
+  getGuaraChatCapabilities,
+  getMissingFieldLabel,
+} from '../application/guara-chat/guara-chat-policy'
+import type { GuaraChatCapabilities } from '../application/guara-chat/guara-chat-policy'
+import type { GuaraChatMissingField, GuaraChatMode, GuaraMessage } from '../application/guara-chat/guara-chat-types'
 import { getManifestationStatusContract } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
 import { Icon } from '../components/icons/icon'
@@ -20,6 +19,7 @@ import { SiteFooter } from '../components/layout/site-footer'
 import { getManifestationStatusBadgeClassName } from '../components/manifestations/manifestation-status-style'
 import { useAuth } from '../hooks/use-auth'
 import { useGuaraChat } from '../hooks/use-guara-chat'
+import { stashPendingDraft } from '../infrastructure/guara-chat/guara-chat-storage'
 import { cx } from '../utils/cx'
 
 interface DetailItem {
@@ -87,6 +87,18 @@ function getPageCopy(mode: GuaraChatMode, protocol: string | null) {
   }
 }
 
+function getRoleBannerMessage(capabilities: GuaraChatCapabilities, isAuthenticated: boolean): string | null {
+  if (!capabilities.canCreateDraft) {
+    return 'Modo informativo: o Guará não abre manifestações para perfis administrativos.'
+  }
+
+  if (!isAuthenticated) {
+    return 'Você está em modo público. Por aqui, o Guará só pode ajudar a abrir manifestações de denúncia.'
+  }
+
+  return null
+}
+
 function MessageBubble({ message }: { message: GuaraMessage }) {
   const isGuara = message.author === 'guara'
 
@@ -129,6 +141,23 @@ function TypingIndicator() {
         <span className="size-2 rounded-full bg-landing-blue/60 motion-safe:animate-pulse" />
         <span className="size-2 rounded-full bg-landing-blue/50 motion-safe:animate-pulse" />
       </div>
+    </div>
+  )
+}
+
+function MissingFieldsHint({ fields }: { fields: GuaraChatMissingField[] }) {
+  if (fields.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-[min(78%,42rem)] rounded-lg border border-landing-chip bg-landing-muted-surface px-4 py-3 text-xs leading-5 text-landing-brown">
+      <p className="font-bold text-landing-text">Ainda preciso destas informações:</p>
+      <ul className="mt-2 list-disc space-y-1 pl-4">
+        {fields.map((field) => (
+          <li key={field}>{getMissingFieldLabel(field)}</li>
+        ))}
+      </ul>
     </div>
   )
 }
@@ -208,22 +237,31 @@ function QuickActions({
   )
 }
 
-function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string | null }) {
+interface ChatPanelProps {
+  capabilities: GuaraChatCapabilities
+  mode: GuaraChatMode
+}
+
+function ChatPanel({ capabilities, mode }: ChatPanelProps) {
   const [draft, setDraft] = useState('')
   const initialMessages = useMemo(() => getGuaraInitialMessages(mode), [mode])
   const suggestions = useMemo(() => getGuaraSuggestions(mode), [mode])
-  const formHref =
-    mode === 'manifestation-detail' && protocol !== null
-      ? buildManifestationFormHref(protocol)
-      : routes.manifestationForm
-  const formCta = mode === 'manifestation-detail' ? 'Editar manifestação' : 'Preencher manualmente'
-  const { error, isSending, messages, sendMessage } = useGuaraChat({
-    context: {
-      mode,
-      protocol,
-    },
-    initialMessages,
-  })
+  const {
+    clearConversation,
+    error,
+    isSending,
+    messages,
+    missingFields,
+    pendingDraft,
+    pendingIntent,
+    sendMessage,
+    shouldOpenManifestationDraft,
+  } = useGuaraChat({ initialMessages })
+
+  const canOpenManifestation =
+    capabilities.canCreateDraft && shouldOpenManifestationDraft && canApplyDraft(capabilities, pendingDraft)
+  const showCandidateHint =
+    capabilities.canCreateDraft && pendingIntent === 'manifestation_candidate' && missingFields.length > 0
 
   const handleSubmit = async () => {
     const message = draft.trim()
@@ -245,13 +283,22 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
     await sendMessage(suggestion.message)
   }
 
+  const handleOpenManifestation = () => {
+    if (pendingDraft === null) {
+      return
+    }
+
+    stashPendingDraft(pendingDraft)
+    navigateTo(routes.manifestationForm)
+  }
+
   return (
     <section
       aria-labelledby="guara-chat-title"
       className="isolate flex min-h-[640px] flex-col overflow-hidden rounded-lg border border-landing-chip bg-landing-surface shadow-landing-step md:min-h-[720px]"
     >
       <div className="flex items-center gap-4 border-b border-landing-chip bg-landing-surface px-4 py-3 sm:px-5">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border border-landing-chip bg-landing-muted-surface sm:size-14">
             <img alt="" className="size-11 object-contain sm:size-12" src={guaraMascot} />
             <span className="absolute right-1 bottom-1 size-3 rounded-full border-2 border-landing-surface bg-landing-success" />
@@ -263,6 +310,14 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
             <p className="truncate text-xs leading-5 text-landing-brown sm:text-sm">Assistente da Ouvidoria UESPI</p>
           </div>
         </div>
+        <button
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-landing-chip px-3 py-1.5 text-xs leading-5 font-bold text-landing-brown transition duration-150 hover:border-landing-blue hover:bg-landing-blue/10 hover:text-landing-blue focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
+          onClick={clearConversation}
+          type="button"
+        >
+          <Icon className="size-3.5" name="x" />
+          Limpar conversa
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-landing-muted-surface px-3 py-5 sm:px-5">
@@ -277,6 +332,7 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
               <MessageBubble key={message.id} message={message} />
             ))}
           </ul>
+          {showCandidateHint ? <MissingFieldsHint fields={missingFields} /> : null}
           {isSending ? <TypingIndicator /> : null}
         </div>
       </div>
@@ -289,13 +345,16 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
             suggestions={suggestions}
           />
 
-          <a
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-landing-blue px-4 text-sm leading-5 font-bold text-landing-blue no-underline transition duration-150 hover:bg-landing-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
-            href={formHref}
-          >
-            <Icon className="size-4" name="file-text" />
-            {formCta}
-          </a>
+          {canOpenManifestation ? (
+            <button
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-landing-blue px-4 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
+              onClick={handleOpenManifestation}
+              type="button"
+            >
+              <Icon className="size-4" name="file-text" />
+              Abrir manifestação com o Guará
+            </button>
+          ) : null}
         </div>
 
         {error !== null ? (
@@ -342,42 +401,14 @@ function ChatPanel({ mode, protocol }: { mode: GuaraChatMode; protocol: string |
 
 export function GuaraPage() {
   const { mode, protocol } = resolveMode()
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const copy = getPageCopy(mode, protocol)
-  const canUseGuara = user?.role === 'manifestant'
-
-  useEffect(() => {
-    if (isLoading) {
-      return
-    }
-
-    if (!isAuthenticated) {
-      replaceWith(routes.login)
-      return
-    }
-
-    if (user !== null && !canUseGuara) {
-      replaceWith(getAuthenticatedHomeRoute(user.role))
-    }
-  }, [canUseGuara, isAuthenticated, isLoading, user])
-
-  if (isLoading || !isAuthenticated || !canUseGuara) {
-    return (
-      <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
-        <AppHeader isAuthenticated={isAuthenticated} />
-
-        <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
-          <p className="text-base leading-7 text-landing-brown" role="status">
-            Redirecionando para a área correta...
-          </p>
-        </main>
-      </div>
-    )
-  }
+  const capabilities = getGuaraChatCapabilities(user)
+  const banner = getRoleBannerMessage(capabilities, isAuthenticated)
 
   return (
     <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
-      <AppHeader isAuthenticated />
+      <AppHeader isAuthenticated={isAuthenticated} />
 
       <main className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-8 md:pt-14 lg:px-12">
         <section>
@@ -390,8 +421,17 @@ export function GuaraPage() {
           </div>
         </section>
 
+        {banner !== null ? (
+          <div
+            className="mt-6 rounded-lg border border-landing-chip bg-landing-surface px-4 py-3 text-sm leading-6 font-bold text-landing-brown shadow-landing-step"
+            role="status"
+          >
+            {banner}
+          </div>
+        ) : null}
+
         <div className="mt-8 lg:mt-10">
-          <ChatPanel mode={mode} protocol={protocol} />
+          <ChatPanel capabilities={capabilities} mode={mode} />
         </div>
 
         {mode === 'manifestation-detail' ? (

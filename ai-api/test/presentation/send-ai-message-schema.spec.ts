@@ -52,4 +52,29 @@ describe('sendAiMessageBodySchema', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('defaults userRole to null when omitted (anonymous client)', () => {
+    const parsed = sendAiMessageBodySchema.safeParse(validBody)
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.userRole).toBeNull()
+    }
+  })
+
+  it('accepts a valid userRole value', () => {
+    const parsed = sendAiMessageBodySchema.safeParse({ ...validBody, userRole: 'manifestant' })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.userRole).toBe('manifestant')
+    }
+  })
+
+  it('rejects an unknown userRole value', () => {
+    expect(
+      sendAiMessageBodySchema.safeParse({
+        ...validBody,
+        userRole: 'super-admin',
+      }).success,
+    ).toBe(false)
+  })
 })

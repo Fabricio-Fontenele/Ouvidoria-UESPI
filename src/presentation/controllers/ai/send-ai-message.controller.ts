@@ -26,7 +26,10 @@ export class SendAiMessageController extends BaseController {
       return badRequest(validation.error)
     }
 
-    const result = await this.useCase.execute(validation.data)
+    const result = await this.useCase.execute({
+      ...validation.data,
+      userRole: request.user?.role ?? null,
+    })
 
     return ok(result)
   }
