@@ -1034,7 +1034,11 @@ O chatbot assume a persona do **Guará**, mascote da Ouvidoria UESPI — uma ave
 
 ### `POST /ai/messages`
 
-- Pública (sem autenticação).
+- **Autenticação opcional**: o backend aplica `optionalAuthenticate` na rota. Quando o `Authorization: Bearer <jwt>` é enviado e válido, o backend extrai `role` do payload e propaga como `userRole` para o `ai-api`; caso contrário, o request é tratado como anônimo (`userRole: null`). O frontend deve **sempre enviar** o Bearer quando o usuário estiver autenticado — o cliente HTTP padrão (`apiFetch`) faz isso automaticamente.
+- **Política de tipos por perfil** (aplicada pelo prompt no `ai-api` e re-validada no `web` via `guara-chat-policy`):
+  - Anônimo → só pode preparar draft de **denúncia** (`report`); para outros tipos, o Guará orienta login ou formulário manual.
+  - `manifestant` autenticado → pode preparar draft de **qualquer tipo** (`report`, `complaint`, `suggestion`, `compliment`).
+  - `ombudsman` / `admin` → modo informativo; o Guará não prepara draft para perfis administrativos.
 - Não persiste a conversa; o frontend é responsável por manter o histórico entre turnos.
 - O cliente envia apenas `history` e `message`. O catálogo institucional (`campuses` / `administrativeUnits`) é buscado internamente pelo backend principal antes de chamar o `ai-api`.
 - Por padrão, pode ser atendida por `FakeAiGateway` para desenvolvimento/MVP local.

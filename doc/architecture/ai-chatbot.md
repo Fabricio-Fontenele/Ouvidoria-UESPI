@@ -220,7 +220,7 @@ O `GeminiStructuredLlmProvider` (em `ai-api/src/infra/llm/`) utiliza:
 
 ```ts
 const model = new ChatGoogleGenerativeAI({
-  model: 'models/gemini-3-flash-preview', // configurável via GOOGLE_CHAT_MODEL
+  model: 'models/gemini-2.5-flash', // configurável via GOOGLE_CHAT_MODEL
   temperature: 0.1, // configurável via LLM_TEMPERATURE
 })
 ```
@@ -813,7 +813,7 @@ ai-api/src/
 
 ### Fluxo
 
-1. Recebe `AiChatRequest` (history, message, campuses, administrativeUnits).
+1. Recebe `AiChatRequest` (history, message, `userRole`, campuses, administrativeUnits). `userRole` é `'manifestant' | 'ombudsman' | 'admin' | null` (null = anônimo) e é injetado no system prompt pelo `RagPromptBuilder` para condicionar a política de tipos de manifestação permitidos pelo chat.
 2. Constrói `CatalogContext` a partir dos arrays recebidos.
 3. Recupera chunks relevantes via `KnowledgeRetriever.retrieve(query, retrievalTopK)`.
 4. Constrói prompts (system + user) via `RagPromptBuilder.build()`.
@@ -839,7 +839,7 @@ ai-api/src/
 ```ts
 interface GeminiClientConfig {
   apiKey: string // GOOGLE_API_KEY
-  chatModel: string // GOOGLE_CHAT_MODEL (padrão: models/gemini-3-flash-preview)
+  chatModel: string // GOOGLE_CHAT_MODEL (padrão: models/gemini-2.5-flash)
   embeddingModel: string // GOOGLE_EMBEDDING_MODEL (padrão: models/text-embedding-001)
   temperature: number // LLM_TEMPERATURE (padrão: 0.1)
 }
@@ -911,23 +911,23 @@ function makeApiKeyAuth(expectedApiKey: string): FastifyPreHandler
 
 ## 6.7 Variáveis de Ambiente do ai-api
 
-| Variável                    | Padrão                          | Descrição                                                                       |
-| --------------------------- | ------------------------------- | ------------------------------------------------------------------------------- |
-| `PORT`                      | `4000`                          | Porta do servidor                                                               |
-| `HOST`                      | `0.0.0.0`                       | Host do servidor                                                                |
-| `GOOGLE_API_KEY`            | —                               | Chave da API Google (obrigatória)                                               |
-| `GOOGLE_CHAT_MODEL`         | `models/gemini-3-flash-preview` | Modelo Gemini para chat (versão 3.0 Flash Preview)                              |
-| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001`     | Modelo Gemini para embeddings                                                   |
-| `GOOGLE_EMBEDDING_DIMS`     | `3072`                          | Dimensão dos embeddings                                                         |
-| `LLM_TEMPERATURE`           | `0.1`                           | Temperatura do LLM (0-1)                                                        |
-| `DATABASE_URL`              | —                               | URL do PostgreSQL com pgvector                                                  |
-| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`                  | Nome da tabela de coleção vetorial                                              |
-| `KB_DIR`                    | `./docs/knowledge-base`         | Diretório dos documentos institucionais                                         |
-| `RAG_CHUNK_SIZE`            | `600`                           | Tamanho dos chunks para divisão (sweet spot empírico do `gemini-embedding-001`) |
-| `RAG_CHUNK_OVERLAP`         | `300`                           | Sobreposição entre chunks (defesa adicional à propagação de headers)            |
-| `RAG_TOP_K`                 | `8`                             | Número de chunks recuperados por query                                          |
-| `AI_API_KEY`                | —                               | Chave para autenticação das requisições                                         |
-| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                         | Limite do body da requisição                                                    |
+| Variável                    | Padrão                      | Descrição                                                                       |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
+| `PORT`                      | `4000`                      | Porta do servidor                                                               |
+| `HOST`                      | `0.0.0.0`                   | Host do servidor                                                                |
+| `GOOGLE_API_KEY`            | —                           | Chave da API Google (obrigatória)                                               |
+| `GOOGLE_CHAT_MODEL`         | `models/gemini-2.5-flash`   | Modelo Gemini para chat (modelo stable de raciocínio + structured output)       |
+| `GOOGLE_EMBEDDING_MODEL`    | `models/text-embedding-001` | Modelo Gemini para embeddings                                                   |
+| `GOOGLE_EMBEDDING_DIMS`     | `3072`                      | Dimensão dos embeddings                                                         |
+| `LLM_TEMPERATURE`           | `0.1`                       | Temperatura do LLM (0-1)                                                        |
+| `DATABASE_URL`              | —                           | URL do PostgreSQL com pgvector                                                  |
+| `PG_VECTOR_COLLECTION_NAME` | `ouvidoria_kb`              | Nome da tabela de coleção vetorial                                              |
+| `KB_DIR`                    | `./docs/knowledge-base`     | Diretório dos documentos institucionais                                         |
+| `RAG_CHUNK_SIZE`            | `600`                       | Tamanho dos chunks para divisão (sweet spot empírico do `gemini-embedding-001`) |
+| `RAG_CHUNK_OVERLAP`         | `300`                       | Sobreposição entre chunks (defesa adicional à propagação de headers)            |
+| `RAG_TOP_K`                 | `8`                         | Número de chunks recuperados por query                                          |
+| `AI_API_KEY`                | —                           | Chave para autenticação das requisições                                         |
+| `REQUEST_BODY_LIMIT_BYTES`  | `65536`                     | Limite do body da requisição                                                    |
 
 ---
 
