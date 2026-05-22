@@ -12,7 +12,7 @@ import type {
 import { useForm, useWatch } from 'react-hook-form'
 
 import { manifestantOnlyRoles } from '../app/access-policy'
-import { replaceWith, routes } from '../app/routes'
+import { routes } from '../app/routes'
 import type { GuaraChatDraft } from '../application/guara-chat/guara-chat-types'
 import {
   ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
@@ -197,14 +197,8 @@ export function ManifestationFormPage() {
     resolver: zodResolver(manifestationFormSchema),
   })
 
-  const renderAsPublicDraft = !authIsLoading && !isAuthenticated && pendingDraft !== null
-  const shouldRedirectToLogin = !authIsLoading && !isAuthenticated && pendingDraft === null
-
-  useEffect(() => {
-    if (shouldRedirectToLogin) {
-      replaceWith(routes.login)
-    }
-  }, [shouldRedirectToLogin])
+  const renderAsPublic = !authIsLoading && !isAuthenticated
+  const renderAsPublicDraft = renderAsPublic && pendingDraft !== null
   const selectedCampusId = useWatch({ control: form.control, name: 'campusId' })
   const isAnonymous = useWatch({ control: form.control, name: 'isAnonymous' })
   const hasSubmitErrors = form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0
@@ -284,6 +278,14 @@ export function ManifestationFormPage() {
     form.reset(defaults)
     draftAppliedRef.current = true
   }, [catalog, form, isAuthenticated, pendingDraft])
+
+  useEffect(() => {
+    if (!renderAsPublic || pendingDraft !== null) {
+      return
+    }
+
+    form.setValue('isAnonymous', true)
+  }, [form, pendingDraft, renderAsPublic])
 
   const handleInvalidSubmit: SubmitErrorHandler<ManifestationFormData> = () => {
     setSubmittedManifestation(null)
@@ -369,13 +371,13 @@ export function ManifestationFormPage() {
   const catalogIsLoading = catalogStatus === 'loading' || catalogStatus === 'idle'
   const catalogIsBroken = catalogStatus === 'error'
 
-  if (shouldRedirectToLogin || authIsLoading) {
+  if (authIsLoading) {
     return (
       <div className="min-h-svh bg-landing-surface font-sans text-landing-text">
         <AppHeader isAuthenticated={false} />
         <main className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-8">
           <p className="text-base leading-7 text-landing-brown" role="status">
-            Redirecionando...
+            Carregando...
           </p>
         </main>
       </div>
@@ -384,13 +386,14 @@ export function ManifestationFormPage() {
 
   const formContent = (
     <main className="mx-auto w-full max-w-5xl px-5 pt-7 pb-12 min-[390px]:px-7 sm:px-8 lg:px-10">
-      {renderAsPublicDraft ? (
+      {renderAsPublic ? (
         <div
           className="mb-6 rounded-lg border border-[#0d47a1]/20 bg-[#e8eefb] px-4 py-3 text-sm leading-6 font-bold text-[#0d47a1]"
           role="status"
         >
-          Você está registrando uma manifestação anônima a partir da conversa com o Guará. Revise as informações antes
-          de enviar — o protocolo e o código de acesso aparecem uma única vez.
+          {renderAsPublicDraft
+            ? 'Você está registrando uma manifestação anônima a partir da conversa com o Guará. Revise as informações antes de enviar — o protocolo e o código de acesso aparecem uma única vez.'
+            : 'Você está registrando uma manifestação anônima. Guarde o protocolo e o código de acesso que serão exibidos após o envio — eles são a única forma de acompanhar a manifestação.'}
         </div>
       ) : null}
       <section className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:items-start lg:gap-12">
@@ -558,14 +561,14 @@ export function ManifestationFormPage() {
             <label className="mt-5 flex items-start gap-3 rounded-lg border border-[rgba(114,119,127,0.25)] bg-white p-4 text-sm leading-6 text-[#43474e]">
               <input
                 className="mt-1 size-4 accent-[#0d47a1]"
-                disabled={renderAsPublicDraft}
+                disabled={renderAsPublic}
                 type="checkbox"
                 {...form.register('isAnonymous')}
               />
               <span>
                 <span className="block font-bold text-[#1d1b1b]">Registrar como manifestação anônima</span>
                 <span className="mt-1 block">
-                  {renderAsPublicDraft
+                  {renderAsPublic
                     ? 'Como você não está autenticado, esta manifestação será registrada anonimamente. O protocolo e o código de acesso serão exibidos uma única vez após o envio.'
                     : 'O protocolo e o código de acesso serão exibidos uma única vez após o envio.'}
                 </span>
@@ -648,7 +651,7 @@ export function ManifestationFormPage() {
     </main>
   )
 
-  if (renderAsPublicDraft) {
+  if (renderAsPublic) {
     return (
       <div className="min-h-svh bg-white font-sans text-[#1d1b1b]">
         <div className="fixed inset-x-0 top-0 z-50">

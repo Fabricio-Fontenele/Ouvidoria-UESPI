@@ -109,13 +109,22 @@ function NewRecordCard() {
           </div>
         </div>
 
-        <a
-          className="mt-4 inline-flex min-h-9 min-w-32 items-center justify-center gap-2 rounded-[4px] bg-home-surface px-4 text-xs leading-none font-bold text-home-blue no-underline transition duration-150 hover:bg-home-action active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white md:mt-5 md:min-h-10 md:min-w-40 md:rounded-lg md:text-sm lg:mt-7 lg:min-h-11 lg:w-fit lg:px-5 lg:text-base"
-          href={buildGuaraNewManifestationHref()}
-        >
-          <Icon className="hidden size-5 lg:block" name="message-circle" />
-          Fale com o Guará
-        </a>
+        <div className="mt-4 flex flex-col gap-2 md:mt-5 md:flex-row md:flex-wrap md:items-center md:gap-3 lg:mt-7">
+          <a
+            className="inline-flex min-h-9 min-w-32 items-center justify-center gap-2 rounded-[4px] bg-home-surface px-4 text-xs leading-none font-bold text-home-blue no-underline transition duration-150 hover:bg-home-action active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white md:min-h-10 md:min-w-40 md:rounded-lg md:text-sm lg:min-h-11 lg:w-fit lg:px-5 lg:text-base"
+            href={buildGuaraNewManifestationHref()}
+          >
+            <Icon className="hidden size-5 lg:block" name="message-circle" />
+            Fale com o Guará
+          </a>
+          <a
+            className="inline-flex min-h-9 min-w-32 items-center justify-center gap-2 rounded-[4px] border border-white/60 bg-transparent px-4 text-xs leading-none font-bold text-white no-underline transition duration-150 hover:bg-white/15 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white md:min-h-10 md:min-w-40 md:rounded-lg md:text-sm lg:min-h-11 lg:w-fit lg:px-5 lg:text-base"
+            href={routes.manifestationForm}
+          >
+            <Icon className="hidden size-5 lg:block" name="edit" />
+            Registrar manualmente
+          </a>
+        </div>
       </div>
 
       <img

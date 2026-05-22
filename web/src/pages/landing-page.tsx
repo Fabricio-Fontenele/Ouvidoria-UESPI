@@ -1,5 +1,6 @@
 import { routes } from '../app/routes'
 
+import guaraMascot from '../assets/guara-mascot.png'
 import uespiImageBg from '../assets/uespi-img-bg.webp'
 import { Icon, type IconName } from '../components/icons/icon'
 import { AppHeader } from '../components/layout/app-header'
@@ -127,6 +128,45 @@ function LoginCallout() {
   )
 }
 
+function GuaraCallout() {
+  return (
+    <section className="px-4 pb-9 md:px-8 md:pb-12" id="guara">
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 rounded-2xl border border-landing-chip bg-landing-muted-surface px-5 py-6 text-center shadow-landing-step md:flex-row md:gap-7 md:px-8 md:py-7 md:text-left">
+        <img alt="" className="size-40 shrink-0 object-contain md:size-56" src={guaraMascot} />
+        <div className="flex-1">
+          <span className="inline-flex rounded-full bg-landing-blue/10 px-2.5 py-1 text-[9px] leading-none font-black tracking-[0.08em] text-landing-blue uppercase md:text-[10px]">
+            Assistente virtual
+          </span>
+          <h2 className="mt-2 text-[20px] leading-tight font-black text-landing-text md:text-2xl">Fale com o Guará</h2>
+          <p className="mt-2 text-[12px] leading-[1.6] text-landing-text md:text-[15px] md:leading-6">
+            Tire dúvidas sobre a Ouvidoria, entenda os tipos de manifestação ou comece a organizar uma denúncia — tudo
+            sem precisar fazer login. Quando estiver tudo pronto, é só revisar e enviar.
+          </p>
+          <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 md:justify-start">
+            <a
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-landing-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
+              href={routes.guara}
+            >
+              <Icon className="size-4" name="message-circle" />
+              Conversar com o Guará
+            </a>
+            <a
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-landing-blue bg-transparent px-5 text-sm leading-5 font-bold text-landing-blue no-underline transition duration-150 hover:bg-landing-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
+              href={routes.manifestationForm}
+            >
+              <Icon className="size-4" name="edit" />
+              Registrar manifestação
+            </a>
+          </div>
+          <p className="mt-3 text-[11px] leading-4 text-landing-menu md:text-xs md:leading-5">
+            Sem login, o registro é feito anonimamente — o protocolo e o código de acesso são exibidos apenas uma vez.
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function AboutSection() {
   return (
     <section className="px-[18px] pb-[28px] md:px-0 md:pb-0" id="o-que-e">
@@ -205,6 +245,7 @@ export function LandingPage() {
       <main className="mx-auto w-full max-w-5xl bg-landing-surface md:px-8">
         <HeroSection />
         <LoginCallout />
+        <GuaraCallout />
         <div className="md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(260px,0.65fr)] md:gap-12 md:py-16">
           <AboutSection />
           <TypesSection />
