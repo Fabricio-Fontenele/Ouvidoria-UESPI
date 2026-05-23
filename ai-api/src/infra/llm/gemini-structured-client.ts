@@ -29,6 +29,7 @@ export class GeminiStructuredLlmProvider implements LlmProvider {
       apiKey: config.apiKey,
       model: config.chatModel,
       temperature: config.temperature,
+      maxRetries: 0,
     })
 
     this.structured = model.withStructuredOutput(aiChatResponseSchema, {

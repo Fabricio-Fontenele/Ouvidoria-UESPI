@@ -1,8 +1,26 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
-import { NEUTRAL_FALLBACK_RESPONSE } from '../../application/dtos/ai-chat-response.js'
+import { NEUTRAL_FALLBACK_RESPONSE, type AiChatResponse } from '../../application/dtos/ai-chat-response.js'
 import type { SendAiMessageUseCase } from '../../application/use-cases/send-ai-message-use-case.js'
 import { sendAiMessageBodySchema } from '../validators/send-ai-message-schema.js'
+
+const RATE_LIMIT_FALLBACK_RESPONSE: AiChatResponse = {
+  answer:
+    'Estou um pouco sobrecarregado agora. Aguarde alguns segundos e tente enviar a mensagem novamente, por favor.',
+  intent: 'unknown',
+  confidence: null,
+  shouldOpenManifestationDraft: false,
+  draft: null,
+  missingFields: [],
+}
+
+function isRateLimitError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false
+  }
+  const status = (error as { status?: unknown }).status
+  return status === 429
+}
 
 export function makeSendAiMessageHandler(useCase: SendAiMessageUseCase) {
   return async function handler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -24,6 +42,11 @@ export function makeSendAiMessageHandler(useCase: SendAiMessageUseCase) {
     try {
       result = await useCase.execute(parsed.data)
     } catch (error) {
+      if (isRateLimitError(error)) {
+        request.log.warn({ messagePreview }, 'ai-message: upstream rate limit, returning rate-limit fallback')
+        await reply.code(200).send(RATE_LIMIT_FALLBACK_RESPONSE)
+        return
+      }
       request.log.error({ err: error, messagePreview }, 'ai-message: use case threw, returning neutral fallback')
       await reply.code(200).send(NEUTRAL_FALLBACK_RESPONSE)
       return
