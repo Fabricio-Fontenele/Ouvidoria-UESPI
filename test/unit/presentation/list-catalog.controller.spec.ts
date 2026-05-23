@@ -26,6 +26,7 @@ describe('ListCatalogController', () => {
             {
               id: 'unit-coordenacao-computacao-parnaiba',
               label: 'Coordenação do Curso de Ciência da Computação',
+              description: null,
             },
           ],
         },
@@ -45,6 +46,7 @@ describe('ListCatalogController', () => {
             {
               id: 'unit-coordenacao-computacao-parnaiba',
               label: 'Coordenação do Curso de Ciência da Computação',
+              description: null,
             },
           ],
         },

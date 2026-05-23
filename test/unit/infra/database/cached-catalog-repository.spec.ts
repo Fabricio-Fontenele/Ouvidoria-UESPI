@@ -9,7 +9,14 @@ describe('CachedCatalogRepository', () => {
   let inner: DeepMockProxy<CatalogRepository>
 
   const catalog: PublicCatalogDTO = {
-    campuses: [{ id: 'c1', label: 'Campus 1', city: 'X', administrativeUnits: [{ id: 'u1', label: 'Unit 1' }] }],
+    campuses: [
+      {
+        id: 'c1',
+        label: 'Campus 1',
+        city: 'X',
+        administrativeUnits: [{ id: 'u1', label: 'Unit 1', description: null }],
+      },
+    ],
   }
 
   beforeEach(() => {

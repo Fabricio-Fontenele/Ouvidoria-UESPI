@@ -34,6 +34,7 @@ describe('SendAiMessageUseCase', () => {
           {
             id: 'unit-coordenacao-computacao-parnaiba',
             label: 'Coordenação do Curso de Ciência da Computação',
+            description: null,
           },
         ],
       },
@@ -41,7 +42,7 @@ describe('SendAiMessageUseCase', () => {
         id: 'campus-poeta-torquato-neto',
         label: 'Campus Poeta Torquato Neto',
         city: 'Teresina',
-        administrativeUnits: [{ id: 'unit-prad-teresina', label: 'Pró-Reitoria de Administração' }],
+        administrativeUnits: [{ id: 'unit-prad-teresina', label: 'Pró-Reitoria de Administração', description: null }],
       },
     ],
   }
@@ -56,11 +57,13 @@ describe('SendAiMessageUseCase', () => {
       id: 'unit-coordenacao-computacao-parnaiba',
       label: 'Coordenação do Curso de Ciência da Computação',
       campusId: 'campus-professor-alexandre-alves-de-oliveira',
+      description: null,
     },
     {
       id: 'unit-prad-teresina',
       label: 'Pró-Reitoria de Administração',
       campusId: 'campus-poeta-torquato-neto',
+      description: null,
     },
   ]
 

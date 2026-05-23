@@ -67,6 +67,7 @@ describe('RegisterManifestationUseCase', () => {
     catalogRepository.findAdministrativeUnitById.mockResolvedValue({
       id: 'unit-1',
       name: 'Unit 1',
+      description: null,
       campusId: 'campus-1',
       isActive: true,
     })
@@ -281,6 +282,7 @@ describe('RegisterManifestationUseCase', () => {
     catalogRepository.findAdministrativeUnitById.mockResolvedValue({
       id: 'unit-1',
       name: 'Unit 1',
+      description: null,
       campusId: 'campus-1',
       isActive: false,
     })
@@ -295,6 +297,7 @@ describe('RegisterManifestationUseCase', () => {
     catalogRepository.findAdministrativeUnitById.mockResolvedValue({
       id: 'unit-1',
       name: 'Unit 1',
+      description: null,
       campusId: 'campus-2',
       isActive: true,
     })

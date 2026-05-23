@@ -7,6 +7,7 @@ export interface CatalogAdministrativeUnit {
   id: string
   label: string
   campusId: string
+  description: string | null
 }
 
 export interface CatalogContext {

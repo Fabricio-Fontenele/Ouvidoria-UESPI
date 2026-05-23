@@ -84,13 +84,14 @@ model Campus {
 }
 
 model AdministrativeUnit {
-  id        String   @id
-  name      String
-  campusId  String   @map("campus_id")
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  campus    Campus   @relation(fields: [campusId], references: [id])
+  id          String   @id
+  name        String
+  description String?
+  campusId    String   @map("campus_id")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  campus      Campus   @relation(fields: [campusId], references: [id])
 
   @@index([campusId])
   @@index([isActive])
@@ -99,21 +100,21 @@ model AdministrativeUnit {
 }
 
 model Manifestation {
-  id                   String                   @id @default(uuid()) @db.Uuid
-  protocol             String                   @unique
+  id                   String                    @id @default(uuid()) @db.Uuid
+  protocol             String                    @unique
   type                 ManifestationType
-  status               ManifestationStatus      @default(in_analysis)
-  campusId             String                   @map("campus_id")
-  administrativeUnitId String                   @map("administrative_unit_id")
-  description          String                   @db.Text
-  involvedPeople       String?                  @map("involved_people") @db.Text
-  authorUserId         String?                  @map("author_user_id") @db.Uuid
-  attendantUserId      String?                  @map("attendant_user_id") @db.Uuid
-  accessCodeHash       String?                  @map("access_code_hash")
-  createdAt            DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
-  author               User?                    @relation("ManifestationAuthor", fields: [authorUserId], references: [id])
-  attendant            User?                    @relation("ManifestationAttendant", fields: [attendantUserId], references: [id])
+  status               ManifestationStatus       @default(in_analysis)
+  campusId             String                    @map("campus_id")
+  administrativeUnitId String                    @map("administrative_unit_id")
+  description          String                    @db.Text
+  involvedPeople       String?                   @map("involved_people") @db.Text
+  authorUserId         String?                   @map("author_user_id") @db.Uuid
+  attendantUserId      String?                   @map("attendant_user_id") @db.Uuid
+  accessCodeHash       String?                   @map("access_code_hash")
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  author               User?                     @relation("ManifestationAuthor", fields: [authorUserId], references: [id])
+  attendant            User?                     @relation("ManifestationAttendant", fields: [attendantUserId], references: [id])
   messages             ManifestationMessage[]
   evaluation           ManifestationEvaluation?
   attachments          ManifestationAttachment[]
@@ -165,17 +166,17 @@ model ManifestationMessage {
 }
 
 model ManifestationAttachment {
-  id              String                                @id @default(uuid()) @db.Uuid
-  manifestationId String                                @map("manifestation_id") @db.Uuid
-  storageKey      String                                @unique @map("storage_key")
-  originalName    String                                @map("original_name")
-  mimeType        String                                @map("mime_type")
-  sizeInBytes     Int                                   @map("size_in_bytes")
-  uploadedByType  ManifestationAttachmentUploadedByType @map("uploaded_by_type")
-  uploadedByUserId String?                              @map("uploaded_by_user_id") @db.Uuid
-  createdAt       DateTime                              @default(now()) @map("created_at") @db.Timestamptz(6)
-  manifestation   Manifestation                         @relation(fields: [manifestationId], references: [id])
-  uploadedByUser  User?                                 @relation(fields: [uploadedByUserId], references: [id])
+  id               String                                @id @default(uuid()) @db.Uuid
+  manifestationId  String                                @map("manifestation_id") @db.Uuid
+  storageKey       String                                @unique @map("storage_key")
+  originalName     String                                @map("original_name")
+  mimeType         String                                @map("mime_type")
+  sizeInBytes      Int                                   @map("size_in_bytes")
+  uploadedByType   ManifestationAttachmentUploadedByType @map("uploaded_by_type")
+  uploadedByUserId String?                               @map("uploaded_by_user_id") @db.Uuid
+  createdAt        DateTime                              @default(now()) @map("created_at") @db.Timestamptz(6)
+  manifestation    Manifestation                         @relation(fields: [manifestationId], references: [id])
+  uploadedByUser   User?                                 @relation(fields: [uploadedByUserId], references: [id])
 
   @@index([manifestationId, createdAt])
   @@index([uploadedByUserId])

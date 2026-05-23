@@ -14,6 +14,12 @@ const administrativeUnitSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   campusId: z.string().min(1),
+  description: z
+    .string()
+    .min(1)
+    .nullable()
+    .optional()
+    .transform((value) => value ?? null),
 })
 
 const userRoleSchema = z

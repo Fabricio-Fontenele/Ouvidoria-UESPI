@@ -232,16 +232,16 @@ Exemplos:
 
 Para preparar uma denúncia, o Guará deve tentar obter as seguintes informações:
 
-| Campo                | Obrigatório para o draft | Descrição                                                                                            |
-| -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Tipo                 | Sim                      | Deve ser denúncia (`report`)                                                                         |
-| Campus               | Sim                      | Campus onde o fato ocorreu ou ao qual o fato está relacionado                                        |
-| Unidade ou local     | Sim                      | Unidade administrativa, setor, prédio, coordenação, sala, restaurante, portaria ou local relacionado |
-| Descrição            | Sim                      | Relato claro do ocorrido                                                                             |
-| Pessoas envolvidas   | Não                      | Pessoas, cargos, setores ou descrições genéricas, se o usuário souber                                |
-| Data aproximada      | Não                      | Quando aconteceu, se o usuário souber                                                                |
-| Horário aproximado   | Não                      | Horário ou período do dia, se o usuário souber                                                       |
-| Anexos ou evidências | Não                      | Fotos, documentos, prints ou outros arquivos, se houver                                              |
+| Campo                | Obrigatório para o draft | Descrição                                                                                                                                                                                                                                              |
+| -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tipo                 | Sim                      | Deve ser denúncia (`report`)                                                                                                                                                                                                                           |
+| Campus               | Sim                      | Campus onde fica a unidade responsável (= campus para onde a manifestação será encaminhada). Para órgãos centrais (Pró-Reitorias, Reitoria, DTIC, Ouvidoria, etc.), é o Campus Poeta Torquato Neto (sede), mesmo se o usuário estudar em outro campus. |
+| Unidade ou local     | Sim                      | Unidade administrativa, setor, prédio, coordenação, sala, restaurante, portaria ou local responsável                                                                                                                                                   |
+| Descrição            | Sim                      | Relato claro do ocorrido                                                                                                                                                                                                                               |
+| Pessoas envolvidas   | Não                      | Pessoas, cargos, setores ou descrições genéricas, se o usuário souber                                                                                                                                                                                  |
+| Data aproximada      | Não                      | Quando aconteceu, se o usuário souber                                                                                                                                                                                                                  |
+| Horário aproximado   | Não                      | Horário ou período do dia, se o usuário souber                                                                                                                                                                                                         |
+| Anexos ou evidências | Não                      | Fotos, documentos, prints ou outros arquivos, se houver                                                                                                                                                                                                |
 
 ## Como pedir complementação
 

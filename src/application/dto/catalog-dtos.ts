@@ -5,11 +5,13 @@ export interface CatalogCampusItemDTO {
 
 export interface CatalogAdministrativeUnitItemDTO extends CatalogCampusItemDTO {
   campusId: string
+  description: string | null
 }
 
 export interface PublicCatalogAdministrativeUnitDTO {
   id: string
   label: string
+  description: string | null
 }
 
 export interface PublicCatalogCampusDTO {
@@ -33,6 +35,7 @@ export interface CatalogCampusRecordDTO {
 export interface CatalogAdministrativeUnitRecordDTO {
   id: string
   name: string
+  description: string | null
   campusId: string
   isActive: boolean
 }

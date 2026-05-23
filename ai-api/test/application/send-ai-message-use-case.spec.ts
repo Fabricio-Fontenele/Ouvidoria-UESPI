@@ -14,8 +14,13 @@ describe('SendAiMessageUseCase', () => {
       { id: 'campus-teresina', label: 'Campus Teresina' },
     ],
     administrativeUnits: [
-      { id: 'unit-direcao-parnaiba', label: 'Direcao Parnaiba', campusId: 'campus-parnaiba' },
-      { id: 'unit-prad-teresina', label: 'PRAD Teresina', campusId: 'campus-teresina' },
+      {
+        id: 'unit-direcao-parnaiba',
+        label: 'Direcao Parnaiba',
+        campusId: 'campus-parnaiba',
+        description: null,
+      },
+      { id: 'unit-prad-teresina', label: 'PRAD Teresina', campusId: 'campus-teresina', description: null },
     ],
   }
 

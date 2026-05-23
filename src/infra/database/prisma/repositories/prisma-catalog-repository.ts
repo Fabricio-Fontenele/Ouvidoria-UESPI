@@ -37,6 +37,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
           select: {
             id: true,
             name: true,
+            description: true,
           },
         },
       },
@@ -50,6 +51,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
         administrativeUnits: campus.administrativeUnits.map((administrativeUnit) => ({
           id: administrativeUnit.id,
           label: administrativeUnit.name,
+          description: administrativeUnit.description,
         })),
       })),
     }
@@ -73,6 +75,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
       select: {
         id: true,
         name: true,
+        description: true,
         campusId: true,
         isActive: true,
       },

@@ -31,108 +31,326 @@ const usersSeedData = [
   },
 ]
 
-const catalogSeedData = {
-  campuses: [
-    {
-      id: 'campus-poeta-torquato-neto',
-      name: 'Campus Poeta Torquato Neto',
-      city: 'Teresina',
-      isActive: true,
-    },
-    {
-      id: 'campus-professor-alexandre-alves-de-oliveira',
-      name: 'Campus Professor Alexandre Alves de Oliveira',
-      city: 'Parnaíba',
-      isActive: true,
-    },
-    {
-      id: 'campus-professor-antonio-giovanni-alves-de-sousa',
-      name: 'Campus Professor Antônio Giovanni Alves de Sousa',
-      city: 'Piripiri',
-      isActive: true,
-    },
-    {
-      id: 'campus-doutora-josefina-demes',
-      name: 'Campus Doutora Josefina Demes',
-      city: 'Floriano',
-      isActive: false,
-    },
-    {
-      id: 'campus-professor-barros-araujo',
-      name: 'Campus Professor Barros Araújo',
-      city: 'Picos',
-      isActive: true,
-    },
-  ],
+const headquartersCampusId = 'campus-poeta-torquato-neto'
 
-  administrativeUnits: [
+const campusCatalogEntries = [
+  {
+    id: 'campus-poeta-torquato-neto',
+    slug: 'poeta-torquato-neto',
+    name: 'Campus Poeta Torquato Neto',
+    city: 'Teresina',
+  },
+  {
+    id: 'campus-clovis-moura',
+    slug: 'clovis-moura',
+    name: 'Campus Clóvis Moura',
+    city: 'Teresina',
+  },
+  {
+    id: 'campus-professor-alexandre-alves-de-oliveira',
+    slug: 'professor-alexandre-alves-de-oliveira',
+    name: 'Campus Professor Alexandre Alves de Oliveira',
+    city: 'Parnaíba',
+  },
+  {
+    id: 'campus-professor-antonio-giovanni-alves-de-sousa',
+    slug: 'professor-antonio-giovani-alves-de-sousa',
+    name: 'Campus Professor Antônio Giovani Alves de Sousa',
+    city: 'Piripiri',
+  },
+  {
+    id: 'campus-herois-do-jenipapo',
+    slug: 'herois-do-jenipapo',
+    name: 'Campus Heróis do Jenipapo',
+    city: 'Campo Maior',
+  },
+  {
+    id: 'nucleo-barras',
+    slug: 'barras',
+    name: 'Núcleo de Barras',
+    city: 'Barras',
+  },
+  {
+    id: 'campus-professor-barros-araujo',
+    slug: 'professor-barros-araujo',
+    name: 'Campus Professor Barros Araújo',
+    city: 'Picos',
+  },
+  {
+    id: 'campus-possidonio-queiroz',
+    slug: 'possidonio-queiroz',
+    name: 'Campus Possidônio Queiroz',
+    city: 'Oeiras',
+  },
+  {
+    id: 'campus-doutora-josefina-demes',
+    slug: 'doutora-josefina-demes',
+    name: 'Campus Dra. Josefina Demes',
+    city: 'Floriano',
+  },
+  {
+    id: 'campus-professor-ariston-dias-lima',
+    slug: 'professor-ariston-dias-lima',
+    name: 'Campus Professor Ariston Dias Lima',
+    city: 'São Raimundo Nonato',
+  },
+  {
+    id: 'campus-urucui',
+    slug: 'urucui',
+    name: 'Campus Uruçuí',
+    city: 'Uruçuí',
+  },
+  {
+    id: 'campus-dom-jose-vasquez-dias',
+    slug: 'dom-jose-vasquez-dias',
+    name: 'Campus Dom José Vasquez Dias',
+    city: 'Bom Jesus',
+  },
+  {
+    id: 'campus-deputado-jesualdo-cavalcante',
+    slug: 'deputado-jesualdo-cavalcante',
+    name: 'Campus Deputado Jesualdo Cavalcante',
+    city: 'Corrente',
+  },
+] as const
+
+const campuses = campusCatalogEntries.map(({ id, name, city }) => ({
+  id,
+  name,
+  city,
+  isActive: true,
+}))
+
+const centralAdministrativeUnits = [
+  {
+    id: 'unit-reitoria',
+    name: 'Reitoria',
+    description:
+      'órgão executivo máximo da universidade; condução geral, planejamento estratégico e representação institucional',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-vice-reitoria',
+    name: 'Vice-Reitoria',
+    description: 'apoio à Reitoria, substituição do Reitor em afastamentos e articulação de projetos institucionais',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-preg',
+    name: 'Pró-Reitoria de Ensino de Graduação',
+    description: 'matrículas, currículos, calendário acadêmico e regulação dos cursos de graduação',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-prad',
+    name: 'Pró-Reitoria de Administração',
+    description:
+      'orçamento, compras, contratos, infraestrutura administrativa e gestão de pessoal técnico-administrativo',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-prex',
+    name: 'Pró-Reitoria de Extensão, Assuntos Estudantis e Comunitários',
+    description: 'bolsas, auxílios estudantis, restaurante universitário, programas de extensão e ações comunitárias',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-prop',
+    name: 'Pró-Reitoria de Pesquisa e Pós-Graduação',
+    description: 'programas de mestrado e doutorado, iniciação científica e fomento à pesquisa',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-proplan',
+    name: 'Pró-Reitoria de Planejamento e Finanças',
+    description: 'orçamento institucional, planejamento estratégico, prestação de contas e gestão financeira',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-ouvidoria',
+    name: 'Ouvidoria',
+    description:
+      'canal oficial de manifestações dos usuários (denúncia, reclamação, sugestão, elogio); recebe e encaminha às unidades responsáveis',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-biblioteca-central',
+    name: 'Biblioteca Central',
+    description: 'acervo central, empréstimo de livros, normalização de trabalhos acadêmicos e espaço de estudo',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-ascom',
+    name: 'Assessoria de Comunicação',
+    description: 'imprensa, redes sociais oficiais, divulgação institucional e comunicação externa da universidade',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-assejur',
+    name: 'Assessoria Jurídica',
+    description: 'pareceres jurídicos, contratos, contencioso e suporte legal à administração da universidade',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-auditoria',
+    name: 'Auditoria',
+    description: 'controle interno, auditoria de processos, contas e conformidade administrativa',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-dtic',
+    name: 'Departamento de Tecnologia da Informação e Comunicação',
+    description: 'rede, sistemas institucionais, e-mail institucional, suporte de TI e infraestrutura tecnológica',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-nit',
+    name: 'Núcleo de Inovação Tecnológica',
+    description: 'patentes, transferência de tecnologia, propriedade intelectual e apoio à inovação',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-npj',
+    name: 'Núcleo de Práticas Jurídicas',
+    description: 'estágios obrigatórios e atendimento jurídico à comunidade vinculados ao curso de Direito',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-nucepe',
+    name: 'Núcleo de Concursos e Promoção de Eventos',
+    description: 'organização de vestibular, concursos públicos, processos seletivos e eventos institucionais',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-almoxarifado',
+    name: 'Almoxarifado',
+    description: 'gestão de materiais, suprimentos, estoque e distribuição de bens de consumo',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-prefeitura-universitaria',
+    name: 'Prefeitura Universitária',
+    description: 'manutenção predial, obras, limpeza, segurança patrimonial e logística do campus sede',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+]
+
+const poetaTorquatoCenters = [
+  {
+    id: 'unit-ccsa',
+    name: 'Centro de Ciências Sociais Aplicadas',
+    description: 'centro acadêmico que reúne cursos como Administração, Ciências Contábeis, Direito e Turismo',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-cchl',
+    name: 'Centro de Ciências Humanas e Letras',
+    description: 'centro acadêmico que reúne cursos como Letras, História, Geografia e Filosofia',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-cceca',
+    name: 'Centro de Ciências da Educação, Comunicação e Artes',
+    description: 'centro acadêmico que reúne cursos como Pedagogia, Jornalismo, Música e Artes Visuais',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-ctu',
+    name: 'Centro de Tecnologia e Urbanismo',
+    description: 'centro acadêmico que reúne cursos como Engenharia, Arquitetura e Ciência da Computação',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-ccn',
+    name: 'Centro de Ciências da Natureza',
+    description: 'centro acadêmico que reúne cursos como Biologia, Química, Física e Matemática',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-ccs',
+    name: 'Centro de Ciências da Saúde',
+    description: 'centro acadêmico que reúne cursos como Medicina, Enfermagem, Odontologia, Fisioterapia e Nutrição',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+  {
+    id: 'unit-cca',
+    name: 'Centro de Ciências Agrárias',
+    description: 'centro acadêmico que reúne cursos como Agronomia, Medicina Veterinária e Engenharia Florestal',
+    campusId: headquartersCampusId,
+    isActive: true,
+  },
+]
+
+const campusAdministrativeUnits = campusCatalogEntries.flatMap(({ id: campusId, slug, name }) => {
+  const isNucleus = name.startsWith('Núcleo')
+
+  const baseUnits = [
     {
-      id: 'unit-preg-teresina',
-      name: 'Pró-Reitoria de Ensino de Graduação',
-      campusId: 'campus-poeta-torquato-neto',
+      id: `unit-${isNucleus ? 'coordenacao' : 'direcao'}-${slug}`,
+      name: `${isNucleus ? 'Coordenação' : 'Direção'} do ${name}`,
+      description: isNucleus
+        ? 'coordenação administrativa do núcleo; condução geral, infraestrutura e articulação com a reitoria'
+        : 'direção administrativa do campus; condução geral, infraestrutura, segurança patrimonial e articulação com a reitoria',
+      campusId,
       isActive: true,
     },
     {
-      id: 'unit-prad-teresina',
-      name: 'Pró-Reitoria de Administração',
-      campusId: 'campus-poeta-torquato-neto',
+      id: `unit-secretaria-academica-${slug}`,
+      name: `Secretaria Acadêmica do ${name}`,
+      description: 'matrícula, histórico escolar, atestados, diplomas e documentos acadêmicos dos alunos do campus',
+      campusId,
       isActive: true,
     },
     {
-      id: 'unit-direcao-parnaiba',
-      name: 'Direção do Campus Professor Alexandre Alves de Oliveira',
-      campusId: 'campus-professor-alexandre-alves-de-oliveira',
+      id: `unit-coordenacoes-curso-${slug}`,
+      name: `Coordenações de Curso do ${name}`,
+      description:
+        'coordenações dos cursos de graduação do campus; questões pedagógicas, professores, disciplinas, estágios e TCC',
+      campusId,
       isActive: true,
     },
-    {
-      id: 'unit-coordenacao-computacao-parnaiba',
-      name: 'Coordenação do Curso de Ciência da Computação',
-      campusId: 'campus-professor-alexandre-alves-de-oliveira',
+  ]
+
+  if (campusId !== headquartersCampusId) {
+    baseUnits.push({
+      id: `unit-biblioteca-${slug}`,
+      name: `Biblioteca Setorial do ${name}`,
+      description: 'acervo, empréstimo de livros e espaço de estudo do campus',
+      campusId,
       isActive: true,
-    },
-    {
-      id: 'unit-biblioteca-parnaiba',
-      name: 'Biblioteca Setorial do Campus Professor Alexandre Alves de Oliveira',
-      campusId: 'campus-professor-alexandre-alves-de-oliveira',
-      isActive: true,
-    },
-    {
-      id: 'unit-direcao-piripiri',
-      name: 'Direção do Campus Professor Antônio Giovanni Alves de Sousa',
-      campusId: 'campus-professor-antonio-giovanni-alves-de-sousa',
-      isActive: true,
-    },
-    {
-      id: 'unit-coordenacao-computacao-piripiri',
-      name: 'Coordenação do Curso de Ciência da Computação',
-      campusId: 'campus-professor-antonio-giovanni-alves-de-sousa',
-      isActive: true,
-    },
-    {
-      id: 'unit-secretaria-academica-piripiri',
-      name: 'Secretaria Acadêmica do Campus Professor Antônio Giovanni Alves de Sousa',
-      campusId: 'campus-professor-antonio-giovanni-alves-de-sousa',
-      isActive: true,
-    },
-    {
-      id: 'unit-nti-parnaiba-inativo',
-      name: 'Núcleo de Tecnologia da Informação do Campus de Parnaíba',
-      campusId: 'campus-professor-alexandre-alves-de-oliveira',
-      isActive: false,
-    },
-    {
-      id: 'unit-protocolo-floriano',
-      name: 'Setor de Protocolo do Campus Doutora Josefina Demes',
-      campusId: 'campus-doutora-josefina-demes',
-      isActive: true,
-    },
-    {
-      id: 'unit-ouvidoria-picos-inativa',
-      name: 'Ouvidoria Local do Campus Professor Barros Araújo',
-      campusId: 'campus-professor-barros-araujo',
-      isActive: false,
-    },
-  ],
+    })
+  }
+
+  return baseUnits
+})
+
+const catalogSeedData = {
+  campuses,
+  administrativeUnits: [...centralAdministrativeUnits, ...poetaTorquatoCenters, ...campusAdministrativeUnits],
 } as const
 
 async function main(): Promise<void> {
@@ -154,6 +372,7 @@ async function main(): Promise<void> {
       create: administrativeUnit,
       update: {
         name: administrativeUnit.name,
+        description: administrativeUnit.description,
         campusId: administrativeUnit.campusId,
         isActive: administrativeUnit.isActive,
       },
