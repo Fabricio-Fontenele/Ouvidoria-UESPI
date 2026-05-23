@@ -10,6 +10,7 @@ export const routes = {
   manifestationForm: '/manifestation-form',
   ombudsmanManifestation: '/ombudsman/manifestation',
   ombudsmanHome: '/ombudsman/home',
+  privacy: '/privacy',
   sign: '/sign',
   track: '/track',
 } as const

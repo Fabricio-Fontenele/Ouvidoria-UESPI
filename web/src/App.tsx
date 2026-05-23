@@ -8,6 +8,7 @@ import { ManifestationDetailsPage } from './pages/manifestation-details-page'
 import { ManifestationFormPage } from './pages/manifestation-form-page'
 import { OmbudsmanManifestationDetailsPage } from './pages/ombudsman-manifestation-details-page'
 import { OmbudsmanHomePage } from './pages/ombudsman-home-page'
+import { PrivacyPage } from './pages/privacy-page'
 import { SignPage } from './pages/sign-page'
 import { TrackPage } from './pages/track-page'
 
@@ -36,6 +37,10 @@ function App() {
 
   if (normalizedPath === routes.ombudsmanManifestation) {
     return <OmbudsmanManifestationDetailsPage />
+  }
+
+  if (normalizedPath === routes.privacy) {
+    return <PrivacyPage />
   }
 
   if (normalizedPath === routes.guara) {
