@@ -2,9 +2,11 @@ import { useState } from 'react'
 
 import { buildManifestationDetailsHref, routes } from '../../app/routes'
 import { manifestantOnlyRoles } from '../../app/access-policy'
+import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
 import { Icon } from '../icons/icon'
 import type { IconName } from '../icons/icon'
+import { AppHeader } from '../layout/app-header'
 import { AuthenticatedAppShell } from '../layout/authenticated-app-shell'
 import { SiteFooter } from '../layout/site-footer'
 
@@ -44,9 +46,11 @@ export function ManifestationSubmissionSuccess({
   protocol,
   uploadWarning,
 }: ManifestationSubmissionSuccessProps) {
+  const { isAuthenticated, isLoading: authIsLoading } = useAuth()
   const [copyStatus, setCopyStatus] = useState<'copied' | 'error' | 'idle'>('idle')
   const [accessCodeCopyStatus, setAccessCodeCopyStatus] = useState<'copied' | 'error' | 'idle'>('idle')
   const isAnonymous = accessCode !== null
+  const renderAsPublic = !authIsLoading && !isAuthenticated
 
   const handleCopyProtocol = async () => {
     try {
@@ -78,10 +82,11 @@ export function ManifestationSubmissionSuccess({
     }
   }
 
-  return (
-    <div className="min-h-svh bg-white font-sans text-[#1a1c1d]">
-      <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles} fixedHeader>
-        <main className="mx-auto flex w-full max-w-5xl flex-col items-center px-5 pt-10 min-[390px]:px-7 sm:px-8 md:pt-14 lg:px-10">
+  const homeHref = renderAsPublic ? routes.landing : routes.home
+
+  const mainContent = (
+    <>
+      <main className="mx-auto flex w-full max-w-5xl flex-col items-center px-5 pt-10 min-[390px]:px-7 sm:px-8 md:pt-14 lg:px-10">
           <section
             aria-labelledby="submission-success-title"
             className="flex w-full max-w-[448px] flex-col items-center"
@@ -225,7 +230,7 @@ export function ManifestationSubmissionSuccess({
 
           <a
             className="mt-3 inline-flex min-h-12 w-full max-w-[448px] items-center justify-center gap-2 rounded-lg border-2 border-[#2b5bb5]/20 px-6 text-base leading-6 font-bold text-[#2b5bb5] no-underline transition duration-150 hover:bg-[#2b5bb5]/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
-            href={routes.home}
+            href={homeHref}
           >
             <Icon className="size-5" name="home" />
             Voltar ao início
@@ -233,6 +238,25 @@ export function ManifestationSubmissionSuccess({
         </main>
 
         <SiteFooter className="w-full" />
+      </>
+  )
+
+  if (renderAsPublic) {
+    return (
+      <div className="min-h-svh bg-white font-sans text-[#1a1c1d]">
+        <div className="fixed inset-x-0 top-0 z-50">
+          <AppHeader isAuthenticated={false} />
+        </div>
+        <div aria-hidden="true" className="h-22 md:h-24" />
+        {mainContent}
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-svh bg-white font-sans text-[#1a1c1d]">
+      <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles} fixedHeader>
+        {mainContent}
       </AuthenticatedAppShell>
     </div>
   )
