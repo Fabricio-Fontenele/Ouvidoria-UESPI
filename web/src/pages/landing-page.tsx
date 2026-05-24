@@ -38,7 +38,15 @@ interface RegistrationChoiceModalProps {
 const modalFocusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 const guaraShortcutInactivityDelayInMs = 6000
 const guaraShortcutBubbleExitDurationInMs = 220
-const guaraShortcutActivityEvents = ['click', 'focusin', 'keydown', 'pointerdown', 'pointermove', 'scroll', 'touchstart'] as const
+const guaraShortcutActivityEvents = [
+  'click',
+  'focusin',
+  'keydown',
+  'pointerdown',
+  'pointermove',
+  'scroll',
+  'touchstart',
+] as const
 type GuaraSpeechBubbleState = 'hidden' | 'leaving' | 'visible'
 
 const manifestationTypes: ManifestationType[] = [

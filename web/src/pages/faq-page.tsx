@@ -261,9 +261,7 @@ export function FaqPage() {
           <p className="mt-5 text-[11px] leading-4 font-black tracking-[0.12em] text-landing-blue uppercase">
             Central de ajuda
           </p>
-          <h1 className="mt-3 text-3xl leading-tight font-black text-landing-text md:text-5xl">
-            Perguntas frequentes
-          </h1>
+          <h1 className="mt-3 text-3xl leading-tight font-black text-landing-text md:text-5xl">Perguntas frequentes</h1>
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-landing-menu md:text-base">
             Encontre respostas rápidas sobre registro, acompanhamento, anonimato, prazos e uso do Guará no sistema de
             Ouvidoria da UESPI.
@@ -304,7 +302,10 @@ export function FaqPage() {
               <label className="sr-only" htmlFor="faq-search">
                 Buscar no FAQ
               </label>
-              <Icon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-landing-menu" name="search" />
+              <Icon
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-landing-menu"
+                name="search"
+              />
               <input
                 className="min-h-12 w-full rounded-lg border border-landing-chip bg-landing-surface pr-11 pl-10 text-sm leading-5 text-landing-text outline-none transition duration-150 placeholder:text-landing-menu/70 focus:border-landing-blue focus:ring-3 focus:ring-landing-blue/15"
                 id="faq-search"
