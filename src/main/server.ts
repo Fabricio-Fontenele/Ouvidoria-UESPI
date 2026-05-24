@@ -21,7 +21,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(fastifyCors, {
     allowedHeaders: ['Authorization', 'Content-Type'],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    origin: true,
+    origin: env.CORS_ORIGIN ?? true,
   })
   await app.register(fastifyJwt, { secret: env.JWT_SECRET })
   await app.register(fastifyMultipart)

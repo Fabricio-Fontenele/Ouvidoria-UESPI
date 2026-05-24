@@ -6,6 +6,7 @@ const envSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(3333),
     HOST: z.string().default('0.0.0.0'),
+    CORS_ORIGIN: z.url().optional(),
     DATABASE_URL: z.url(),
     JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
     JWT_EXPIRES_IN_SECONDS: z.coerce
