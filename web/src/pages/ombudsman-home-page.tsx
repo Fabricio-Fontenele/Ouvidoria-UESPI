@@ -153,31 +153,6 @@ function buildFiltersForRequest({
   return filters
 }
 
-function buildMetricsFiltersForRequest({
-  typeFilter,
-  dateFilter,
-}: {
-  typeFilter: TypeFilter
-  dateFilter: DateFilter
-}): Omit<OmbudsmanListFilters, 'page' | 'status'> {
-  const filters: Omit<OmbudsmanListFilters, 'page' | 'status'> = {}
-
-  if (typeFilter !== FILTER_ALL_VALUE) {
-    filters.type = typeFilter
-  }
-
-  if (dateFilter !== FILTER_ALL_VALUE) {
-    const range = buildLocalDayRange(dateFilter)
-
-    if (range !== null) {
-      filters.from = range.from
-      filters.to = range.to
-    }
-  }
-
-  return filters
-}
-
 function MetricCards({
   loadStatus,
   statusTotals,
@@ -415,7 +390,7 @@ export function OmbudsmanHomePage() {
       setMetricsLoadStatus('loading')
 
       try {
-        const result = await ombudsmanService.getMetrics(buildMetricsFiltersForRequest({ dateFilter, typeFilter }))
+        const result = await ombudsmanService.getMetrics({})
 
         if (!isMounted) {
           return
@@ -438,7 +413,7 @@ export function OmbudsmanHomePage() {
     return () => {
       isMounted = false
     }
-  }, [dateFilter, ombudsmanService, typeFilter])
+  }, [ombudsmanService])
 
   useEffect(() => {
     let isMounted = true
