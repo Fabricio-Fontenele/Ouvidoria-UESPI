@@ -144,3 +144,4 @@ Todos vinculados ao Campus Poeta Torquato Neto (Teresina).
 - Secretaria Acadêmica do Campus Deputado Jesualdo Cavalcante (`unit-secretaria-academica-deputado-jesualdo-cavalcante`): matrícula, histórico escolar, atestados, diplomas e documentos acadêmicos dos alunos do campus
 - Coordenações de Curso do Campus Deputado Jesualdo Cavalcante (`unit-coordenacoes-curso-deputado-jesualdo-cavalcante`): coordenações dos cursos de graduação do campus; questões pedagógicas, professores, disciplinas, estágios e TCC
 - Biblioteca Setorial do Campus Deputado Jesualdo Cavalcante (`unit-biblioteca-deputado-jesualdo-cavalcante`): acervo, empréstimo de livros e espaço de estudo do campus
+<!-- fim do catálogo -->
