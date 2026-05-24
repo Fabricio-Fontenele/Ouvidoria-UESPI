@@ -1,9 +1,10 @@
 import { getCurrentPath, routes } from './app/routes'
+import { EvaluationPage } from './pages/evaluation-page'
+import { FaqPage } from './pages/faq-page'
 import { GuaraPage } from './pages/guara-page'
 import { HomePage } from './pages/home-page'
 import { LandingPage } from './pages/landing-page'
 import { LoginPage } from './pages/login-page'
-import { EvaluationPage } from './pages/evaluation-page'
 import { ManifestationDetailsPage } from './pages/manifestation-details-page'
 import { ManifestationFormPage } from './pages/manifestation-form-page'
 import { OmbudsmanManifestationDetailsPage } from './pages/ombudsman-manifestation-details-page'
@@ -25,6 +26,10 @@ function App() {
 
   if (normalizedPath === routes.evaluation) {
     return <EvaluationPage />
+  }
+
+  if (normalizedPath === routes.faq) {
+    return <FaqPage />
   }
 
   if (normalizedPath === routes.home) {

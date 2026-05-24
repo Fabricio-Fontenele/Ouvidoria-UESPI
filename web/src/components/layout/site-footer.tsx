@@ -11,6 +11,7 @@ type SiteFooterProps = ComponentProps<'footer'> & {
 const institutionalLinks: Array<{ external?: boolean; href: string; label: string }> = [
   { external: true, href: 'https://transparencia.uespi.br/', label: 'Transparência' },
   { external: true, href: 'https://sigaa.uespi.br/sigaa/?modo=classico', label: 'Portal do Aluno' },
+  { href: routes.faq, label: 'FAQ' },
   { href: routes.privacy, label: 'Privacidade' },
 ] as const
 
@@ -82,7 +83,7 @@ export function SiteFooter({ className, variant = 'default', ...props }: SiteFoo
           </div>
 
           <div className="flex flex-col gap-4 text-xs leading-5 text-landing-menu md:flex-row md:items-center md:justify-between md:text-sm">
-            <p>&copy; 2024 Universidade Estadual do Piauí - UESPI. Todos os direitos reservados.</p>
+            <p>&copy; 2026 Universidade Estadual do Piauí - UESPI. Todos os direitos reservados.</p>
 
             <div aria-label="Canais oficiais" className="flex gap-2">
               {socialLinks.map((link) => (
