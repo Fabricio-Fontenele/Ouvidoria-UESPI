@@ -208,28 +208,32 @@ function FilterSelect({ id, label, onChange, options, value }: FilterSelectProps
   const isActive = value !== FILTER_ALL_VALUE
 
   return (
-    <label
-      className={cx(
-        'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
-        isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
-      )}
-    >
-      <span className="sr-only">{label}</span>
-      <select
-        className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none"
-        id={id}
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
+    <label className="grid w-full gap-1.5" htmlFor={id}>
+      <span className="px-1 text-xs leading-4 font-black tracking-[0.08em] text-home-brown/70 uppercase md:text-sm">
+        {label}
+      </span>
+      <span
+        className={cx(
+          'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
+          isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
+        )}
       >
-        <option className="bg-home-surface text-home-text" value={FILTER_ALL_VALUE}>
-          {label}
-        </option>
-        {options.map((option) => (
-          <option className="bg-home-surface text-home-text" key={`${id}-${option.value}`} value={option.value}>
-            {option.label}
+        <select
+          className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none md:text-sm"
+          id={id}
+          onChange={(event) => onChange(event.target.value)}
+          value={value}
+        >
+          <option className="bg-home-surface text-home-text" value={FILTER_ALL_VALUE}>
+            Todos
           </option>
-        ))}
-      </select>
+          {options.map((option) => (
+            <option className="bg-home-surface text-home-text" key={`${id}-${option.value}`} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </span>
     </label>
   )
 }
@@ -238,21 +242,25 @@ function DateFilterInput({ id, label, onChange, value }: DateFilterInputProps) {
   const isActive = value !== FILTER_ALL_VALUE
 
   return (
-    <label
-      className={cx(
-        'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
-        isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
-      )}
-    >
-      <span className="sr-only">{label}</span>
-      <input
-        className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none [color-scheme:light]"
-        id={id}
-        onChange={(event) => onChange(event.target.value === '' ? FILTER_ALL_VALUE : event.target.value)}
-        title={label}
-        type="date"
-        value={value === FILTER_ALL_VALUE ? '' : value}
-      />
+    <label className="grid w-full gap-1.5" htmlFor={id}>
+      <span className="px-1 text-xs leading-4 font-black tracking-[0.08em] text-home-brown/70 uppercase md:text-sm">
+        {label}
+      </span>
+      <span
+        className={cx(
+          'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
+          isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
+        )}
+      >
+        <input
+          className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none [color-scheme:light] md:text-sm"
+          id={id}
+          onChange={(event) => onChange(event.target.value === '' ? FILTER_ALL_VALUE : event.target.value)}
+          title={label}
+          type="date"
+          value={value === FILTER_ALL_VALUE ? '' : value}
+        />
+      </span>
     </label>
   )
 }
