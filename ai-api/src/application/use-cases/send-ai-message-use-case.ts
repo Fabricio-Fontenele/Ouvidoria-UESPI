@@ -1,4 +1,4 @@
-import type { AiChatRequest } from '../dtos/ai-chat-request.js'
+import type { AiChatRequest, AiChatUserRole } from '../dtos/ai-chat-request.js'
 import {
   aiChatResponseSchema,
   NEUTRAL_FALLBACK_RESPONSE,
@@ -6,6 +6,7 @@ import {
   type AiChatDraft,
   type AiChatIntent,
   type AiChatResponse,
+  type ManifestationType,
   type RequiredDraftField,
 } from '../dtos/ai-chat-response.js'
 import type { CatalogContext } from '../ports/catalog-context.js'
@@ -57,14 +58,17 @@ export class SendAiMessageUseCase {
       return NEUTRAL_FALLBACK_RESPONSE
     }
 
-    return this.sanitize(parsed.data, catalog)
+    return this.sanitize(parsed.data, catalog, request.userRole)
   }
 
-  private sanitize(response: AiChatResponse, catalog: CatalogContext): AiChatResponse {
+  private sanitize(response: AiChatResponse, catalog: CatalogContext, userRole: AiChatUserRole): AiChatResponse {
     const isDraftIntent =
       response.intent === 'manifestation_candidate' || response.intent === 'manifestation_draft_ready'
 
-    const draft = isDraftIntent ? this.sanitizeDraft(response.draft, catalog) : null
+    let draft = isDraftIntent ? this.sanitizeDraft(response.draft, catalog) : null
+    if (draft !== null && !this.isDraftAllowedForRole(userRole, draft.type)) {
+      draft = null
+    }
     const missingFields = this.computeMissingFields(response.intent, draft)
     const shouldOpenManifestationDraft =
       response.intent === 'manifestation_draft_ready' &&
@@ -112,6 +116,26 @@ export class SendAiMessageUseCase {
 
     const hasAnyFilledField = Object.values(sanitized).some((value) => value !== null)
     return hasAnyFilledField ? sanitized : null
+  }
+
+  /**
+   * Role→type policy, enforced deterministically. The prompt (PERFIL DO USUÁRIO in
+   * rag-prompt-builder) asks the model to honor this, but the LLM is not reliable —
+   * anonymous callers occasionally produced a `complaint` draft. Mirrors those rules:
+   * - ombudsman/admin: informative only, never a draft;
+   * - anonymous (null): only `report` (denúncia). A still-undetermined (`null`) type
+   *   stays allowed while the draft is assembled, so the legit anonymous denúncia flow
+   *   is not broken;
+   * - manifestant: any type.
+   */
+  private isDraftAllowedForRole(userRole: AiChatUserRole, type: ManifestationType | null): boolean {
+    if (userRole === 'ombudsman' || userRole === 'admin') {
+      return false
+    }
+    if (userRole === null) {
+      return type === null || type === 'report'
+    }
+    return true
   }
 
   private computeMissingFields(intent: AiChatIntent, draft: AiChatDraft | null): RequiredDraftField[] {
