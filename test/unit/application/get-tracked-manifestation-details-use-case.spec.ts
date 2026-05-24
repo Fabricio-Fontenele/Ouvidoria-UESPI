@@ -46,6 +46,7 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
     description: 'The service was unavailable during the whole morning.',
     involvedPeople: null,
     authorUserId: null,
+    author: null,
     attendantUserId: null,
     forwardedToUnit: null,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),

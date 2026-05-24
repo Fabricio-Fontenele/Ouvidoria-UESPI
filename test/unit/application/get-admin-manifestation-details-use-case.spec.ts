@@ -40,6 +40,14 @@ describe('GetAdminManifestationDetailsUseCase', () => {
     description: 'The service was unavailable during the whole morning.',
     involvedPeople: 'Coordination Team',
     authorUserId,
+    author:
+      authorUserId === null
+        ? null
+        : {
+            id: authorUserId,
+            name: 'Diana Reis',
+            email: 'diana@example.com',
+          },
     attendantUserId: null,
     forwardedToUnit: null,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
@@ -115,6 +123,11 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         description: details.description,
         involvedPeople: details.involvedPeople,
         authorUserId: 'user-1',
+        author: {
+          id: 'user-1',
+          name: 'Diana Reis',
+          email: 'diana@example.com',
+        },
         attendantUserId: null,
         forwardedToUnit: details.forwardedToUnit,
         createdAt: details.createdAt,
@@ -137,6 +150,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
     })
 
     expect(result.manifestation.authorUserId).toBeNull()
+    expect(result.manifestation.author).toBeNull()
   })
 
   it('rejects requesters without administrative role', async () => {

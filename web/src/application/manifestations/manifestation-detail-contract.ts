@@ -48,10 +48,17 @@ export interface ManifestationAttachmentInfo {
   uploadedByType: ManifestationAttachmentUploaderType
 }
 
+export interface ManifestationAuthorInfo {
+  email: string
+  id: string
+  name: string
+}
+
 export interface ManifestationDetail {
   administrativeUnitId: string
   attachments: ManifestationAttachmentInfo[]
   attendantUserId: string | null
+  author: ManifestationAuthorInfo | null
   authorUserId: string | null
   campusId: string
   createdAt: string

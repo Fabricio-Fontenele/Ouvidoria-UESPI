@@ -9,6 +9,11 @@ function buildDetail(overrides: Partial<ManifestationDetail> = {}): Manifestatio
     administrativeUnitId: 'unit-1',
     attachments: [],
     attendantUserId: null,
+    author: {
+      email: 'diana@example.com',
+      id: 'user-1',
+      name: 'Diana Reis',
+    },
     authorUserId: 'user-1',
     campusId: 'campus-1',
     createdAt: '2026-05-01T10:00:00.000Z',

@@ -10,8 +10,12 @@ import {
   narrowMessageSenderType,
 } from '../../application/manifestations/manifestation-detail-contract'
 
-export interface RawManifestationDetail extends Omit<ManifestationDetail, 'attachments' | 'history' | 'messages'> {
+export interface RawManifestationDetail extends Omit<
+  ManifestationDetail,
+  'attachments' | 'author' | 'history' | 'messages'
+> {
   attachments: RawAttachmentInfo[]
+  author?: ManifestationDetail['author']
   history: RawHistoryEntry[]
   messages: RawMessageEntry[]
 }
@@ -55,6 +59,7 @@ export function mapManifestationDetail(raw: RawManifestationDetail): Manifestati
   return {
     ...raw,
     attachments: raw.attachments.map(mapAttachmentInfo),
+    author: raw.author ?? null,
     history: raw.history.map(mapHistoryEntry),
     messages: raw.messages.map(mapMessageEntry),
   }
