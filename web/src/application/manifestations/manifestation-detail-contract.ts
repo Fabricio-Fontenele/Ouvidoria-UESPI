@@ -56,6 +56,7 @@ export interface ManifestationDetail {
   campusId: string
   createdAt: string
   description: string
+  forwardedToUnit: { id: string; name: string } | null
   history: ManifestationHistoryEntry[]
   id: string
   involvedPeople: string | null

@@ -1,6 +1,7 @@
 import { z, type ZodType } from 'zod'
 
 import { AnswerManifestationUseCase } from '#src/application/use-cases/answer-manifestation/answer-manifestation-use-case.js'
+import { ForwardManifestationToUnitUseCase } from '#src/application/use-cases/forward-manifestation-to-unit/forward-manifestation-to-unit-use-case.js'
 import { GetAdminManifestationDetailsUseCase } from '#src/application/use-cases/get-admin-manifestation-details/get-admin-manifestation-details-use-case.js'
 import { ListAdminManifestationsUseCase } from '#src/application/use-cases/list-admin-manifestations/list-admin-manifestations-use-case.js'
 import { GetAdminManifestationAttachmentDownloadUrlUseCase } from '#src/application/use-cases/manifestation-attachments/get-admin-manifestation-attachment-download-url-use-case.js'
@@ -8,6 +9,7 @@ import { UpdateManifestationStatusUseCase } from '#src/application/use-cases/upd
 import { ManifestationStatus } from '#src/domain/entities/manifestation.js'
 import { ZodValidator } from '#src/infra/http/fastify/validators/zod-validator.js'
 import { AnswerManifestationController } from '#src/presentation/controllers/admin/answer-manifestation.controller.js'
+import { ForwardManifestationToUnitController } from '#src/presentation/controllers/admin/forward-manifestation-to-unit.controller.js'
 import { GetAdminManifestationAttachmentDownloadUrlController } from '#src/presentation/controllers/admin/get-admin-manifestation-attachment-download-url.controller.js'
 import { GetAdminManifestationDetailsController } from '#src/presentation/controllers/admin/get-admin-manifestation-details.controller.js'
 import { ListAdminManifestationsController } from '#src/presentation/controllers/admin/list-admin-manifestations.controller.js'
@@ -17,6 +19,7 @@ import { env } from '../../config/env.js'
 import { infrastructure } from '../infrastructure.js'
 
 const answerSchema = z.object({ content: z.string() })
+const forwardToUnitSchema = z.object({ administrativeUnitId: z.string() })
 const updateStatusSchema = z.object({
   status: z.enum(Object.values(ManifestationStatus) as [string, ...string[]]),
 }) as unknown as ZodType<{ status: ManifestationStatus }>
@@ -28,6 +31,16 @@ export function makeAnswerManifestationController(): AnswerManifestationControll
     infrastructure.usersRepository,
   )
   return new AnswerManifestationController(useCase, new ZodValidator(answerSchema))
+}
+
+export function makeForwardManifestationToUnitController(): ForwardManifestationToUnitController {
+  const useCase = new ForwardManifestationToUnitUseCase(
+    infrastructure.manifestationsRepository,
+    infrastructure.manifestationAdministrationRepository,
+    infrastructure.usersRepository,
+    infrastructure.catalogRepository,
+  )
+  return new ForwardManifestationToUnitController(useCase, new ZodValidator(forwardToUnitSchema))
 }
 
 export function makeUpdateManifestationStatusController(): UpdateManifestationStatusController {

@@ -16,6 +16,7 @@ export enum ManifestationType {
 
 export enum ManifestationStatus {
   IN_ANALYSIS = 'in_analysis',
+  AWAITING_UNIT = 'awaiting_unit',
   ANSWERED = 'answered',
   CANCELED = 'canceled',
   FINALIZED = 'finalized',
@@ -52,8 +53,13 @@ interface ManifestationProps {
   involvedPeople: ManifestationInvolvedPeople | null
   authorUserId: UniqueEntityId | null
   attendantUserId: UniqueEntityId | null
+  forwardedToUnitId: AdministrativeUnitId | null
   accessCodeHash: string | null
   createdAt: Date
+}
+
+type RestoreManifestationProps = Omit<ManifestationProps, 'forwardedToUnitId'> & {
+  forwardedToUnitId?: AdministrativeUnitId | null
 }
 
 interface OpenManifestationProps {
@@ -71,6 +77,7 @@ interface OpenManifestationProps {
 export class Manifestation extends Entity<ManifestationProps> {
   private static readonly allowedAdministrativeStatusTransitions: Record<ManifestationStatus, ManifestationStatus[]> = {
     [ManifestationStatus.IN_ANALYSIS]: [ManifestationStatus.CANCELED],
+    [ManifestationStatus.AWAITING_UNIT]: [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.CANCELED],
     [ManifestationStatus.ANSWERED]: [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.FINALIZED],
     [ManifestationStatus.CANCELED]: [],
     [ManifestationStatus.FINALIZED]: [],
@@ -86,16 +93,17 @@ export class Manifestation extends Entity<ManifestationProps> {
         ...props,
         status: ManifestationStatus.IN_ANALYSIS,
         attendantUserId: null,
+        forwardedToUnitId: null,
         createdAt,
       },
       id,
     )
   }
 
-  static restore(props: ManifestationProps, id: UniqueEntityId): Manifestation {
+  static restore(props: RestoreManifestationProps, id: UniqueEntityId): Manifestation {
     Manifestation.validateAccessMode(props.authorUserId, props.accessCodeHash)
 
-    return new Manifestation(props, id)
+    return new Manifestation({ ...props, forwardedToUnitId: props.forwardedToUnitId ?? null }, id)
   }
 
   private static validateAccessMode(authorUserId: UniqueEntityId | null, accessCodeHash: string | null): void {
@@ -131,11 +139,23 @@ export class Manifestation extends Entity<ManifestationProps> {
       return
     }
 
-    if (this.props.status !== ManifestationStatus.IN_ANALYSIS) {
+    if (
+      this.props.status !== ManifestationStatus.IN_ANALYSIS &&
+      this.props.status !== ManifestationStatus.AWAITING_UNIT
+    ) {
       throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.ANSWERED)
     }
 
     this.props.status = ManifestationStatus.ANSWERED
+  }
+
+  forwardToUnit(administrativeUnitId: AdministrativeUnitId): void {
+    if (this.props.status !== ManifestationStatus.IN_ANALYSIS) {
+      throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.AWAITING_UNIT)
+    }
+
+    this.props.status = ManifestationStatus.AWAITING_UNIT
+    this.props.forwardedToUnitId = administrativeUnitId
   }
 
   transitionStatusAdministratively(target: ManifestationStatus): void {
@@ -202,6 +222,10 @@ export class Manifestation extends Entity<ManifestationProps> {
 
   get attendantUserId(): UniqueEntityId | null {
     return this.props.attendantUserId
+  }
+
+  get forwardedToUnitId(): AdministrativeUnitId | null {
+    return this.props.forwardedToUnitId
   }
 
   get accessCodeHash(): string | null {

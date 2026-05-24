@@ -25,6 +25,7 @@ enum ManifestationType {
 
 enum ManifestationStatus {
   in_analysis
+  awaiting_unit
   answered
   canceled
   finalized
@@ -93,6 +94,8 @@ model AdministrativeUnit {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   campus      Campus   @relation(fields: [campusId], references: [id])
 
+  forwardedManifestations Manifestation[] @relation("ManifestationForwardedUnit")
+
   @@index([campusId])
   @@index([isActive])
   @@index([campusId, isActive])
@@ -110,17 +113,20 @@ model Manifestation {
   involvedPeople       String?                   @map("involved_people") @db.Text
   authorUserId         String?                   @map("author_user_id") @db.Uuid
   attendantUserId      String?                   @map("attendant_user_id") @db.Uuid
+  forwardedToUnitId    String?                   @map("forwarded_to_unit_id")
   accessCodeHash       String?                   @map("access_code_hash")
   createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
   author               User?                     @relation("ManifestationAuthor", fields: [authorUserId], references: [id])
   attendant            User?                     @relation("ManifestationAttendant", fields: [attendantUserId], references: [id])
+  forwardedToUnit      AdministrativeUnit?       @relation("ManifestationForwardedUnit", fields: [forwardedToUnitId], references: [id])
   messages             ManifestationMessage[]
   evaluation           ManifestationEvaluation?
   attachments          ManifestationAttachment[]
 
   @@index([authorUserId])
   @@index([attendantUserId])
+  @@index([forwardedToUnitId])
   @@index([status])
   @@index([type])
   @@index([campusId])

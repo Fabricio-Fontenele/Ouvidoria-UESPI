@@ -18,6 +18,7 @@ export interface SystemMessagePayload {
 const HISTORY_TYPES: readonly SystemHistoryType[] = [
   'registered',
   'status_changed',
+  'forwarded_to_unit',
   'finalized_by_author',
   'evaluation_recorded',
 ]

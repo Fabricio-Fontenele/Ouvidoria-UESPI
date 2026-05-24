@@ -48,7 +48,7 @@ describe('Identified manifestation (e2e)', () => {
         isAnonymous: false,
         type: 'report',
         campusId: 'campus-professor-alexandre-alves-de-oliveira',
-        administrativeUnitId: 'unit-direcao-parnaiba',
+        administrativeUnitId: 'unit-direcao-professor-alexandre-alves-de-oliveira',
         description: 'Documento extraviado.',
       },
     })
@@ -92,7 +92,7 @@ describe('Identified manifestation (e2e)', () => {
         isAnonymous: false,
         type: 'report',
         campusId: 'campus-professor-alexandre-alves-de-oliveira',
-        administrativeUnitId: 'unit-direcao-parnaiba',
+        administrativeUnitId: 'unit-direcao-professor-alexandre-alves-de-oliveira',
         description: 'Documento extraviado.',
       },
     })
@@ -172,7 +172,7 @@ describe('Identified manifestation (e2e)', () => {
         isAnonymous: false,
         type: 'complaint',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-prad-teresina',
+        administrativeUnitId: 'unit-prad',
         description: 'Sem auth.',
       },
     })
@@ -191,7 +191,7 @@ describe('Identified manifestation (e2e)', () => {
         isAnonymous: false,
         type: 'compliment',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-preg-teresina',
+        administrativeUnitId: 'unit-preg',
         description: 'Elogio.',
       },
     })
@@ -229,7 +229,7 @@ describe('Identified manifestation (e2e)', () => {
         isAnonymous: false,
         type: 'compliment',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-preg-teresina',
+        administrativeUnitId: 'unit-preg',
         description: 'Elogio.',
       },
     })
@@ -298,7 +298,7 @@ describe('Identified manifestation (e2e)', () => {
         isAnonymous: false,
         type: 'report',
         campusId: 'campus-professor-alexandre-alves-de-oliveira',
-        administrativeUnitId: 'unit-direcao-parnaiba',
+        administrativeUnitId: 'unit-direcao-professor-alexandre-alves-de-oliveira',
         description: 'Documento extraviado.',
       },
     })
@@ -395,7 +395,7 @@ describe('Identified manifestation (e2e)', () => {
         isAnonymous: false,
         type: 'complaint',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-preg-teresina',
+        administrativeUnitId: 'unit-preg',
         description: 'Outra manifestação.',
       },
     })

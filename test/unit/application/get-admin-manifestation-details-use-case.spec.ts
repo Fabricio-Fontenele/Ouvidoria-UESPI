@@ -41,6 +41,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
     involvedPeople: 'Coordination Team',
     authorUserId,
     attendantUserId: null,
+    forwardedToUnit: null,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [
       {
@@ -115,6 +116,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         involvedPeople: details.involvedPeople,
         authorUserId: 'user-1',
         attendantUserId: null,
+        forwardedToUnit: details.forwardedToUnit,
         createdAt: details.createdAt,
         history: details.history,
         messages: details.messages,

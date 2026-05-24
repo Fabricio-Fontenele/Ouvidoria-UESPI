@@ -36,6 +36,15 @@ interface FinalizeByAuthorParams {
   toStatus: ManifestationStatus
 }
 
+interface ForwardToUnitParams {
+  manifestation: Manifestation
+  actorUserId: string
+  actorType: ManifestationMessageSenderType
+  forwardedToUnitName: string
+  fromStatus: ManifestationStatus
+  toStatus: ManifestationStatus
+}
+
 export class PrismaManifestationAdministrationRepository implements ManifestationAdministrationRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -139,6 +148,45 @@ export class PrismaManifestationAdministrationRepository implements Manifestatio
           content: encodeSystemMessagePayload({
             type: 'finalized_by_author',
             description: 'Manifestação finalizada pelo autor.',
+            actorUserId,
+            actorType,
+            fromStatus,
+            toStatus,
+          }),
+        },
+      })
+    })
+  }
+
+  async forwardToUnit({
+    manifestation,
+    actorUserId,
+    actorType,
+    forwardedToUnitName,
+    fromStatus,
+    toStatus,
+  }: ForwardToUnitParams): Promise<void> {
+    const manifestationData = manifestationMapper.toPersistence(manifestation)
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.manifestation.update({
+        where: { id: manifestationData.id },
+        data: {
+          status: manifestationData.status,
+          attendantUserId: manifestationData.attendantUserId,
+          forwardedToUnitId: manifestationData.forwardedToUnitId,
+        },
+      })
+
+      await tx.manifestationMessage.create({
+        data: {
+          id: new UniqueEntityId().toString(),
+          manifestationId: manifestationData.id,
+          senderUserId: null,
+          senderType: ManifestationMessageSenderType.SYSTEM,
+          content: encodeSystemMessagePayload({
+            type: 'forwarded_to_unit',
+            description: `Manifestação encaminhada ao setor responsável: ${forwardedToUnitName}.`,
             actorUserId,
             actorType,
             fromStatus,

@@ -5,6 +5,7 @@ export type ManifestationHistoryEntryType =
   | 'registered'
   | 'administrative_answered'
   | 'status_changed'
+  | 'forwarded_to_unit'
   | 'finalized_by_author'
   | 'evaluation_recorded'
 
@@ -62,6 +63,7 @@ export interface ManifestationDetailsDTO {
   involvedPeople: string | null
   authorUserId: string | null
   attendantUserId: string | null
+  forwardedToUnit: { id: string; name: string } | null
   createdAt: Date
   history: ManifestationHistoryEntryDTO[]
   messages: ManifestationMessageDTO[]

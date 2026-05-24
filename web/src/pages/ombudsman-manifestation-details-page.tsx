@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { ombudsmanAreaRoles } from '../app/access-policy'
 import { getSearchParams, routes } from '../app/routes'
@@ -6,7 +6,8 @@ import type {
   ManifestationAttachmentInfo,
   ManifestationDetail,
 } from '../application/manifestations/manifestation-detail-contract'
-import { canAnswer, canCancel, canFinalize } from '../application/ombudsman/ombudsman-policy'
+import type { Catalog } from '../application/catalog/catalog-types'
+import { canAnswer, canCancel, canFinalize, canForward } from '../application/ombudsman/ombudsman-policy'
 import { ombudsmanReplyLimits } from '../application/ombudsman/ombudsman-reply-limits'
 import type { OmbudsmanService, OmbudsmanStatusChange } from '../application/ombudsman/ombudsman-service'
 import { ConfirmDialog } from '../components/feedback/confirm-dialog'
@@ -152,6 +153,198 @@ function AnswerComposer({
           >
             {isSubmitting ? 'Enviando...' : 'Enviar resposta'}
             <Icon className="size-4" name="send" />
+          </button>
+        </div>
+        {error !== null ? (
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </form>
+    </section>
+  )
+}
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .trim()
+}
+
+interface SectorOption {
+  campusLabel: string
+  id: string
+  label: string
+  searchText: string
+}
+
+function ForwardAction({
+  catalog,
+  detail,
+  ombudsmanService,
+  onForwarded,
+}: {
+  catalog: Catalog | null
+  detail: ManifestationDetail
+  ombudsmanService: OmbudsmanService
+  onForwarded: () => void
+}) {
+  const inputId = useId()
+  const listboxId = useId()
+  const [administrativeUnitId, setAdministrativeUnitId] = useState('')
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (containerRef.current !== null && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [])
+
+  if (!canForward(detail)) {
+    return null
+  }
+
+  const options: SectorOption[] = (catalog?.campuses ?? []).flatMap((campus) => {
+    const campusLabel = campus.city !== null ? `${campus.label} (${campus.city})` : campus.label
+    return campus.administrativeUnits.map((unit) => ({
+      campusLabel,
+      id: unit.id,
+      label: unit.label,
+      searchText: normalizeText(`${unit.label} ${campus.label} ${campus.city ?? ''}`),
+    }))
+  })
+  const normalizedQuery = normalizeText(query)
+  const matches =
+    normalizedQuery === '' ? options : options.filter((option) => option.searchText.includes(normalizedQuery))
+  const hasCatalog = options.length > 0
+
+  function selectOption(option: SectorOption) {
+    setAdministrativeUnitId(option.id)
+    setQuery(`${option.label} — ${option.campusLabel}`)
+    setIsOpen(false)
+    setError(null)
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (administrativeUnitId === '') {
+      setError('Selecione o setor responsável para encaminhar.')
+      return
+    }
+
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      await ombudsmanService.forwardToUnit({ administrativeUnitId, manifestationId: detail.id })
+      setAdministrativeUnitId('')
+      setQuery('')
+      onForwarded()
+    } catch (forwardError) {
+      const message =
+        forwardError instanceof Error ? forwardError.message : 'Não foi possível encaminhar agora. Tente novamente.'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <section
+      aria-labelledby="ombudsman-forward-title"
+      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
+    >
+      <h3 className="text-xl font-black text-home-text" id="ombudsman-forward-title">
+        Encaminhar ao setor responsável
+      </h3>
+      <p className="mt-2 text-sm leading-6 text-home-brown">
+        Após acionar o setor responsável (por e-mail ou ofício), registre o encaminhamento aqui. O status passa para
+        “Aguardando setor” e o autor acompanha que a apuração está em andamento. Ao receber o retorno, responda
+        normalmente.
+      </p>
+
+      {detail.forwardedToUnit !== null ? (
+        <p className="mt-4 rounded-2xl bg-home-action/40 px-4 py-3 text-sm leading-6 text-home-text">
+          Aguardando retorno de <strong className="font-bold">{detail.forwardedToUnit.name}</strong>.
+        </p>
+      ) : null}
+
+      <form className="mt-4 grid gap-4" onSubmit={(event) => void handleSubmit(event)}>
+        <div className="grid gap-2" ref={containerRef}>
+          <label className="text-sm font-bold text-home-text" htmlFor={inputId}>
+            Setor responsável
+          </label>
+          <div className="relative">
+            <input
+              aria-autocomplete="list"
+              aria-controls={listboxId}
+              aria-expanded={isOpen}
+              autoComplete="off"
+              className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none placeholder:text-home-brown/70 focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={isSubmitting || !hasCatalog}
+              id={inputId}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setAdministrativeUnitId('')
+                setIsOpen(true)
+                setError(null)
+              }}
+              onFocus={() => setIsOpen(true)}
+              placeholder="Digite para buscar o setor (nome, campus ou cidade)..."
+              role="combobox"
+              type="text"
+              value={query}
+            />
+            {isOpen && hasCatalog ? (
+              <ul
+                className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-login-brown/10 bg-white py-1 shadow-login-frame"
+                id={listboxId}
+                role="listbox"
+              >
+                {matches.length === 0 ? (
+                  <li className="px-4 py-3 text-sm leading-6 text-home-brown">Nenhum setor encontrado.</li>
+                ) : (
+                  matches.map((option) => (
+                    <li aria-selected={option.id === administrativeUnitId} key={option.id} role="option">
+                      <button
+                        className="block w-full px-4 py-2 text-left transition duration-150 hover:bg-home-action/60 focus-visible:bg-home-action/60 focus-visible:outline-none"
+                        onClick={() => {
+                          selectOption(option)
+                        }}
+                        type="button"
+                      >
+                        <span className="block text-sm font-semibold text-home-text">{option.label}</span>
+                        <span className="block text-xs text-home-brown">{option.campusLabel}</span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <button
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+            disabled={isSubmitting || administrativeUnitId === ''}
+            type="submit"
+          >
+            {isSubmitting ? 'Encaminhando...' : 'Encaminhar ao setor'}
+            <Icon className="size-4" name="chevron-right" />
           </button>
         </div>
         {error !== null ? (
@@ -416,6 +609,12 @@ export function OmbudsmanManifestationDetailsPage() {
               <ManifestationTimelineCard history={detail.history} />
               <ManifestationMessagesThread messages={detail.messages} perspective="institutional" />
               <AnswerComposer detail={detail} ombudsmanService={ombudsmanService} onAnswered={refetch} />
+              <ForwardAction
+                catalog={catalog}
+                detail={detail}
+                ombudsmanService={ombudsmanService}
+                onForwarded={refetch}
+              />
               <StatusActions detail={detail} ombudsmanService={ombudsmanService} onChanged={refetch} />
             </div>
           ) : null}

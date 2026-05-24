@@ -4,10 +4,10 @@ import type { UsersRepository } from '#src/application/repositories/users-reposi
 import type { AttachmentStorage } from '#src/application/storage/attachment-storage.js'
 import { UserRole } from '#src/domain/entities/user.js'
 
+import { AttachmentNotFoundError } from './errors/attachment-not-found-error.js'
 import { ManifestationNotFoundError } from '../manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToManageManifestationError } from '../manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
 import type { UseCase } from '../use-case.js'
-import { AttachmentNotFoundError } from './errors/attachment-not-found-error.js'
 
 interface GetAdminManifestationAttachmentDownloadUrlInput {
   manifestationId: string

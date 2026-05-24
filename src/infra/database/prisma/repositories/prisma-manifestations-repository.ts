@@ -43,6 +43,7 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
     const record = await this.prisma.manifestation.findUnique({
       where: { id: manifestationId },
       include: {
+        forwardedToUnit: true,
         attachments: {
           orderBy: { createdAt: 'asc' },
         },
@@ -161,6 +162,7 @@ interface ManifestationRow {
   involvedPeople: string | null
   authorUserId: string | null
   attendantUserId: string | null
+  forwardedToUnit: { id: string; name: string } | null
   createdAt: Date
 }
 
@@ -240,6 +242,10 @@ function buildDetailsDTO(
     involvedPeople: manifestation.involvedPeople,
     authorUserId: manifestation.authorUserId,
     attendantUserId: manifestation.attendantUserId,
+    forwardedToUnit:
+      manifestation.forwardedToUnit === null
+        ? null
+        : { id: manifestation.forwardedToUnit.id, name: manifestation.forwardedToUnit.name },
     createdAt: manifestation.createdAt,
     history,
     messages: conversation,

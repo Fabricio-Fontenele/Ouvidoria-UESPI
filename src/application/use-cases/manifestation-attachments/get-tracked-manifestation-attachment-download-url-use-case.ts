@@ -3,10 +3,10 @@ import type { ManifestationAttachmentsRepository } from '#src/application/reposi
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { AttachmentStorage } from '#src/application/storage/attachment-storage.js'
 
+import { isTrackingVisibleAttachment } from './public-attachment-visibility.js'
 import { AnonymousManifestationAccessService } from '../anonymous-manifestation-access/anonymous-manifestation-access-service.js'
 import { ManifestationTrackingNotFoundError } from '../anonymous-manifestation-access/errors/manifestation-tracking-not-found-error.js'
 import type { UseCase } from '../use-case.js'
-import { isTrackingVisibleAttachment } from './public-attachment-visibility.js'
 
 interface GetTrackedManifestationAttachmentDownloadUrlInput {
   attachmentId: string

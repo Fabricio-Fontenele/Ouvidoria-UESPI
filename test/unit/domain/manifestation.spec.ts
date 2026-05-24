@@ -48,6 +48,7 @@ describe('Manifestation', () => {
 
   it('allows messages while the manifestation is open for interaction', () => {
     expect(buildManifestation({ status: ManifestationStatus.IN_ANALYSIS }).canReceiveMessages()).toBe(true)
+    expect(buildManifestation({ status: ManifestationStatus.AWAITING_UNIT }).canReceiveMessages()).toBe(true)
     expect(buildManifestation({ status: ManifestationStatus.ANSWERED }).canReceiveMessages()).toBe(true)
   })
 
@@ -191,6 +192,59 @@ describe('Manifestation', () => {
     }).toThrow(ManifestationStatusTransitionNotAllowedError)
     expect(finalized.status).toBe(ManifestationStatus.FINALIZED)
     expect(canceled.status).toBe(ManifestationStatus.CANCELED)
+  })
+
+  it('forwards an in-analysis manifestation to a responsible unit', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    manifestation.forwardToUnit(AdministrativeUnitId.create('unit-2'))
+
+    expect(manifestation.status).toBe(ManifestationStatus.AWAITING_UNIT)
+    expect(manifestation.forwardedToUnitId?.getValue()).toBe('unit-2')
+  })
+
+  it('refuses to forward a manifestation that is already awaiting the unit response', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.AWAITING_UNIT })
+
+    expect(() => {
+      manifestation.forwardToUnit(AdministrativeUnitId.create('unit-3'))
+    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    expect(manifestation.status).toBe(ManifestationStatus.AWAITING_UNIT)
+  })
+
+  it('refuses to forward awaiting, terminal or answered manifestations', () => {
+    for (const status of [
+      ManifestationStatus.AWAITING_UNIT,
+      ManifestationStatus.ANSWERED,
+      ManifestationStatus.CANCELED,
+      ManifestationStatus.FINALIZED,
+    ]) {
+      const manifestation = buildManifestation({ status })
+
+      expect(() => {
+        manifestation.forwardToUnit(AdministrativeUnitId.create('unit-2'))
+      }).toThrow(ManifestationStatusTransitionNotAllowedError)
+      expect(manifestation.status).toBe(status)
+    }
+  })
+
+  it('answers an awaiting-unit manifestation by transitioning to answered', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.AWAITING_UNIT })
+
+    manifestation.recordAdministrativeAnswer()
+
+    expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
+  })
+
+  it('moves an awaiting-unit manifestation back to analysis or to canceled', () => {
+    const reanalyzing = buildManifestation({ status: ManifestationStatus.AWAITING_UNIT })
+    const canceling = buildManifestation({ status: ManifestationStatus.AWAITING_UNIT })
+
+    reanalyzing.transitionStatusAdministratively(ManifestationStatus.IN_ANALYSIS)
+    canceling.transitionStatusAdministratively(ManifestationStatus.CANCELED)
+
+    expect(reanalyzing.status).toBe(ManifestationStatus.IN_ANALYSIS)
+    expect(canceling.status).toBe(ManifestationStatus.CANCELED)
   })
 
   it('opens an anonymous manifestation only when an access code hash is provided', () => {

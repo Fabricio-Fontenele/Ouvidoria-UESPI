@@ -15,6 +15,12 @@ const manifestationStatusStyles: Record<ManifestationStatus, ManifestationStatus
     iconClassName: 'bg-home-blue text-white',
     textClassName: 'text-home-blue',
   },
+  awaiting_unit: {
+    accentClassName: 'border-l-home-muted',
+    badgeClassName: 'bg-home-muted text-white',
+    iconClassName: 'bg-home-muted text-white',
+    textClassName: 'text-home-muted',
+  },
   canceled: {
     accentClassName: 'border-l-home-brown',
     badgeClassName: 'bg-home-brown text-white',

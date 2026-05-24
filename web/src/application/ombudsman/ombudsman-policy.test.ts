@@ -14,6 +14,7 @@ function buildDetail(status: ManifestationStatus): ManifestationDetail {
     campusId: 'campus-1',
     createdAt: '2026-05-10T12:00:00.000Z',
     description: 'desc',
+    forwardedToUnit: null,
     history: [],
     id: 'manifestation-1',
     involvedPeople: null,
