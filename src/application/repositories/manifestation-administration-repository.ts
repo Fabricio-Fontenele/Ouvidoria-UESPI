@@ -28,8 +28,18 @@ interface FinalizeManifestationByAuthorParams {
   toStatus: ManifestationStatus
 }
 
+interface ForwardManifestationToUnitParams {
+  manifestation: Manifestation
+  actorUserId: string
+  actorType: ManifestationMessageSenderType
+  forwardedToUnitName: string
+  fromStatus: ManifestationStatus
+  toStatus: ManifestationStatus
+}
+
 export interface ManifestationAdministrationRepository {
   recordAnswer(params: RecordManifestationAnswerParams): Promise<ManifestationMessageDTO>
   updateStatus(params: UpdateManifestationStatusParams): Promise<void>
   finalizeByAuthor(params: FinalizeManifestationByAuthorParams): Promise<void>
+  forwardToUnit(params: ForwardManifestationToUnitParams): Promise<void>
 }

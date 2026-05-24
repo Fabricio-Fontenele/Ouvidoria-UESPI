@@ -23,6 +23,7 @@ describe('GetManifestationDetailsUseCase', () => {
     involvedPeople: 'Coordination Team',
     authorUserId,
     attendantUserId: null,
+    forwardedToUnit: null,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [
       {
