@@ -59,10 +59,11 @@ describe('ombudsman-policy', () => {
   describe('canCancel', () => {
     it('allows canceling while still actionable', () => {
       expect(canCancel(buildDetail('in_analysis'))).toBe(true)
-      expect(canCancel(buildDetail('answered'))).toBe(true)
+      expect(canCancel(buildDetail('awaiting_unit'))).toBe(true)
     })
 
-    it('blocks canceling after closure', () => {
+    it('blocks canceling after the manifestation was answered or closed', () => {
+      expect(canCancel(buildDetail('answered'))).toBe(false)
       expect(canCancel(buildDetail('finalized'))).toBe(false)
       expect(canCancel(buildDetail('canceled'))).toBe(false)
     })

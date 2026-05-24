@@ -449,15 +449,17 @@ function StatusActions({
           Finalizar manifestação
           <Icon className="size-4" name="check-circle" />
         </button>
-        <button
-          className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-home-brown px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-brown/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-brown disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-          disabled={!cancelEnabled || pendingAction !== null}
-          onClick={() => setConfirmingAction('canceled')}
-          type="button"
-        >
-          Cancelar manifestação
-          <Icon className="size-4" name="x" />
-        </button>
+        {cancelEnabled ? (
+          <button
+            className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-home-brown px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-brown/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-brown disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+            disabled={pendingAction !== null}
+            onClick={() => setConfirmingAction('canceled')}
+            type="button"
+          >
+            Cancelar manifestação
+            <Icon className="size-4" name="x" />
+          </button>
+        ) : null}
       </div>
 
       {error !== null ? (
