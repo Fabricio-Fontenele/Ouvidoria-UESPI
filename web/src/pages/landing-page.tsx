@@ -93,8 +93,7 @@ const steps: Step[] = [
   },
   {
     accent: 'blue',
-    description:
-      'A Ouvidoria recebe sua manifestação, verifica as informações e define o encaminhamento adequado.',
+    description: 'A Ouvidoria recebe sua manifestação, verifica as informações e define o encaminhamento adequado.',
     icon: 'braces',
     title: 'Em análise',
   },
@@ -557,9 +556,7 @@ function StepsSection() {
                 aria-hidden="true"
                 className={cx(
                   'relative z-10 flex size-10 items-center justify-center rounded-full border-4 border-landing-surface text-sm leading-none font-black shadow-landing-step md:col-start-2 md:mx-auto md:size-12 md:text-base',
-                  step.accent === 'blue'
-                    ? 'bg-landing-blue text-white'
-                    : 'bg-landing-warning text-landing-text',
+                  step.accent === 'blue' ? 'bg-landing-blue text-white' : 'bg-landing-warning text-landing-text',
                 )}
               >
                 {index + 1}
