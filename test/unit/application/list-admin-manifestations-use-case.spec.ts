@@ -87,7 +87,7 @@ describe('ListAdminManifestationsUseCase', () => {
       pageSize: MANIFESTATIONS_PAGE_SIZE,
       statusTotals,
       totalItems: 41,
-      totalPages: 14,
+      totalPages: Math.ceil(41 / MANIFESTATIONS_PAGE_SIZE),
     })
   })
 

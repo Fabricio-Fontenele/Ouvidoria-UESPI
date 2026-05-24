@@ -1,4 +1,4 @@
-export const MANIFESTATIONS_PAGE_SIZE = 3
+export const MANIFESTATIONS_PAGE_SIZE = 10
 
 export interface PaginationParams {
   page: number

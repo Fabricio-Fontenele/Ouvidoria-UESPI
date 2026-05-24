@@ -171,6 +171,14 @@ function getMetrics(statusTotals: ManifestationStatusTotals, totalItems: number)
   ]
 }
 
+function matchesFilter(manifestation: ManifestationSummary, filter: ManifestationFilter) {
+  if (filter === 'all') {
+    return true
+  }
+
+  return manifestation.status === filter
+}
+
 function Overview({ metrics }: { metrics: Metric[] }) {
   return (
     <section aria-labelledby="overview-title" className="space-y-6">
@@ -201,14 +209,6 @@ function Overview({ metrics }: { metrics: Metric[] }) {
       </dl>
     </section>
   )
-}
-
-function matchesFilter(manifestation: ManifestationSummary, filter: ManifestationFilter) {
-  if (filter === 'all') {
-    return true
-  }
-
-  return manifestation.status === filter
 }
 
 function FilterBar({
@@ -393,8 +393,16 @@ export function HomePage() {
       ),
     [items, activeFilter, search],
   )
-  const hasNoManifestations = items.length === 0
-  const hasNoFilteredResults = items.length > 0 && filteredManifestations.length === 0
+  const hasActiveFilter = activeFilter !== 'all'
+  const hasSearch = search.trim().length > 0
+  const hasNoManifestations = items.length === 0 && !hasActiveFilter && !hasSearch
+  const hasNoFilteredResults =
+    !hasNoManifestations && filteredManifestations.length === 0 && (hasActiveFilter || hasSearch)
+  const filteredTotalItems = activeFilter === 'all' ? pagination.totalItems : statusTotals[activeFilter]
+  const pageSize = pagination.pageSize > 0 ? pagination.pageSize : 1
+  const filteredTotalPages = Math.ceil(filteredTotalItems / pageSize)
+  const shouldShowPagination =
+    !hasNoManifestations && !hasSearch && filteredManifestations.length > 0 && filteredTotalPages > 1
   const handleFilterChange = (filter: ManifestationFilter) => {
     setActiveFilter(filter)
     setPage(1)
@@ -453,13 +461,13 @@ export function HomePage() {
                 </div>
               ) : null}
 
-              {listStatus === 'ready' && !hasNoManifestations ? (
+              {listStatus === 'ready' && shouldShowPagination ? (
                 <div className="mt-8">
                   <PaginationControls
                     ariaLabel="Paginação das minhas manifestações"
                     onPageChange={setPage}
                     page={pagination.page}
-                    totalPages={pagination.totalPages}
+                    totalPages={filteredTotalPages}
                   />
                 </div>
               ) : null}

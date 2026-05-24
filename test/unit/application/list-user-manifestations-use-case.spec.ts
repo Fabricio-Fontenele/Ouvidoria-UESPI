@@ -58,7 +58,7 @@ describe('ListUserManifestationsUseCase', () => {
       pageSize: MANIFESTATIONS_PAGE_SIZE,
       statusTotals,
       totalItems: 42,
-      totalPages: 14,
+      totalPages: Math.ceil(42 / MANIFESTATIONS_PAGE_SIZE),
     })
   })
 
