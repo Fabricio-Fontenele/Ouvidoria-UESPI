@@ -3,10 +3,10 @@ import type { ManifestationsRepository } from '#src/application/repositories/man
 import type { AttachmentStorage } from '#src/application/storage/attachment-storage.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
+import { AttachmentNotFoundError } from './errors/attachment-not-found-error.js'
 import { ManifestationNotFoundError } from '../manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '../manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
 import type { UseCase } from '../use-case.js'
-import { AttachmentNotFoundError } from './errors/attachment-not-found-error.js'
 
 interface GetManifestationAttachmentDownloadUrlInput {
   manifestationId: string
