@@ -25,6 +25,7 @@ export const manifestationMapper = {
         involvedPeople: raw.involvedPeople === null ? null : ManifestationInvolvedPeople.create(raw.involvedPeople),
         authorUserId: raw.authorUserId === null ? null : new UniqueEntityId(raw.authorUserId),
         attendantUserId: raw.attendantUserId === null ? null : new UniqueEntityId(raw.attendantUserId),
+        forwardedToUnitId: raw.forwardedToUnitId === null ? null : AdministrativeUnitId.create(raw.forwardedToUnitId),
         accessCodeHash: raw.accessCodeHash,
         createdAt: raw.createdAt,
       },
@@ -43,6 +44,7 @@ export const manifestationMapper = {
     involvedPeople: string | null
     authorUserId: string | null
     attendantUserId: string | null
+    forwardedToUnitId: string | null
     accessCodeHash: string | null
     createdAt: Date
   } {
@@ -57,6 +59,7 @@ export const manifestationMapper = {
       involvedPeople: manifestation.involvedPeople?.getValue() ?? null,
       authorUserId: manifestation.authorUserId?.toString() ?? null,
       attendantUserId: manifestation.attendantUserId?.toString() ?? null,
+      forwardedToUnitId: manifestation.forwardedToUnitId?.getValue() ?? null,
       accessCodeHash: manifestation.accessCodeHash,
       createdAt: manifestation.createdAt,
     }
