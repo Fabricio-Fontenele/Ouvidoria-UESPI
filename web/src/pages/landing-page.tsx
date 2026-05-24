@@ -93,8 +93,7 @@ const steps: Step[] = [
   },
   {
     accent: 'blue',
-    description:
-      'Crie a sua conta e, em seguida, faça a sua manifestação de forma anônima ou não, utilizando o formulário digital seguro.',
+    description: 'A Ouvidoria recebe sua manifestação, verifica as informações e define o encaminhamento adequado.',
     icon: 'braces',
     title: 'Em análise',
   },
@@ -313,8 +312,8 @@ function HeroSection() {
           Sua voz constrói a nossa <span className="text-landing-blue">universidade.</span>
         </h1>
         <p className="mt-4 text-[11px] leading-[1.75] text-landing-text md:mt-5 md:max-w-xs md:text-[15px] md:leading-6">
-          O canal oficial para manifestações, sugestões e elogios. Participe ativamente da evolução acadêmica e
-          administrativa da UESPI.
+          Sua participação ajuda a melhorar a UESPI. Registre sua manifestação pelo canal oficial da universidade e
+          conte com o Guará para orientar seu relato de forma simples, clara e segura.
         </p>
       </div>
     </section>
@@ -365,8 +364,9 @@ function GuaraCallout() {
               Fale com o Guará
             </h2>
             <p className="mt-3 text-[13px] leading-[1.7] text-landing-brown md:text-[15px] md:leading-7">
-              Tire dúvidas sobre a Ouvidoria, entenda os tipos de manifestação ou comece a organizar uma denúncia — tudo
-              sem precisar fazer login. Quando estiver tudo pronto, é só revisar e enviar.
+              O Guará é o assistente virtual da Ouvidoria UESPI. Ele conversa com você de forma simples, ajuda a
+              entender qual caminho seguir e organiza as informações principais do seu relato, deixando tudo mais claro
+              para revisar antes de enviar.
             </p>
           </div>
 
@@ -407,8 +407,8 @@ function GuaraCallout() {
 
 function OmbudsmanOverviewSection() {
   return (
-    <section className="px-4 pb-10 md:px-0 md:pb-16">
-      <div className="px-1 md:px-0" id="o-que-e">
+    <section className="px-4 pb-10 md:px-0 md:pb-16" id="o-que-e">
+      <div className="px-1 md:px-0">
         <SectionPill label="Sobre o canal" variant="highlight" />
         <h2 className="mt-3 max-w-md text-[24px] leading-tight font-black text-landing-text md:text-4xl">
           O que é a Ouvidoria?
@@ -430,76 +430,166 @@ function OmbudsmanOverviewSection() {
           ))}
         </div>
       </div>
+    </section>
+  )
+}
 
-      <div className="pt-8 md:pt-12" id="tipos">
-        <SectionPill label="Manifestações" variant="blue" />
-        <div className="mt-3 max-w-2xl">
-          <h2 className="text-[22px] leading-tight font-black text-landing-text md:text-3xl">Tipos de manifestação</h2>
-          <p className="mt-2 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
-            Escolha o tipo que melhor representa sua necessidade no momento do registro.
-          </p>
-        </div>
+function ManifestationTypesSection() {
+  return (
+    <section className="px-4 pb-10 md:px-0 md:pb-16" id="tipos">
+      <SectionPill label="Manifestações" variant="blue" />
+      <div className="mt-3 max-w-2xl">
+        <h2 className="text-[22px] leading-tight font-black text-landing-text md:text-3xl">Tipos de manifestação</h2>
+        <p className="mt-2 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
+          Escolha o tipo que melhor representa sua necessidade no momento do registro.
+        </p>
+      </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {manifestationTypes.map((type) => (
-            <article
-              className="rounded-lg border border-landing-chip bg-landing-surface p-4 shadow-landing-step"
-              key={type.label}
-            >
-              <div className="flex items-start gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-landing-blue/10 text-landing-blue">
-                  <Icon className="size-5" name={type.icon} />
-                </span>
-                <div>
-                  <h3 className="text-sm leading-5 font-black text-landing-text md:text-base">{type.label}</h3>
-                  <p className="mt-1 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
-                    {type.description}
-                  </p>
-                </div>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        {manifestationTypes.map((type) => (
+          <article
+            className="rounded-lg border border-landing-chip bg-landing-surface p-4 shadow-landing-step"
+            key={type.label}
+          >
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-landing-blue/10 text-landing-blue">
+                <Icon className="size-5" name={type.icon} />
+              </span>
+              <div>
+                <h3 className="text-sm leading-5 font-black text-landing-text md:text-base">{type.label}</h3>
+                <p className="mt-1 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
+                  {type.description}
+                </p>
               </div>
-            </article>
-          ))}
-        </div>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   )
 }
 
 function StepsSection() {
-  return (
-    <section className="px-6 pb-[50px] text-center md:px-0 md:pb-16" id="como-funciona">
-      <h2 className="text-[21px] leading-none font-black text-landing-text md:text-3xl md:leading-none">
-        Como funciona?
-      </h2>
-      <p className="mx-auto mt-4 max-w-[210px] text-[10px] leading-[1.55] text-landing-text md:max-w-sm md:text-[15px] md:leading-6">
-        De que modo é que o fluxo da sua manifestação é gerido pela nossa ouvidoria?
-      </p>
+  const stepRefs = useRef<(HTMLLIElement | null)[]>([])
+  const [shouldRevealAllSteps] = useState(
+    () =>
+      typeof window === 'undefined' ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      !('IntersectionObserver' in window),
+  )
+  const [visibleStepIndexes, setVisibleStepIndexes] = useState<Set<number>>(() => new Set())
 
-      <div className="mt-6 space-y-6 text-left md:mt-10 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
-        {steps.map((step) => (
-          <article
-            className={cx(
-              'min-h-[114px] rounded-lg border-l-[3px] bg-landing-surface px-3.5 pt-4 pb-3 shadow-landing-step md:min-h-44 md:px-5 md:pt-5 md:pb-4',
-              step.accent === 'blue' ? 'border-l-landing-blue' : 'border-l-landing-warning',
-            )}
-            key={step.title}
-          >
-            <Icon
-              className={cx(
-                'size-[18px] md:size-6',
-                step.accent === 'blue' ? 'text-landing-blue' : 'text-landing-warning',
-              )}
-              name={step.icon}
-            />
-            <h3 className="mt-3 text-[12px] leading-none font-medium text-landing-text md:mt-4 md:text-lg">
-              {step.title}
-            </h3>
-            <p className="mt-4 text-[10px] leading-[1.55] text-landing-text md:text-sm md:leading-5">
-              {step.description}
-            </p>
-          </article>
-        ))}
+  useEffect(() => {
+    if (shouldRevealAllSteps) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return
+          }
+
+          const stepIndex = Number((entry.target as HTMLElement).dataset.stepIndex)
+
+          setVisibleStepIndexes((currentIndexes) => {
+            if (currentIndexes.has(stepIndex)) {
+              return currentIndexes
+            }
+
+            const nextIndexes = new Set(currentIndexes)
+            nextIndexes.add(stepIndex)
+            return nextIndexes
+          })
+
+          observer.unobserve(entry.target)
+        })
+      },
+      { rootMargin: '0px 0px -18% 0px', threshold: 0.28 },
+    )
+
+    stepRefs.current.forEach((stepElement) => {
+      if (stepElement !== null) {
+        observer.observe(stepElement)
+      }
+    })
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [shouldRevealAllSteps])
+
+  return (
+    <section className="px-4 pb-[50px] md:px-0 md:pb-16" id="como-funciona">
+      <div className="mx-auto max-w-3xl text-center">
+        <SectionPill label="Fluxo de atendimento" variant="blue" />
+        <h2 className="mt-3 text-[24px] leading-tight font-black text-landing-text md:text-4xl">Como funciona?</h2>
+        <p className="mx-auto mt-4 max-w-xl text-[13px] leading-[1.75] text-landing-brown md:text-[15px] md:leading-7">
+          Do registro à resposta final, cada etapa mostra onde sua manifestação está e qual é o próximo movimento da
+          Ouvidoria.
+        </p>
       </div>
+
+      <ol
+        aria-label="Etapas do fluxo da manifestação"
+        className="relative mx-auto mt-8 max-w-4xl space-y-6 text-left before:absolute before:top-5 before:bottom-5 before:left-5 before:w-px before:bg-landing-chip md:mt-12 md:space-y-0 md:before:left-1/2 md:before:-translate-x-1/2"
+      >
+        {steps.map((step, index) => {
+          const isVisible = shouldRevealAllSteps || visibleStepIndexes.has(index)
+          const isEvenStep = index % 2 === 0
+
+          return (
+            <li
+              className={cx(
+                'relative grid grid-cols-[40px_minmax(0,1fr)] gap-4 transition duration-700 ease-out md:grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)] md:gap-0',
+                isVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0',
+              )}
+              data-step-index={index}
+              key={step.title}
+              ref={(element) => {
+                stepRefs.current[index] = element
+              }}
+              style={{ transitionDelay: isVisible ? `${index * 90}ms` : '0ms' }}
+            >
+              <div
+                aria-hidden="true"
+                className={cx(
+                  'relative z-10 flex size-10 items-center justify-center rounded-full border-4 border-landing-surface text-sm leading-none font-black shadow-landing-step md:col-start-2 md:mx-auto md:size-12 md:text-base',
+                  step.accent === 'blue' ? 'bg-landing-blue text-white' : 'bg-landing-warning text-landing-text',
+                )}
+              >
+                {index + 1}
+              </div>
+
+              <article
+                className={cx(
+                  'py-1 md:py-3',
+                  isEvenStep
+                    ? 'md:col-start-1 md:row-start-1 md:mr-10 md:text-right'
+                    : 'md:col-start-3 md:row-start-1 md:ml-10',
+                )}
+              >
+                <div className={cx('flex items-start gap-3', isEvenStep && 'md:flex-row-reverse')}>
+                  <Icon
+                    className={cx(
+                      'mt-0.5 size-6 shrink-0',
+                      step.accent === 'blue' ? 'text-landing-blue' : 'text-landing-warning',
+                    )}
+                    name={step.icon}
+                  />
+                  <div className="min-w-0">
+                    <h3 className="text-base leading-6 font-black text-landing-text md:text-lg">
+                      {index + 1}. {step.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-landing-menu">{step.description}</p>
+                  </div>
+                </div>
+              </article>
+            </li>
+          )
+        })}
+      </ol>
     </section>
   )
 }
@@ -640,10 +730,11 @@ export function LandingPage() {
       <main className="mx-auto w-full max-w-5xl bg-landing-surface md:px-8">
         <HeroSection />
         <LoginCallout onRegisterClick={openRegistrationModal} />
-        <OmbudsmanOverviewSection />
-        <StepsSection />
         <TrackManifestationSection />
         <GuaraCallout />
+        <ManifestationTypesSection />
+        <StepsSection />
+        <OmbudsmanOverviewSection />
       </main>
       <FloatingGuaraShortcut />
       <SiteFooter />
