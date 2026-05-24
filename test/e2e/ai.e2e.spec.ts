@@ -14,6 +14,14 @@ describe('AI messages (e2e)', () => {
   it('returns a manifestation draft when the message expresses a complaint', async () => {
     const app = await getApp()
 
+    // The fake AI gateway drafts against the first catalog campus and its first unit,
+    // mirroring the order the public catalog is served in, so derive the expectation from it.
+    const catalog = (await app.inject({ method: 'GET', url: '/catalog' })).json<{
+      campuses: Array<{ id: string; administrativeUnits: Array<{ id: string }> }>
+    }>()
+    const firstCampus = catalog.campuses[0]
+    const firstUnit = firstCampus?.administrativeUnits[0]
+
     const response = await app.inject({
       method: 'POST',
       url: '/ai/messages',
@@ -30,8 +38,8 @@ describe('AI messages (e2e)', () => {
       shouldOpenManifestationDraft: true,
       draft: {
         type: 'complaint',
-        campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-prad-teresina',
+        campusId: firstCampus?.id,
+        administrativeUnitId: firstUnit?.id,
         description: 'Quero fazer uma reclamação sobre o atendimento.',
         involvedPeople: null,
       },

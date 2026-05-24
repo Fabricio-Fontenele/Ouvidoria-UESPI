@@ -23,7 +23,7 @@ describe('Anonymous manifestation (e2e)', () => {
         isAnonymous: true,
         type: 'complaint',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-prad-teresina',
+        administrativeUnitId: 'unit-prad',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
@@ -59,7 +59,7 @@ describe('Anonymous manifestation (e2e)', () => {
         isAnonymous: true,
         type: 'complaint',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-prad-teresina',
+        administrativeUnitId: 'unit-prad',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
@@ -119,7 +119,16 @@ describe('Anonymous manifestation (e2e)', () => {
       originalName: 'evidence.png',
     })
     expect(Object.keys(details.manifestation).sort()).toStrictEqual(
-      ['protocol', 'type', 'status', 'campusId', 'administrativeUnitId', 'createdAt', 'attachments'].sort(),
+      [
+        'protocol',
+        'type',
+        'status',
+        'campusId',
+        'administrativeUnitId',
+        'forwardedToUnit',
+        'createdAt',
+        'attachments',
+      ].sort(),
     )
     expect('description' in details.manifestation).toBe(false)
     expect('history' in details.manifestation).toBe(false)
@@ -151,7 +160,7 @@ describe('Anonymous manifestation (e2e)', () => {
         isAnonymous: true,
         type: 'suggestion',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-preg-teresina',
+        administrativeUnitId: 'unit-preg',
         description: 'Sugestão genérica.',
       },
     })
@@ -176,7 +185,7 @@ describe('Anonymous manifestation (e2e)', () => {
         isAnonymous: true,
         type: 'suggestion',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-preg-teresina',
+        administrativeUnitId: 'unit-preg',
         description: 'Sugestão genérica.',
       },
     })
@@ -214,7 +223,7 @@ describe('Anonymous manifestation (e2e)', () => {
         isAnonymous: true,
         type: 'complaint',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-prad-teresina',
+        administrativeUnitId: 'unit-prad',
         description: 'Primeira manifestação.',
       },
     })
@@ -227,7 +236,7 @@ describe('Anonymous manifestation (e2e)', () => {
         isAnonymous: true,
         type: 'suggestion',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-preg-teresina',
+        administrativeUnitId: 'unit-preg',
         description: 'Segunda manifestação.',
       },
     })

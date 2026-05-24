@@ -41,7 +41,7 @@ async function openManifestation(token: string): Promise<{ id: string }> {
       isAnonymous: false,
       type: 'complaint',
       campusId: 'campus-professor-antonio-giovanni-alves-de-sousa',
-      administrativeUnitId: 'unit-direcao-piripiri',
+      administrativeUnitId: 'unit-direcao-professor-antonio-giovani-alves-de-sousa',
       description: 'Houve atraso no atendimento.',
     },
   })

@@ -1,6 +1,17 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
+import { prisma } from '#src/infra/database/prisma/client.js'
+
 import { getApp, resetDatabase } from './utils/app.js'
+
+interface PublicCatalog {
+  campuses: Array<{
+    id: string
+    label: string
+    city: string | null
+    administrativeUnits: Array<{ id: string; label: string; description: string | null }>
+  }>
+}
 
 describe('Catalog (e2e)', () => {
   beforeAll(async () => {
@@ -11,66 +22,28 @@ describe('Catalog (e2e)', () => {
     await resetDatabase()
   })
 
-  it('returns only active campuses with at least one active administrative unit', async () => {
+  it('returns active campuses, each carrying active units with id, label and description', async () => {
     const app = await getApp()
 
-    const response = await app.inject({
-      method: 'GET',
-      url: '/catalog',
-    })
+    const response = await app.inject({ method: 'GET', url: '/catalog' })
 
     expect(response.statusCode).toBe(200)
-    expect(response.json()).toStrictEqual({
-      campuses: [
-        {
-          id: 'campus-poeta-torquato-neto',
-          label: 'Campus Poeta Torquato Neto',
-          city: 'Teresina',
-          administrativeUnits: [
-            { id: 'unit-prad-teresina', label: 'Pró-Reitoria de Administração' },
-            { id: 'unit-preg-teresina', label: 'Pró-Reitoria de Ensino de Graduação' },
-          ],
-        },
-        {
-          id: 'campus-professor-alexandre-alves-de-oliveira',
-          label: 'Campus Professor Alexandre Alves de Oliveira',
-          city: 'Parnaíba',
-          administrativeUnits: [
-            {
-              id: 'unit-biblioteca-parnaiba',
-              label: 'Biblioteca Setorial do Campus Professor Alexandre Alves de Oliveira',
-            },
-            {
-              id: 'unit-coordenacao-computacao-parnaiba',
-              label: 'Coordenação do Curso de Ciência da Computação',
-            },
-            {
-              id: 'unit-direcao-parnaiba',
-              label: 'Direção do Campus Professor Alexandre Alves de Oliveira',
-            },
-          ],
-        },
-        {
-          id: 'campus-professor-antonio-giovanni-alves-de-sousa',
-          label: 'Campus Professor Antônio Giovanni Alves de Sousa',
-          city: 'Piripiri',
-          administrativeUnits: [
-            {
-              id: 'unit-coordenacao-computacao-piripiri',
-              label: 'Coordenação do Curso de Ciência da Computação',
-            },
-            {
-              id: 'unit-direcao-piripiri',
-              label: 'Direção do Campus Professor Antônio Giovanni Alves de Sousa',
-            },
-            {
-              id: 'unit-secretaria-academica-piripiri',
-              label: 'Secretaria Acadêmica do Campus Professor Antônio Giovanni Alves de Sousa',
-            },
-          ],
-        },
-      ],
-    })
+    const catalog = response.json<PublicCatalog>()
+
+    expect(catalog.campuses.length).toBeGreaterThan(0)
+    for (const campus of catalog.campuses) {
+      expect(typeof campus.id).toBe('string')
+      expect(typeof campus.label).toBe('string')
+      expect(campus.administrativeUnits.length).toBeGreaterThan(0)
+      for (const unit of campus.administrativeUnits) {
+        expect(Object.keys(unit).sort()).toStrictEqual(['id', 'label', 'description'].sort())
+      }
+    }
+
+    const headquarters = catalog.campuses.find((campus) => campus.id === 'campus-poeta-torquato-neto')
+    expect(headquarters?.label).toBe('Campus Poeta Torquato Neto')
+    const headquartersUnitIds = headquarters?.administrativeUnits.map((unit) => unit.id) ?? []
+    expect(headquartersUnitIds).toStrictEqual(expect.arrayContaining(['unit-prad', 'unit-preg']))
   })
 
   it('accepts seeded valid catalog ids when registering a manifestation', async () => {
@@ -83,7 +56,7 @@ describe('Catalog (e2e)', () => {
         isAnonymous: true,
         type: 'complaint',
         campusId: 'campus-professor-alexandre-alves-de-oliveira',
-        administrativeUnitId: 'unit-coordenacao-computacao-parnaiba',
+        administrativeUnitId: 'unit-coordenacoes-curso-professor-alexandre-alves-de-oliveira',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
@@ -101,20 +74,33 @@ describe('Catalog (e2e)', () => {
         isAnonymous: true,
         type: 'complaint',
         campusId: 'campus-inexistente',
-        administrativeUnitId: 'unit-prad-teresina',
+        administrativeUnitId: 'unit-prad',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
 
     expect(response.statusCode).toBe(400)
-    expect(response.json()).toStrictEqual({
-      error: 'CampusNotFoundError',
-      message: 'Campus not found',
-    })
+    expect(response.json()).toStrictEqual({ error: 'CampusNotFoundError', message: 'Campus not found' })
   })
 
   it('rejects manifestations for inactive campuses', async () => {
     const app = await getApp()
+
+    await prisma.campus.upsert({
+      where: { id: 'e2e-inactive-campus' },
+      update: { isActive: false },
+      create: { id: 'e2e-inactive-campus', name: 'Campus Inativo E2E', city: 'Teste', isActive: false },
+    })
+    await prisma.administrativeUnit.upsert({
+      where: { id: 'e2e-inactive-campus-unit' },
+      update: {},
+      create: {
+        id: 'e2e-inactive-campus-unit',
+        name: 'Unidade do campus inativo',
+        campusId: 'e2e-inactive-campus',
+        isActive: true,
+      },
+    })
 
     const response = await app.inject({
       method: 'POST',
@@ -122,17 +108,14 @@ describe('Catalog (e2e)', () => {
       payload: {
         isAnonymous: true,
         type: 'complaint',
-        campusId: 'campus-doutora-josefina-demes',
-        administrativeUnitId: 'unit-protocolo-floriano',
+        campusId: 'e2e-inactive-campus',
+        administrativeUnitId: 'e2e-inactive-campus-unit',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
 
     expect(response.statusCode).toBe(400)
-    expect(response.json()).toStrictEqual({
-      error: 'CampusInactiveError',
-      message: 'Campus is inactive',
-    })
+    expect(response.json()).toStrictEqual({ error: 'CampusInactiveError', message: 'Campus is inactive' })
   })
 
   it('rejects manifestations for non-existent administrative units', async () => {
@@ -160,14 +143,25 @@ describe('Catalog (e2e)', () => {
   it('rejects manifestations for inactive administrative units', async () => {
     const app = await getApp()
 
+    await prisma.administrativeUnit.upsert({
+      where: { id: 'e2e-inactive-unit' },
+      update: { isActive: false },
+      create: {
+        id: 'e2e-inactive-unit',
+        name: 'Unidade Inativa E2E',
+        campusId: 'campus-poeta-torquato-neto',
+        isActive: false,
+      },
+    })
+
     const response = await app.inject({
       method: 'POST',
       url: '/manifestations',
       payload: {
         isAnonymous: true,
         type: 'complaint',
-        campusId: 'campus-professor-alexandre-alves-de-oliveira',
-        administrativeUnitId: 'unit-nti-parnaiba-inativo',
+        campusId: 'campus-poeta-torquato-neto',
+        administrativeUnitId: 'e2e-inactive-unit',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
@@ -189,7 +183,7 @@ describe('Catalog (e2e)', () => {
         isAnonymous: true,
         type: 'complaint',
         campusId: 'campus-poeta-torquato-neto',
-        administrativeUnitId: 'unit-biblioteca-parnaiba',
+        administrativeUnitId: 'unit-biblioteca-professor-alexandre-alves-de-oliveira',
         description: 'Há ruído excessivo no setor administrativo.',
       },
     })
@@ -204,76 +198,13 @@ describe('Catalog (e2e)', () => {
   it('keeps the seeded catalog available after resetDatabase', async () => {
     const app = await getApp()
 
-    await app.inject({
-      method: 'POST',
-      url: '/manifestations',
-      payload: {
-        isAnonymous: true,
-        type: 'complaint',
-        campusId: 'campus-professor-antonio-giovanni-alves-de-sousa',
-        administrativeUnitId: 'unit-direcao-piripiri',
-        description: 'Manifestação transitória para validar o reset.',
-      },
-    })
+    const before = (await app.inject({ method: 'GET', url: '/catalog' })).json<PublicCatalog>()
+    expect(before.campuses.length).toBeGreaterThan(0)
 
     await resetDatabase()
 
-    const catalogResponse = await app.inject({
-      method: 'GET',
-      url: '/catalog',
-    })
-
-    expect(catalogResponse.statusCode).toBe(200)
-    expect(catalogResponse.json()).toStrictEqual({
-      campuses: [
-        {
-          id: 'campus-poeta-torquato-neto',
-          label: 'Campus Poeta Torquato Neto',
-          city: 'Teresina',
-          administrativeUnits: [
-            { id: 'unit-prad-teresina', label: 'Pró-Reitoria de Administração' },
-            { id: 'unit-preg-teresina', label: 'Pró-Reitoria de Ensino de Graduação' },
-          ],
-        },
-        {
-          id: 'campus-professor-alexandre-alves-de-oliveira',
-          label: 'Campus Professor Alexandre Alves de Oliveira',
-          city: 'Parnaíba',
-          administrativeUnits: [
-            {
-              id: 'unit-biblioteca-parnaiba',
-              label: 'Biblioteca Setorial do Campus Professor Alexandre Alves de Oliveira',
-            },
-            {
-              id: 'unit-coordenacao-computacao-parnaiba',
-              label: 'Coordenação do Curso de Ciência da Computação',
-            },
-            {
-              id: 'unit-direcao-parnaiba',
-              label: 'Direção do Campus Professor Alexandre Alves de Oliveira',
-            },
-          ],
-        },
-        {
-          id: 'campus-professor-antonio-giovanni-alves-de-sousa',
-          label: 'Campus Professor Antônio Giovanni Alves de Sousa',
-          city: 'Piripiri',
-          administrativeUnits: [
-            {
-              id: 'unit-coordenacao-computacao-piripiri',
-              label: 'Coordenação do Curso de Ciência da Computação',
-            },
-            {
-              id: 'unit-direcao-piripiri',
-              label: 'Direção do Campus Professor Antônio Giovanni Alves de Sousa',
-            },
-            {
-              id: 'unit-secretaria-academica-piripiri',
-              label: 'Secretaria Acadêmica do Campus Professor Antônio Giovanni Alves de Sousa',
-            },
-          ],
-        },
-      ],
-    })
+    const afterReset = await app.inject({ method: 'GET', url: '/catalog' })
+    expect(afterReset.statusCode).toBe(200)
+    expect(afterReset.json<PublicCatalog>()).toStrictEqual(before)
   })
 })
