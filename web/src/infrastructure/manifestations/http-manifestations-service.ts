@@ -11,6 +11,7 @@ import type {
   EvaluateInput,
   GetManifestationAttachmentDownloadUrlInput,
   GetTrackedManifestationAttachmentDownloadUrlInput,
+  ManifestationsListResult,
   ManifestationsService,
   TrackManifestationInput,
   UploadManifestationAttachmentInput,
@@ -28,6 +29,10 @@ import { mapManifestationDetail, mapMessageEntry } from './manifestation-detail-
 
 interface ListResponse {
   manifestations: ManifestationSummary[]
+  page?: number
+  pageSize?: number
+  totalItems?: number
+  totalPages?: number
 }
 
 interface DetailResponse {
@@ -114,12 +119,18 @@ export class HttpManifestationsService implements ManifestationsService {
     return mapTrackedManifestationDetail(response.manifestation)
   }
 
-  async list(page = 1): Promise<ManifestationSummary[]> {
+  async list(page = 1): Promise<ManifestationsListResult> {
     const response = await apiFetch<ListResponse>('/manifestations', {
       query: { page },
     })
 
-    return response.manifestations
+    return {
+      manifestations: response.manifestations,
+      page: response.page ?? page,
+      pageSize: response.pageSize ?? response.manifestations.length,
+      totalItems: response.totalItems ?? response.manifestations.length,
+      totalPages: response.totalPages ?? 1,
+    }
   }
 
   async uploadAttachment(input: UploadManifestationAttachmentInput): Promise<void> {

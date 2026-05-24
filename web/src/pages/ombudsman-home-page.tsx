@@ -18,11 +18,13 @@ import {
 import type { ManifestationType } from '../application/manifestations/manifestation-type-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
 import type { OmbudsmanListFilters } from '../application/ombudsman/ombudsman-service'
+import type { PaginationMeta } from '../application/pagination/pagination-contract'
 import { Icon } from '../components/icons/icon'
 import type { IconName } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
+import { PaginationControls } from '../components/navigation/pagination-controls'
 import { useCatalog } from '../hooks/use-catalog'
 import { makeOmbudsmanService } from '../infrastructure/ombudsman/ombudsman-service-factory'
 import { cx } from '../utils/cx'
@@ -94,6 +96,13 @@ const manifestationCardClasses = [
   'transition duration-150 hover:-translate-y-0.5 hover:shadow-landing-card sm:px-6 sm:py-6 md:px-7',
 ]
 
+const initialPagination: PaginationMeta = {
+  page: 1,
+  pageSize: 0,
+  totalItems: 0,
+  totalPages: 1,
+}
+
 function buildAreaLabel(catalog: Catalog | null, manifestation: ManifestationSummary) {
   const campus = catalog?.campuses.find((entry) => entry.id === manifestation.campusId)
   const unit = campus?.administrativeUnits.find((entry) => entry.id === manifestation.administrativeUnitId)
@@ -109,12 +118,14 @@ function buildFiltersForRequest({
   statusFilter,
   typeFilter,
   dateFilter,
+  page,
 }: {
   statusFilter: StatusFilter
   typeFilter: TypeFilter
   dateFilter: DateFilter
+  page: number
 }): OmbudsmanListFilters {
-  const filters: OmbudsmanListFilters = { page: 1 }
+  const filters: OmbudsmanListFilters = { page }
 
   if (statusFilter !== FILTER_ALL_VALUE) {
     filters.status = statusFilter
@@ -341,6 +352,8 @@ export function OmbudsmanHomePage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(FILTER_ALL_VALUE)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(FILTER_ALL_VALUE)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
 
   const statusOptions: FilterSelectOption[] = manifestationStatusContracts.map((status) => ({
     label: status.filterLabel,
@@ -359,13 +372,21 @@ export function OmbudsmanHomePage() {
       setLoadError(null)
 
       try {
-        const result = await ombudsmanService.list(buildFiltersForRequest({ dateFilter, statusFilter, typeFilter }))
+        const result = await ombudsmanService.list(
+          buildFiltersForRequest({ dateFilter, page, statusFilter, typeFilter }),
+        )
 
         if (!isMounted) {
           return
         }
 
         setManifestations(result.manifestations)
+        setPagination({
+          page: result.page,
+          pageSize: result.pageSize,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages,
+        })
         setLoadStatus('ready')
       } catch (error) {
         if (!isMounted) {
@@ -382,15 +403,32 @@ export function OmbudsmanHomePage() {
     return () => {
       isMounted = false
     }
-  }, [dateFilter, ombudsmanService, statusFilter, typeFilter])
+  }, [dateFilter, ombudsmanService, page, statusFilter, typeFilter])
 
   const filteredManifestations = useMemo(() => searchManifestations(manifestations, search), [manifestations, search])
 
   const handleClearFilters = () => {
     setDateFilter(FILTER_ALL_VALUE)
+    setPage(1)
     setSearch('')
     setStatusFilter(FILTER_ALL_VALUE)
     setTypeFilter(FILTER_ALL_VALUE)
+  }
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value as StatusFilter)
+    setPage(1)
+  }
+  const handleTypeFilterChange = (value: string) => {
+    setTypeFilter(value as TypeFilter)
+    setPage(1)
+  }
+  const handleDateFilterChange = (value: DateFilter) => {
+    setDateFilter(value)
+    setPage(1)
+  }
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
   }
 
   return (
@@ -418,24 +456,29 @@ export function OmbudsmanHomePage() {
             </h2>
 
             <div className="flex w-full flex-col items-start gap-5">
-              <SearchField onSearchChange={setSearch} search={search} />
+              <SearchField onSearchChange={handleSearchChange} search={search} />
 
               <div className="mx-auto grid w-full gap-2 md:w-[92%] xl:w-[94%] sm:grid-cols-2 lg:grid-cols-3">
                 <FilterSelect
                   id="ombudsman-status-filter"
                   label="Status"
-                  onChange={(value) => setStatusFilter(value as StatusFilter)}
+                  onChange={handleStatusFilterChange}
                   options={statusOptions}
                   value={statusFilter}
                 />
                 <FilterSelect
                   id="ombudsman-type-filter"
                   label="Tipo"
-                  onChange={(value) => setTypeFilter(value as TypeFilter)}
+                  onChange={handleTypeFilterChange}
                   options={typeOptions}
                   value={typeFilter}
                 />
-                <DateFilterInput id="ombudsman-date-filter" label="Data" onChange={setDateFilter} value={dateFilter} />
+                <DateFilterInput
+                  id="ombudsman-date-filter"
+                  label="Data"
+                  onChange={handleDateFilterChange}
+                  value={dateFilter}
+                />
               </div>
             </div>
 
@@ -478,6 +521,17 @@ export function OmbudsmanHomePage() {
                   </button>
                 </div>
               )
+            ) : null}
+
+            {loadStatus === 'ready' && manifestations.length > 0 ? (
+              <div className="mt-8">
+                <PaginationControls
+                  ariaLabel="Paginação das demandas da Ouvidoria"
+                  onPageChange={setPage}
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                />
+              </div>
             ) : null}
           </section>
         </main>

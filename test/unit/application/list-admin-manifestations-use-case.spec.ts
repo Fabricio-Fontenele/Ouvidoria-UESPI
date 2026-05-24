@@ -63,7 +63,7 @@ describe('ListAdminManifestationsUseCase', () => {
     }
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
-    manifestationsRepository.findManyForAdmin.mockResolvedValue(manifestations)
+    manifestationsRepository.findManyForAdmin.mockResolvedValue({ manifestations, totalItems: 41 })
 
     const result = await sut.execute({
       requesterUserId: 'ombudsman-1',
@@ -73,14 +73,20 @@ describe('ListAdminManifestationsUseCase', () => {
 
     expect(usersRepository.findById.mock.calls).toStrictEqual([['ombudsman-1']])
     expect(manifestationsRepository.findManyForAdmin.mock.calls).toStrictEqual([[filters, { page: 2 }]])
-    expect(result).toStrictEqual({ manifestations })
+    expect(result).toStrictEqual({
+      manifestations,
+      page: 2,
+      pageSize: 20,
+      totalItems: 41,
+      totalPages: 3,
+    })
   })
 
   it('lists manifestations for an admin without filters', async () => {
     const manifestations = [buildManifestation('manifestation-1')]
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.ADMIN, 'admin-1'))
-    manifestationsRepository.findManyForAdmin.mockResolvedValue(manifestations)
+    manifestationsRepository.findManyForAdmin.mockResolvedValue({ manifestations, totalItems: 1 })
 
     const result = await sut.execute({
       requesterUserId: 'admin-1',
@@ -88,7 +94,13 @@ describe('ListAdminManifestationsUseCase', () => {
     })
 
     expect(manifestationsRepository.findManyForAdmin.mock.calls).toStrictEqual([[{}, { page: 1 }]])
-    expect(result).toStrictEqual({ manifestations })
+    expect(result).toStrictEqual({
+      manifestations,
+      page: 1,
+      pageSize: 20,
+      totalItems: 1,
+      totalPages: 1,
+    })
   })
 
   it('rejects invalid page numbers before touching repositories', async () => {

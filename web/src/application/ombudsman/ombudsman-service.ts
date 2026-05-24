@@ -2,6 +2,7 @@ import type { ManifestationDetail } from '../manifestations/manifestation-detail
 import type { ManifestationStatus } from '../manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../manifestations/manifestation-summary-contract'
 import type { ManifestationType } from '../manifestations/manifestation-type-contract'
+import type { PaginationMeta } from '../pagination/pagination-contract'
 
 export interface OmbudsmanListFilters {
   administrativeUnitId?: string
@@ -13,11 +14,8 @@ export interface OmbudsmanListFilters {
   type?: ManifestationType
 }
 
-export interface OmbudsmanListResult {
+export interface OmbudsmanListResult extends PaginationMeta {
   manifestations: ManifestationSummary[]
-  page: number
-  totalItems?: number
-  totalPages?: number
 }
 
 export type OmbudsmanStatusChange = 'canceled' | 'finalized'

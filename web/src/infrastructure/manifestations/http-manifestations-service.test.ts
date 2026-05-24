@@ -93,4 +93,34 @@ describe('HttpManifestationsService attachments', () => {
       protocol: '2026-0002',
     })
   })
+
+  it('returns manifestation list pagination metadata from the API', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        buildJsonResponse({
+          manifestations: [],
+          page: 3,
+          pageSize: 20,
+          totalItems: 91,
+          totalPages: 5,
+        }),
+      ),
+    )
+    const service = new HttpManifestationsService()
+
+    const result = await service.list(3)
+    const [url] = getFetchCall()
+    const parsed = new URL(String(url))
+
+    expect(parsed.origin + parsed.pathname).toBe(`${apiBaseUrl}/manifestations`)
+    expect(parsed.searchParams.get('page')).toBe('3')
+    expect(result).toStrictEqual({
+      manifestations: [],
+      page: 3,
+      pageSize: 20,
+      totalItems: 91,
+      totalPages: 5,
+    })
+  })
 })

@@ -48,6 +48,10 @@ describe('ListUserManifestationsController', () => {
           createdAt: new Date('2026-01-01T00:00:00.000Z'),
         },
       ],
+      page: 1,
+      pageSize: 20,
+      totalItems: 1,
+      totalPages: 1,
     })
   }
 

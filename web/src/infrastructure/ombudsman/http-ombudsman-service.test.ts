@@ -89,7 +89,18 @@ describe('HttpOmbudsmanService', () => {
   })
 
   it('builds the list URL with all filters and Bearer auth', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(buildJsonResponse({ manifestations: [] })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        buildJsonResponse({
+          manifestations: [],
+          page: 2,
+          pageSize: 20,
+          totalItems: 61,
+          totalPages: 4,
+        }),
+      ),
+    )
     const service = new HttpOmbudsmanService()
 
     const result = await service.list({
@@ -114,8 +125,13 @@ describe('HttpOmbudsmanService', () => {
     expect(parsed.searchParams.get('from')).toBe('2026-05-01T00:00:00.000Z')
     expect(parsed.searchParams.get('to')).toBe('2026-05-31T23:59:59.999Z')
     expect((init?.headers as Headers).get('Authorization')).toBe('Bearer token-abc')
-    expect(result.page).toBe(2)
-    expect(result.manifestations).toEqual([])
+    expect(result).toStrictEqual({
+      manifestations: [],
+      page: 2,
+      pageSize: 20,
+      totalItems: 61,
+      totalPages: 4,
+    })
   })
 
   it('omits undefined filters from the query string', async () => {

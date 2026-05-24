@@ -1,5 +1,9 @@
 import type { ManifestationListItemDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import {
+  buildManifestationsPaginationMetadata,
+  type PaginationMetadata,
+} from '#src/application/repositories/pagination-params.js'
 
 import type { UseCase } from '../use-case.js'
 import { InvalidPageNumberError } from './errors/invalid-page-number-error.js'
@@ -9,7 +13,7 @@ interface ListUserManifestationsInput {
   page: number
 }
 
-interface ListUserManifestationsOutput {
+interface ListUserManifestationsOutput extends PaginationMetadata {
   manifestations: ManifestationListItemDTO[]
 }
 
@@ -25,8 +29,11 @@ export class ListUserManifestationsUseCase implements UseCase<
     }
 
     const paginationParams = { page }
-    const manifestations = await this.manifestationsRepository.findManyByAuthorUserId(userId, paginationParams)
+    const { manifestations, totalItems } = await this.manifestationsRepository.findManyByAuthorUserId(
+      userId,
+      paginationParams,
+    )
 
-    return { manifestations }
+    return { manifestations, ...buildManifestationsPaginationMetadata(page, totalItems) }
   }
 }

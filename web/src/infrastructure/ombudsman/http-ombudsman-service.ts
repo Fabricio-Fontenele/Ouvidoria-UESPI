@@ -16,6 +16,7 @@ import { mapManifestationDetail } from '../manifestations/manifestation-detail-m
 interface ListResponse {
   manifestations: ManifestationSummary[]
   page?: number
+  pageSize?: number
   totalItems?: number
   totalPages?: number
 }
@@ -75,20 +76,13 @@ export class HttpOmbudsmanService implements OmbudsmanService {
       query: buildListQuery({ ...filters, page: requestedPage }),
     })
 
-    const result: OmbudsmanListResult = {
+    return {
       manifestations: response.manifestations,
       page: response.page ?? requestedPage,
+      pageSize: response.pageSize ?? response.manifestations.length,
+      totalItems: response.totalItems ?? response.manifestations.length,
+      totalPages: response.totalPages ?? 1,
     }
-
-    if (response.totalPages !== undefined) {
-      result.totalPages = response.totalPages
-    }
-
-    if (response.totalItems !== undefined) {
-      result.totalItems = response.totalItems
-    }
-
-    return result
   }
 
   async updateStatus(input: UpdateManifestationStatusInput): Promise<void> {

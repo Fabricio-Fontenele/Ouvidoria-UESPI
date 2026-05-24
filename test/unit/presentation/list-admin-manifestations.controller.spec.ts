@@ -36,7 +36,13 @@ describe('ListAdminManifestationsController', () => {
   })
 
   function arrangeUseCaseSuccess(): void {
-    useCase.execute.mockResolvedValue({ manifestations: [] })
+    useCase.execute.mockResolvedValue({
+      manifestations: [],
+      page: 1,
+      pageSize: 20,
+      totalItems: 0,
+      totalPages: 0,
+    })
   }
 
   it('returns 200 with defaults when the query is empty', async () => {

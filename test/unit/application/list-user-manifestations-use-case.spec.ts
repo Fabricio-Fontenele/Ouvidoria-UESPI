@@ -36,7 +36,7 @@ describe('ListUserManifestationsUseCase', () => {
       buildManifestation('manifestation-2', 'user-1'),
     ]
 
-    manifestationsRepository.findManyByAuthorUserId.mockResolvedValue(manifestations)
+    manifestationsRepository.findManyByAuthorUserId.mockResolvedValue({ manifestations, totalItems: 42 })
 
     const result = await sut.execute({
       userId: 'user-1',
@@ -44,7 +44,13 @@ describe('ListUserManifestationsUseCase', () => {
     })
 
     expect(manifestationsRepository.findManyByAuthorUserId.mock.calls).toStrictEqual([['user-1', { page: 2 }]])
-    expect(result).toStrictEqual({ manifestations })
+    expect(result).toStrictEqual({
+      manifestations,
+      page: 2,
+      pageSize: 20,
+      totalItems: 42,
+      totalPages: 3,
+    })
   })
 
   it('rejects invalid page numbers before touching the repository', async () => {

@@ -14,8 +14,11 @@ import type {
   ManifestationMessageDTO,
 } from '#src/application/dto/manifestation-query-dtos.js'
 import type { AdminManifestationFilters } from '#src/application/repositories/admin-manifestation-filters.js'
-import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
-import type { PaginationParams } from '#src/application/repositories/pagination-params.js'
+import type {
+  ManifestationsPage,
+  ManifestationsRepository,
+} from '#src/application/repositories/manifestations-repository.js'
+import { MANIFESTATIONS_PAGE_SIZE, type PaginationParams } from '#src/application/repositories/pagination-params.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { ManifestationStatus, type Manifestation, type ManifestationType } from '#src/domain/entities/manifestation.js'
 
@@ -23,8 +26,6 @@ import { manifestationAttachmentMapper } from '../mappers/manifestation-attachme
 import { manifestationMessageMapper } from '../mappers/manifestation-message.mapper.js'
 import { manifestationMapper } from '../mappers/manifestation.mapper.js'
 import { decodeSystemMessagePayload } from '../system-message-payload.js'
-
-export const MANIFESTATIONS_PAGE_SIZE = 20
 
 export class PrismaManifestationsRepository implements ManifestationsRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -67,56 +68,38 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
     return buildDetailsDTO(record, record.messages, record.attachments)
   }
 
-  async findManyByAuthorUserId(
-    authorUserId: string,
-    pagination: PaginationParams,
-  ): Promise<ManifestationListItemDTO[]> {
-    const records = await this.prisma.manifestation.findMany({
-      where: { authorUserId },
-      orderBy: { createdAt: 'desc' },
-      skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
-      take: MANIFESTATIONS_PAGE_SIZE,
-    })
+  async findManyByAuthorUserId(authorUserId: string, pagination: PaginationParams): Promise<ManifestationsPage> {
+    const where: Prisma.ManifestationWhereInput = { authorUserId }
+    const [records, totalItems] = await this.prisma.$transaction([
+      this.prisma.manifestation.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
+        take: MANIFESTATIONS_PAGE_SIZE,
+      }),
+      this.prisma.manifestation.count({ where }),
+    ])
 
-    return records.map(toListItemDTO)
+    return { manifestations: records.map(toListItemDTO), totalItems }
   }
 
   async findManyForAdmin(
     filters: AdminManifestationFilters,
     pagination: PaginationParams,
-  ): Promise<ManifestationListItemDTO[]> {
-    const where: Prisma.ManifestationWhereInput = {}
-    if (filters.status !== undefined) {
-      where.status = filters.status
-    }
-    if (filters.type !== undefined) {
-      where.type = filters.type
-    }
-    if (filters.campusId !== undefined) {
-      where.campusId = filters.campusId
-    }
-    if (filters.administrativeUnitId !== undefined) {
-      where.administrativeUnitId = filters.administrativeUnitId
-    }
-    if (filters.from !== undefined || filters.to !== undefined) {
-      const createdAt: Prisma.DateTimeFilter = {}
-      if (filters.from !== undefined) {
-        createdAt.gte = filters.from
-      }
-      if (filters.to !== undefined) {
-        createdAt.lte = filters.to
-      }
-      where.createdAt = createdAt
-    }
+  ): Promise<ManifestationsPage> {
+    const where = buildAdminManifestationWhere(filters)
 
-    const records = await this.prisma.manifestation.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
-      take: MANIFESTATIONS_PAGE_SIZE,
-    })
+    const [records, totalItems] = await this.prisma.$transaction([
+      this.prisma.manifestation.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
+        take: MANIFESTATIONS_PAGE_SIZE,
+      }),
+      this.prisma.manifestation.count({ where }),
+    ])
 
-    return records.map(toListItemDTO)
+    return { manifestations: records.map(toListItemDTO), totalItems }
   }
 
   async save(manifestation: Manifestation): Promise<void> {
@@ -132,6 +115,42 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
       },
     })
   }
+}
+
+function buildAdminManifestationWhere(filters: AdminManifestationFilters): Prisma.ManifestationWhereInput {
+  const where: Prisma.ManifestationWhereInput = {}
+
+  if (filters.status !== undefined) {
+    where.status = filters.status
+  }
+
+  if (filters.type !== undefined) {
+    where.type = filters.type
+  }
+
+  if (filters.campusId !== undefined) {
+    where.campusId = filters.campusId
+  }
+
+  if (filters.administrativeUnitId !== undefined) {
+    where.administrativeUnitId = filters.administrativeUnitId
+  }
+
+  if (filters.from !== undefined || filters.to !== undefined) {
+    const createdAt: Prisma.DateTimeFilter = {}
+
+    if (filters.from !== undefined) {
+      createdAt.gte = filters.from
+    }
+
+    if (filters.to !== undefined) {
+      createdAt.lte = filters.to
+    }
+
+    where.createdAt = createdAt
+  }
+
+  return where
 }
 
 function toListItemDTO(record: {
