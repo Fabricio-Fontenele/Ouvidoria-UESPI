@@ -52,6 +52,12 @@ export interface ManifestationAttachmentDTO {
   createdAt: Date
 }
 
+export interface ManifestationAuthorDTO {
+  id: string
+  name: string
+  email: string
+}
+
 export interface ManifestationDetailsDTO {
   id: string
   protocol: string
@@ -62,6 +68,7 @@ export interface ManifestationDetailsDTO {
   description: string
   involvedPeople: string | null
   authorUserId: string | null
+  author: ManifestationAuthorDTO | null
   attendantUserId: string | null
   forwardedToUnit: { id: string; name: string } | null
   createdAt: Date

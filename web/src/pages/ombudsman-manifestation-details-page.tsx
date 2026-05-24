@@ -600,7 +600,7 @@ export function OmbudsmanManifestationDetailsPage() {
 
           {loadStatus === 'ready' && detail !== null ? (
             <div className="mt-8 space-y-10">
-              <ManifestationSummaryCard catalog={catalog} detail={detail} />
+              <ManifestationSummaryCard catalog={catalog} detail={detail} showRequester />
               <DescriptionCard detail={detail} />
               <ManifestationAttachmentsList
                 attachments={detail.attachments}

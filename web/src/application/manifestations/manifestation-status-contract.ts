@@ -1,5 +1,7 @@
 export type ManifestationStatus = 'answered' | 'awaiting_unit' | 'canceled' | 'finalized' | 'in_analysis'
 
+export type ManifestationStatusTotals = Record<ManifestationStatus, number>
+
 export interface ManifestationStatusContract {
   filterLabel: string
   metricLabel: string
@@ -48,4 +50,14 @@ const manifestationStatusContractByValue = Object.fromEntries(
 
 export function getManifestationStatusContract(status: ManifestationStatus) {
   return manifestationStatusContractByValue[status]
+}
+
+export function buildEmptyManifestationStatusTotals(): ManifestationStatusTotals {
+  return {
+    answered: 0,
+    awaiting_unit: 0,
+    canceled: 0,
+    finalized: 0,
+    in_analysis: 0,
+  }
 }

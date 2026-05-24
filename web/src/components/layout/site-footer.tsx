@@ -46,7 +46,7 @@ export function SiteFooter({ className, variant = 'default', ...props }: SiteFoo
             <strong className="text-xl leading-none font-bold md:text-2xl">Ouvidoria UESPI</strong>
           </div>
 
-          <p>&copy; 2024 Universidade Estadual do Piauí - UESPI</p>
+          <p>&copy; 2026 Universidade Estadual do Piauí - UESPI</p>
         </div>
       ) : (
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 md:px-8">

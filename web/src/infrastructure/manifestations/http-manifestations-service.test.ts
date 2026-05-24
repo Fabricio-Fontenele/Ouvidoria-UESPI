@@ -93,4 +93,82 @@ describe('HttpManifestationsService attachments', () => {
       protocol: '2026-0002',
     })
   })
+
+  it('returns manifestation list pagination metadata from the API', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        buildJsonResponse({
+          manifestations: [],
+          page: 3,
+          pageSize: 20,
+          statusTotals: {
+            answered: 10,
+            awaiting_unit: 8,
+            canceled: 3,
+            finalized: 20,
+            in_analysis: 50,
+          },
+          totalItems: 91,
+          totalPages: 5,
+        }),
+      ),
+    )
+    const service = new HttpManifestationsService()
+
+    const result = await service.list(3)
+    const [url] = getFetchCall()
+    const parsed = new URL(String(url))
+
+    expect(parsed.origin + parsed.pathname).toBe(`${apiBaseUrl}/manifestations`)
+    expect(parsed.searchParams.get('page')).toBe('3')
+    expect(result).toStrictEqual({
+      manifestations: [],
+      page: 3,
+      pageSize: 20,
+      statusTotals: {
+        answered: 10,
+        awaiting_unit: 8,
+        canceled: 3,
+        finalized: 20,
+        in_analysis: 50,
+      },
+      totalItems: 91,
+      totalPages: 5,
+    })
+  })
+
+  it('returns manifestation metrics from the API', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        buildJsonResponse({
+          statusTotals: {
+            answered: 3,
+            awaiting_unit: 2,
+            canceled: 1,
+            finalized: 4,
+            in_analysis: 5,
+          },
+          totalItems: 15,
+        }),
+      ),
+    )
+    const service = new HttpManifestationsService()
+
+    const result = await service.getMetrics()
+    const [url] = getFetchCall()
+
+    expect(url).toBe(`${apiBaseUrl}/manifestations/metrics`)
+    expect(result).toStrictEqual({
+      statusTotals: {
+        answered: 3,
+        awaiting_unit: 2,
+        canceled: 1,
+        finalized: 4,
+        in_analysis: 5,
+      },
+      totalItems: 15,
+    })
+  })
 })

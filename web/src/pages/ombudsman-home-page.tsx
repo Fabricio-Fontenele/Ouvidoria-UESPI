@@ -6,10 +6,12 @@ import { buildLocalDayRange, formatBrazilianShortDate } from '../app/date-utils'
 import { buildOmbudsmanManifestationDetailsHref } from '../app/routes'
 import type { Catalog } from '../application/catalog/catalog-types'
 import {
+  buildEmptyManifestationStatusTotals,
   getManifestationStatusContract,
   manifestationStatusContracts,
 } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
 import {
   getManifestationTypeLabel,
@@ -18,11 +20,13 @@ import {
 import type { ManifestationType } from '../application/manifestations/manifestation-type-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
 import type { OmbudsmanListFilters } from '../application/ombudsman/ombudsman-service'
+import type { PaginationMeta } from '../application/pagination/pagination-contract'
 import { Icon } from '../components/icons/icon'
 import type { IconName } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
+import { PaginationControls } from '../components/navigation/pagination-controls'
 import { useCatalog } from '../hooks/use-catalog'
 import { makeOmbudsmanService } from '../infrastructure/ombudsman/ombudsman-service-factory'
 import { cx } from '../utils/cx'
@@ -58,6 +62,7 @@ const dashboardMetricCards: Array<{
   icon: IconName
   iconClassName: string
   label: string
+  status: ManifestationStatus
 }> = [
   {
     anchorId: 'em-analise',
@@ -65,6 +70,7 @@ const dashboardMetricCards: Array<{
     icon: 'clock',
     iconClassName: 'text-home-blue',
     label: 'Em análise',
+    status: 'in_analysis',
   },
   {
     anchorId: 'respondidas',
@@ -72,6 +78,7 @@ const dashboardMetricCards: Array<{
     icon: 'message-circle',
     iconClassName: 'text-home-blue',
     label: 'Respondidas',
+    status: 'answered',
   },
   {
     anchorId: 'finalizadas',
@@ -79,6 +86,7 @@ const dashboardMetricCards: Array<{
     icon: 'check-circle',
     iconClassName: 'text-home-success',
     label: 'Finalizadas',
+    status: 'finalized',
   },
 ]
 
@@ -93,6 +101,13 @@ const manifestationCardClasses = [
   'group relative w-full min-w-0 overflow-hidden rounded-lg border bg-home-surface px-5 py-5 shadow-login-card',
   'transition duration-150 hover:-translate-y-0.5 hover:shadow-landing-card sm:px-6 sm:py-6 md:px-7',
 ]
+
+const initialPagination: PaginationMeta = {
+  page: 1,
+  pageSize: 0,
+  totalItems: 0,
+  totalPages: 1,
+}
 
 function buildAreaLabel(catalog: Catalog | null, manifestation: ManifestationSummary) {
   const campus = catalog?.campuses.find((entry) => entry.id === manifestation.campusId)
@@ -109,12 +124,14 @@ function buildFiltersForRequest({
   statusFilter,
   typeFilter,
   dateFilter,
+  page,
 }: {
   statusFilter: StatusFilter
   typeFilter: TypeFilter
   dateFilter: DateFilter
+  page: number
 }): OmbudsmanListFilters {
-  const filters: OmbudsmanListFilters = { page: 1 }
+  const filters: OmbudsmanListFilters = { page }
 
   if (statusFilter !== FILTER_ALL_VALUE) {
     filters.status = statusFilter
@@ -136,19 +153,20 @@ function buildFiltersForRequest({
   return filters
 }
 
-function MetricCards() {
+function MetricCards({
+  loadStatus,
+  statusTotals,
+}: {
+  loadStatus: LoadStatus
+  statusTotals: ManifestationStatusTotals
+}) {
   return (
     <section aria-labelledby="ombudsman-metrics-title" className="mt-10">
       <h2 className="sr-only" id="ombudsman-metrics-title">
         Indicadores das demandas
       </h2>
 
-      <p className="rounded-2xl bg-home-action/60 px-4 py-3 text-sm leading-6 text-home-brown">
-        Aguardando endpoint de métricas administrativas. Os totais abaixo serão preenchidos assim que o backend expuser
-        os indicadores agregados.
-      </p>
-
-      <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
         {dashboardMetricCards.map((metric) => (
           <div className={metricCardClasses.join(' ')} id={metric.anchorId} key={metric.label}>
             <div className="absolute inset-x-0 top-0 h-1 bg-home-blue/80 opacity-0 transition duration-150 group-hover:opacity-100" />
@@ -162,9 +180,11 @@ function MetricCards() {
               </span>
             </dt>
             <dd className="mt-5 flex items-end justify-between gap-3">
-              <span className="text-4xl leading-none font-black tabular-nums text-home-text md:text-5xl">—</span>
+              <span className="text-4xl leading-none font-black tabular-nums text-home-text md:text-5xl">
+                {loadStatus === 'loading' ? '—' : String(statusTotals[metric.status]).padStart(2, '0')}
+              </span>
               <span className="rounded-full bg-home-action px-3 py-1 text-[11px] leading-4 font-bold text-home-brown">
-                em breve
+                demandas
               </span>
             </dd>
           </div>
@@ -197,28 +217,32 @@ function FilterSelect({ id, label, onChange, options, value }: FilterSelectProps
   const isActive = value !== FILTER_ALL_VALUE
 
   return (
-    <label
-      className={cx(
-        'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
-        isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
-      )}
-    >
-      <span className="sr-only">{label}</span>
-      <select
-        className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none"
-        id={id}
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
+    <label className="grid w-full gap-1.5" htmlFor={id}>
+      <span className="px-1 text-xs leading-4 font-black tracking-[0.08em] text-home-brown/70 uppercase md:text-sm">
+        {label}
+      </span>
+      <span
+        className={cx(
+          'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
+          isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
+        )}
       >
-        <option className="bg-home-surface text-home-text" value={FILTER_ALL_VALUE}>
-          {label}
-        </option>
-        {options.map((option) => (
-          <option className="bg-home-surface text-home-text" key={`${id}-${option.value}`} value={option.value}>
-            {option.label}
+        <select
+          className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none md:text-sm"
+          id={id}
+          onChange={(event) => onChange(event.target.value)}
+          value={value}
+        >
+          <option className="bg-home-surface text-home-text" value={FILTER_ALL_VALUE}>
+            Todos
           </option>
-        ))}
-      </select>
+          {options.map((option) => (
+            <option className="bg-home-surface text-home-text" key={`${id}-${option.value}`} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </span>
     </label>
   )
 }
@@ -227,21 +251,25 @@ function DateFilterInput({ id, label, onChange, value }: DateFilterInputProps) {
   const isActive = value !== FILTER_ALL_VALUE
 
   return (
-    <label
-      className={cx(
-        'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
-        isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
-      )}
-    >
-      <span className="sr-only">{label}</span>
-      <input
-        className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none [color-scheme:light]"
-        id={id}
-        onChange={(event) => onChange(event.target.value === '' ? FILTER_ALL_VALUE : event.target.value)}
-        title={label}
-        type="date"
-        value={value === FILTER_ALL_VALUE ? '' : value}
-      />
+    <label className="grid w-full gap-1.5" htmlFor={id}>
+      <span className="px-1 text-xs leading-4 font-black tracking-[0.08em] text-home-brown/70 uppercase md:text-sm">
+        {label}
+      </span>
+      <span
+        className={cx(
+          'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
+          isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
+        )}
+      >
+        <input
+          className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none [color-scheme:light] md:text-sm"
+          id={id}
+          onChange={(event) => onChange(event.target.value === '' ? FILTER_ALL_VALUE : event.target.value)}
+          title={label}
+          type="date"
+          value={value === FILTER_ALL_VALUE ? '' : value}
+        />
+      </span>
     </label>
   )
 }
@@ -341,6 +369,10 @@ export function OmbudsmanHomePage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(FILTER_ALL_VALUE)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(FILTER_ALL_VALUE)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
+  const [metricsLoadStatus, setMetricsLoadStatus] = useState<LoadStatus>('loading')
+  const [statusTotals, setStatusTotals] = useState<ManifestationStatusTotals>(buildEmptyManifestationStatusTotals)
 
   const statusOptions: FilterSelectOption[] = manifestationStatusContracts.map((status) => ({
     label: status.filterLabel,
@@ -354,18 +386,58 @@ export function OmbudsmanHomePage() {
   useEffect(() => {
     let isMounted = true
 
+    async function loadMetrics() {
+      setMetricsLoadStatus('loading')
+
+      try {
+        const result = await ombudsmanService.getMetrics({})
+
+        if (!isMounted) {
+          return
+        }
+
+        setStatusTotals(result.statusTotals)
+        setMetricsLoadStatus('ready')
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setStatusTotals(buildEmptyManifestationStatusTotals())
+        setMetricsLoadStatus('error')
+      }
+    }
+
+    void loadMetrics()
+
+    return () => {
+      isMounted = false
+    }
+  }, [ombudsmanService])
+
+  useEffect(() => {
+    let isMounted = true
+
     async function load() {
       setLoadStatus('loading')
       setLoadError(null)
 
       try {
-        const result = await ombudsmanService.list(buildFiltersForRequest({ dateFilter, statusFilter, typeFilter }))
+        const result = await ombudsmanService.list(
+          buildFiltersForRequest({ dateFilter, page, statusFilter, typeFilter }),
+        )
 
         if (!isMounted) {
           return
         }
 
         setManifestations(result.manifestations)
+        setPagination({
+          page: result.page,
+          pageSize: result.pageSize,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages,
+        })
         setLoadStatus('ready')
       } catch (error) {
         if (!isMounted) {
@@ -382,107 +454,143 @@ export function OmbudsmanHomePage() {
     return () => {
       isMounted = false
     }
-  }, [dateFilter, ombudsmanService, statusFilter, typeFilter])
+  }, [dateFilter, ombudsmanService, page, statusFilter, typeFilter])
 
   const filteredManifestations = useMemo(() => searchManifestations(manifestations, search), [manifestations, search])
 
   const handleClearFilters = () => {
     setDateFilter(FILTER_ALL_VALUE)
+    setPage(1)
     setSearch('')
     setStatusFilter(FILTER_ALL_VALUE)
     setTypeFilter(FILTER_ALL_VALUE)
+  }
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value as StatusFilter)
+    setPage(1)
+  }
+  const handleTypeFilterChange = (value: string) => {
+    setTypeFilter(value as TypeFilter)
+    setPage(1)
+  }
+  const handleDateFilterChange = (value: DateFilter) => {
+    setDateFilter(value)
+    setPage(1)
+  }
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
   }
 
   return (
     <div className="min-h-svh bg-login-bg font-sans text-home-text">
       <AuthenticatedAppShell allowedRoles={ombudsmanAreaRoles}>
-        <main className="mx-auto w-full max-w-6xl px-5 pt-8 pb-12 min-[390px]:px-7 sm:px-8 md:pt-12 lg:px-12">
-          <header className="max-w-2xl">
-            <h1 className="max-w-[440px] text-[42px] leading-[1.06] font-black text-home-text sm:text-6xl sm:leading-[1.08]">
-              Dashboard de Demandas
-            </h1>
-            <p className="mt-4 max-w-xl text-base leading-[26px] text-home-brown">
-              Acompanhe e atue nas manifestações da Ouvidoria. Use os filtros para priorizar o que precisa de resposta.
-            </p>
-          </header>
+        <div className="flex min-h-[calc(100svh-5.5rem)] flex-col md:min-h-[calc(100svh-6rem)]">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-5 pt-8 pb-12 min-[390px]:px-7 sm:px-8 md:pt-12 lg:px-12">
+            <header className="max-w-2xl">
+              <h1 className="max-w-[440px] text-[42px] leading-[1.06] font-black text-home-text sm:text-6xl sm:leading-[1.08]">
+                Dashboard de Demandas
+              </h1>
+              <p className="mt-4 max-w-xl text-base leading-[26px] text-home-brown">
+                Acompanhe e atue nas manifestações da Ouvidoria. Use os filtros para priorizar o que precisa de
+                resposta.
+              </p>
+            </header>
 
-          <MetricCards />
+            <MetricCards loadStatus={metricsLoadStatus} statusTotals={statusTotals} />
 
-          <section
-            aria-labelledby="ombudsman-demands-title"
-            className="mt-12 rounded-lg bg-home-action px-4 py-6 sm:px-6 md:px-8 md:py-8"
-            id="demandas"
-          >
-            <h2 className="sr-only" id="ombudsman-demands-title">
-              Demandas da Ouvidoria
-            </h2>
+            <section
+              aria-labelledby="ombudsman-demands-title"
+              className="mt-12 rounded-lg bg-home-action px-4 py-6 sm:px-6 md:px-8 md:py-8"
+              id="demandas"
+            >
+              <h2 className="sr-only" id="ombudsman-demands-title">
+                Demandas da Ouvidoria
+              </h2>
 
-            <div className="flex w-full flex-col items-start gap-5">
-              <SearchField onSearchChange={setSearch} search={search} />
+              <div className="flex w-full flex-col items-start gap-5">
+                <SearchField onSearchChange={handleSearchChange} search={search} />
 
-              <div className="mx-auto grid w-full gap-2 md:w-[92%] xl:w-[94%] sm:grid-cols-2 lg:grid-cols-3">
-                <FilterSelect
-                  id="ombudsman-status-filter"
-                  label="Status"
-                  onChange={(value) => setStatusFilter(value as StatusFilter)}
-                  options={statusOptions}
-                  value={statusFilter}
-                />
-                <FilterSelect
-                  id="ombudsman-type-filter"
-                  label="Tipo"
-                  onChange={(value) => setTypeFilter(value as TypeFilter)}
-                  options={typeOptions}
-                  value={typeFilter}
-                />
-                <DateFilterInput id="ombudsman-date-filter" label="Data" onChange={setDateFilter} value={dateFilter} />
-              </div>
-            </div>
-
-            {loadStatus === 'loading' ? (
-              <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 text-center text-sm leading-6 text-home-brown">
-                Carregando manifestações...
-              </div>
-            ) : null}
-
-            {loadStatus === 'error' ? (
-              <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
-                <h2 className="text-xl leading-7 font-bold text-home-text">
-                  Não foi possível carregar as manifestações
-                </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
-                  {loadError ?? 'Tente novamente em alguns instantes.'}
-                </p>
-              </div>
-            ) : null}
-
-            {loadStatus === 'ready' ? (
-              filteredManifestations.length > 0 ? (
-                <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                  {filteredManifestations.map((manifestation) => (
-                    <ManifestationCard catalog={catalog} key={manifestation.id} manifestation={manifestation} />
-                  ))}
+                <div className="mx-auto grid w-full gap-2 md:w-[92%] xl:w-[94%] sm:grid-cols-2 lg:grid-cols-3">
+                  <FilterSelect
+                    id="ombudsman-status-filter"
+                    label="Status"
+                    onChange={handleStatusFilterChange}
+                    options={statusOptions}
+                    value={statusFilter}
+                  />
+                  <FilterSelect
+                    id="ombudsman-type-filter"
+                    label="Tipo"
+                    onChange={handleTypeFilterChange}
+                    options={typeOptions}
+                    value={typeFilter}
+                  />
+                  <DateFilterInput
+                    id="ombudsman-date-filter"
+                    label="Data"
+                    onChange={handleDateFilterChange}
+                    value={dateFilter}
+                  />
                 </div>
-              ) : (
+              </div>
+
+              {loadStatus === 'loading' ? (
+                <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 text-center text-sm leading-6 text-home-brown">
+                  Carregando manifestações...
+                </div>
+              ) : null}
+
+              {loadStatus === 'error' ? (
                 <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
-                  <h2 className="text-xl leading-7 font-bold text-home-text">Nenhuma manifestação encontrada</h2>
+                  <h2 className="text-xl leading-7 font-bold text-home-text">
+                    Não foi possível carregar as manifestações
+                  </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
-                    Ajuste a busca ou limpe os filtros para voltar à lista de demandas da Ouvidoria.
+                    {loadError ?? 'Tente novamente em alguns instantes.'}
                   </p>
-                  <button
-                    className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-                    onClick={handleClearFilters}
-                    type="button"
-                  >
-                    Limpar filtros
-                  </button>
                 </div>
-              )
-            ) : null}
-          </section>
-        </main>
+              ) : null}
 
-        <SiteFooter variant="ombudsman" />
+              {loadStatus === 'ready' ? (
+                filteredManifestations.length > 0 ? (
+                  <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+                    {filteredManifestations.map((manifestation) => (
+                      <ManifestationCard catalog={catalog} key={manifestation.id} manifestation={manifestation} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
+                    <h2 className="text-xl leading-7 font-bold text-home-text">Nenhuma manifestação encontrada</h2>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
+                      Ajuste a busca ou limpe os filtros para voltar à lista de demandas da Ouvidoria.
+                    </p>
+                    <button
+                      className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+                      onClick={handleClearFilters}
+                      type="button"
+                    >
+                      Limpar filtros
+                    </button>
+                  </div>
+                )
+              ) : null}
+
+              {loadStatus === 'ready' && manifestations.length > 0 ? (
+                <div className="mt-8">
+                  <PaginationControls
+                    ariaLabel="Paginação das demandas da Ouvidoria"
+                    onPageChange={setPage}
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                  />
+                </div>
+              ) : null}
+            </section>
+          </main>
+
+          <SiteFooter className="mt-0" variant="ombudsman" />
+        </div>
       </AuthenticatedAppShell>
     </div>
   )

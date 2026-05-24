@@ -1,7 +1,9 @@
 import type { ManifestationDetail } from '../manifestations/manifestation-detail-contract'
 import type { ManifestationStatus } from '../manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../manifestations/manifestation-summary-contract'
 import type { ManifestationType } from '../manifestations/manifestation-type-contract'
+import type { PaginationMeta } from '../pagination/pagination-contract'
 
 export interface OmbudsmanListFilters {
   administrativeUnitId?: string
@@ -13,11 +15,14 @@ export interface OmbudsmanListFilters {
   type?: ManifestationType
 }
 
-export interface OmbudsmanListResult {
+export interface OmbudsmanListResult extends PaginationMeta {
   manifestations: ManifestationSummary[]
-  page: number
-  totalItems?: number
-  totalPages?: number
+  statusTotals: ManifestationStatusTotals
+}
+
+export interface OmbudsmanMetricsResult {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
 }
 
 export type OmbudsmanStatusChange = 'canceled' | 'finalized'
@@ -47,6 +52,7 @@ export interface OmbudsmanService {
   forwardToUnit(input: ForwardManifestationToUnitInput): Promise<void>
   getAttachmentDownloadUrl(input: GetAdminAttachmentDownloadUrlInput): Promise<string>
   getById(id: string): Promise<ManifestationDetail>
+  getMetrics(filters: Omit<OmbudsmanListFilters, 'page' | 'status'>): Promise<OmbudsmanMetricsResult>
   list(filters: OmbudsmanListFilters): Promise<OmbudsmanListResult>
   updateStatus(input: UpdateManifestationStatusInput): Promise<void>
 }

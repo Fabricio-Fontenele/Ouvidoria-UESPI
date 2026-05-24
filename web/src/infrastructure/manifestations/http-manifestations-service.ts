@@ -11,6 +11,8 @@ import type {
   EvaluateInput,
   GetManifestationAttachmentDownloadUrlInput,
   GetTrackedManifestationAttachmentDownloadUrlInput,
+  ManifestationMetricsResult,
+  ManifestationsListResult,
   ManifestationsService,
   TrackManifestationInput,
   UploadManifestationAttachmentInput,
@@ -20,6 +22,8 @@ import type {
   RawTrackedManifestationDetail,
   TrackedManifestationDetail,
 } from '../../application/manifestations/tracked-manifestation-contract'
+import type { ManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
+import { buildEmptyManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
 import { mapTrackedManifestationDetail } from '../../application/manifestations/tracked-manifestation-contract'
 import { apiFetch, publicApiFetch } from '../http/api-client'
 
@@ -28,6 +32,16 @@ import { mapManifestationDetail, mapMessageEntry } from './manifestation-detail-
 
 interface ListResponse {
   manifestations: ManifestationSummary[]
+  page?: number
+  pageSize?: number
+  statusTotals?: ManifestationStatusTotals
+  totalItems?: number
+  totalPages?: number
+}
+
+interface MetricsResponse {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
 }
 
 interface DetailResponse {
@@ -93,6 +107,10 @@ export class HttpManifestationsService implements ManifestationsService {
     return mapManifestationDetail(response.manifestation)
   }
 
+  async getMetrics(): Promise<ManifestationMetricsResult> {
+    return apiFetch<MetricsResponse>('/manifestations/metrics')
+  }
+
   async getTrackedAttachmentDownloadUrl(input: GetTrackedManifestationAttachmentDownloadUrlInput): Promise<string> {
     const response = await publicApiFetch<AttachmentDownloadUrlResult>(
       `/manifestations/track/attachments/${input.attachmentId}/download-url`,
@@ -114,12 +132,19 @@ export class HttpManifestationsService implements ManifestationsService {
     return mapTrackedManifestationDetail(response.manifestation)
   }
 
-  async list(page = 1): Promise<ManifestationSummary[]> {
+  async list(page = 1): Promise<ManifestationsListResult> {
     const response = await apiFetch<ListResponse>('/manifestations', {
       query: { page },
     })
 
-    return response.manifestations
+    return {
+      manifestations: response.manifestations,
+      page: response.page ?? page,
+      pageSize: response.pageSize ?? response.manifestations.length,
+      statusTotals: response.statusTotals ?? buildEmptyManifestationStatusTotals(),
+      totalItems: response.totalItems ?? response.manifestations.length,
+      totalPages: response.totalPages ?? 1,
+    }
   }
 
   async uploadAttachment(input: UploadManifestationAttachmentInput): Promise<void> {

@@ -2,6 +2,7 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { ManifestationListItemDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import { MANIFESTATIONS_PAGE_SIZE } from '#src/application/repositories/pagination-params.js'
 import { InvalidPageNumberError } from '#src/application/use-cases/list-user-manifestations/errors/invalid-page-number-error.js'
 import { ListUserManifestationsUseCase } from '#src/application/use-cases/list-user-manifestations/list-user-manifestations-use-case.js'
 import { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
@@ -21,6 +22,13 @@ describe('ListUserManifestationsUseCase', () => {
     authorUserId,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
   })
+  const statusTotals = {
+    [ManifestationStatus.ANSWERED]: 5,
+    [ManifestationStatus.AWAITING_UNIT]: 4,
+    [ManifestationStatus.CANCELED]: 3,
+    [ManifestationStatus.FINALIZED]: 2,
+    [ManifestationStatus.IN_ANALYSIS]: 28,
+  }
 
   beforeEach(() => {
     manifestationsRepository = mockDeep<ManifestationsRepository>()
@@ -36,7 +44,7 @@ describe('ListUserManifestationsUseCase', () => {
       buildManifestation('manifestation-2', 'user-1'),
     ]
 
-    manifestationsRepository.findManyByAuthorUserId.mockResolvedValue(manifestations)
+    manifestationsRepository.findManyByAuthorUserId.mockResolvedValue({ manifestations, statusTotals, totalItems: 42 })
 
     const result = await sut.execute({
       userId: 'user-1',
@@ -44,7 +52,14 @@ describe('ListUserManifestationsUseCase', () => {
     })
 
     expect(manifestationsRepository.findManyByAuthorUserId.mock.calls).toStrictEqual([['user-1', { page: 2 }]])
-    expect(result).toStrictEqual({ manifestations })
+    expect(result).toStrictEqual({
+      manifestations,
+      page: 2,
+      pageSize: MANIFESTATIONS_PAGE_SIZE,
+      statusTotals,
+      totalItems: 42,
+      totalPages: Math.ceil(42 / MANIFESTATIONS_PAGE_SIZE),
+    })
   })
 
   it('rejects invalid page numbers before touching the repository', async () => {

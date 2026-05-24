@@ -14,8 +14,12 @@ import type {
   ManifestationMessageDTO,
 } from '#src/application/dto/manifestation-query-dtos.js'
 import type { AdminManifestationFilters } from '#src/application/repositories/admin-manifestation-filters.js'
-import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
-import type { PaginationParams } from '#src/application/repositories/pagination-params.js'
+import type {
+  ManifestationMetrics,
+  ManifestationsPage,
+  ManifestationsRepository,
+} from '#src/application/repositories/manifestations-repository.js'
+import { MANIFESTATIONS_PAGE_SIZE, type PaginationParams } from '#src/application/repositories/pagination-params.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { ManifestationStatus, type Manifestation, type ManifestationType } from '#src/domain/entities/manifestation.js'
 
@@ -23,8 +27,6 @@ import { manifestationAttachmentMapper } from '../mappers/manifestation-attachme
 import { manifestationMessageMapper } from '../mappers/manifestation-message.mapper.js'
 import { manifestationMapper } from '../mappers/manifestation.mapper.js'
 import { decodeSystemMessagePayload } from '../system-message-payload.js'
-
-export const MANIFESTATIONS_PAGE_SIZE = 20
 
 export class PrismaManifestationsRepository implements ManifestationsRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -43,6 +45,13 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
     const record = await this.prisma.manifestation.findUnique({
       where: { id: manifestationId },
       include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         forwardedToUnit: true,
         attachments: {
           orderBy: { createdAt: 'asc' },
@@ -60,56 +69,57 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
     return buildDetailsDTO(record, record.messages, record.attachments)
   }
 
-  async findManyByAuthorUserId(
-    authorUserId: string,
-    pagination: PaginationParams,
-  ): Promise<ManifestationListItemDTO[]> {
-    const records = await this.prisma.manifestation.findMany({
-      where: { authorUserId },
-      orderBy: { createdAt: 'desc' },
-      skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
-      take: MANIFESTATIONS_PAGE_SIZE,
-    })
+  async findManyByAuthorUserId(authorUserId: string, pagination: PaginationParams): Promise<ManifestationsPage> {
+    const where: Prisma.ManifestationWhereInput = { authorUserId }
+    const [records, totalItems, statusCounts] = await this.prisma.$transaction([
+      this.prisma.manifestation.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
+        take: MANIFESTATIONS_PAGE_SIZE,
+      }),
+      this.prisma.manifestation.count({ where }),
+      this.prisma.manifestation.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+    ])
 
-    return records.map(toListItemDTO)
+    return { manifestations: records.map(toListItemDTO), statusTotals: buildStatusTotals(statusCounts), totalItems }
   }
 
   async findManyForAdmin(
     filters: AdminManifestationFilters,
     pagination: PaginationParams,
-  ): Promise<ManifestationListItemDTO[]> {
-    const where: Prisma.ManifestationWhereInput = {}
-    if (filters.status !== undefined) {
-      where.status = filters.status as PrismaManifestationStatus
-    }
-    if (filters.type !== undefined) {
-      where.type = filters.type as PrismaManifestationType
-    }
-    if (filters.campusId !== undefined) {
-      where.campusId = filters.campusId
-    }
-    if (filters.administrativeUnitId !== undefined) {
-      where.administrativeUnitId = filters.administrativeUnitId
-    }
-    if (filters.from !== undefined || filters.to !== undefined) {
-      const createdAt: Prisma.DateTimeFilter = {}
-      if (filters.from !== undefined) {
-        createdAt.gte = filters.from
-      }
-      if (filters.to !== undefined) {
-        createdAt.lte = filters.to
-      }
-      where.createdAt = createdAt
-    }
+  ): Promise<ManifestationsPage> {
+    const where = buildAdminManifestationWhere(filters)
 
-    const records = await this.prisma.manifestation.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
-      take: MANIFESTATIONS_PAGE_SIZE,
-    })
+    const [records, totalItems, statusCounts] = await this.prisma.$transaction([
+      this.prisma.manifestation.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (pagination.page - 1) * MANIFESTATIONS_PAGE_SIZE,
+        take: MANIFESTATIONS_PAGE_SIZE,
+      }),
+      this.prisma.manifestation.count({ where }),
+      this.prisma.manifestation.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+    ])
 
-    return records.map(toListItemDTO)
+    return { manifestations: records.map(toListItemDTO), statusTotals: buildStatusTotals(statusCounts), totalItems }
+  }
+
+  async getMetricsByAuthorUserId(authorUserId: string): Promise<ManifestationMetrics> {
+    const where: Prisma.ManifestationWhereInput = { authorUserId }
+    return this.getMetrics(where)
+  }
+
+  async getMetricsForAdmin(filters: AdminManifestationFilters): Promise<ManifestationMetrics> {
+    return this.getMetrics(buildAdminManifestationWhere(filters))
   }
 
   async save(manifestation: Manifestation): Promise<void> {
@@ -125,6 +135,73 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
       },
     })
   }
+
+  private async getMetrics(where: Prisma.ManifestationWhereInput): Promise<ManifestationMetrics> {
+    const [totalItems, statusCounts] = await this.prisma.$transaction([
+      this.prisma.manifestation.count({ where }),
+      this.prisma.manifestation.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+    ])
+
+    return { statusTotals: buildStatusTotals(statusCounts), totalItems }
+  }
+}
+
+function buildStatusTotals(
+  statusCounts: Array<{ status: PrismaManifestationStatus; _count: { _all: number } }>,
+): Record<ManifestationStatus, number> {
+  const totals: Record<ManifestationStatus, number> = {
+    [ManifestationStatus.ANSWERED]: 0,
+    [ManifestationStatus.AWAITING_UNIT]: 0,
+    [ManifestationStatus.CANCELED]: 0,
+    [ManifestationStatus.FINALIZED]: 0,
+    [ManifestationStatus.IN_ANALYSIS]: 0,
+  }
+
+  for (const count of statusCounts) {
+    totals[count.status as ManifestationStatus] = count._count._all
+  }
+
+  return totals
+}
+
+function buildAdminManifestationWhere(filters: AdminManifestationFilters): Prisma.ManifestationWhereInput {
+  const where: Prisma.ManifestationWhereInput = {}
+
+  if (filters.status !== undefined) {
+    where.status = filters.status
+  }
+
+  if (filters.type !== undefined) {
+    where.type = filters.type
+  }
+
+  if (filters.campusId !== undefined) {
+    where.campusId = filters.campusId
+  }
+
+  if (filters.administrativeUnitId !== undefined) {
+    where.administrativeUnitId = filters.administrativeUnitId
+  }
+
+  if (filters.from !== undefined || filters.to !== undefined) {
+    const createdAt: Prisma.DateTimeFilter = {}
+
+    if (filters.from !== undefined) {
+      createdAt.gte = filters.from
+    }
+
+    if (filters.to !== undefined) {
+      createdAt.lte = filters.to
+    }
+
+    where.createdAt = createdAt
+  }
+
+  return where
 }
 
 function toListItemDTO(record: {
@@ -161,6 +238,7 @@ interface ManifestationRow {
   description: string
   involvedPeople: string | null
   authorUserId: string | null
+  author: { id: string; name: string; email: string } | null
   attendantUserId: string | null
   forwardedToUnit: { id: string; name: string } | null
   createdAt: Date
@@ -241,6 +319,10 @@ function buildDetailsDTO(
     description: manifestation.description,
     involvedPeople: manifestation.involvedPeople,
     authorUserId: manifestation.authorUserId,
+    author:
+      manifestation.author === null
+        ? null
+        : { id: manifestation.author.id, name: manifestation.author.name, email: manifestation.author.email },
     attendantUserId: manifestation.attendantUserId,
     forwardedToUnit:
       manifestation.forwardedToUnit === null

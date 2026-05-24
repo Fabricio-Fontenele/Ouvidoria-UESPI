@@ -10,6 +10,11 @@ function buildDetail(status: ManifestationStatus): ManifestationDetail {
     administrativeUnitId: 'unit-1',
     attachments: [],
     attendantUserId: null,
+    author: {
+      email: 'diana@example.com',
+      id: 'user-1',
+      name: 'Diana Reis',
+    },
     authorUserId: 'user-1',
     campusId: 'campus-1',
     createdAt: '2026-05-10T12:00:00.000Z',

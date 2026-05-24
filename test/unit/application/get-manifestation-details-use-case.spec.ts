@@ -22,6 +22,14 @@ describe('GetManifestationDetailsUseCase', () => {
     description: 'The service was unavailable during the whole morning.',
     involvedPeople: 'Coordination Team',
     authorUserId,
+    author:
+      authorUserId === null
+        ? null
+        : {
+            id: authorUserId,
+            name: 'Diana Reis',
+            email: 'diana@example.com',
+          },
     attendantUserId: null,
     forwardedToUnit: null,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),

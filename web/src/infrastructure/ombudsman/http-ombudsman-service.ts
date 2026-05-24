@@ -4,20 +4,30 @@ import type {
   AnswerManifestationInput,
   ForwardManifestationToUnitInput,
   GetAdminAttachmentDownloadUrlInput,
+  OmbudsmanMetricsResult,
   OmbudsmanListFilters,
   OmbudsmanListResult,
   OmbudsmanService,
   UpdateManifestationStatusInput,
 } from '../../application/ombudsman/ombudsman-service'
 import { apiFetch } from '../http/api-client'
+import type { ManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
+import { buildEmptyManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
 import type { RawManifestationDetail } from '../manifestations/manifestation-detail-mapper'
 import { mapManifestationDetail } from '../manifestations/manifestation-detail-mapper'
 
 interface ListResponse {
   manifestations: ManifestationSummary[]
   page?: number
+  pageSize?: number
+  statusTotals?: ManifestationStatusTotals
   totalItems?: number
   totalPages?: number
+}
+
+interface MetricsResponse {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
 }
 
 interface DetailResponse {
@@ -69,26 +79,26 @@ export class HttpOmbudsmanService implements OmbudsmanService {
     return mapManifestationDetail(response.manifestation)
   }
 
+  async getMetrics(filters: Omit<OmbudsmanListFilters, 'page' | 'status'>): Promise<OmbudsmanMetricsResult> {
+    return apiFetch<MetricsResponse>('/admin/manifestations/metrics', {
+      query: buildListQuery({ ...filters, page: undefined, status: undefined }),
+    })
+  }
+
   async list(filters: OmbudsmanListFilters): Promise<OmbudsmanListResult> {
     const requestedPage = filters.page ?? 1
     const response = await apiFetch<ListResponse>('/admin/manifestations', {
       query: buildListQuery({ ...filters, page: requestedPage }),
     })
 
-    const result: OmbudsmanListResult = {
+    return {
       manifestations: response.manifestations,
       page: response.page ?? requestedPage,
+      pageSize: response.pageSize ?? response.manifestations.length,
+      statusTotals: response.statusTotals ?? buildEmptyManifestationStatusTotals(),
+      totalItems: response.totalItems ?? response.manifestations.length,
+      totalPages: response.totalPages ?? 1,
     }
-
-    if (response.totalPages !== undefined) {
-      result.totalPages = response.totalPages
-    }
-
-    if (response.totalItems !== undefined) {
-      result.totalItems = response.totalItems
-    }
-
-    return result
   }
 
   async updateStatus(input: UpdateManifestationStatusInput): Promise<void> {

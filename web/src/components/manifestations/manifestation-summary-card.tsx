@@ -24,10 +24,17 @@ interface ManifestationSummaryCardProps {
   catalog: Catalog | null
   detail: ManifestationDetail
   extraItems?: Array<{ label: string; value: string }>
+  showRequester?: boolean
   titleSlot?: ReactNode
 }
 
-export function ManifestationSummaryCard({ catalog, detail, extraItems, titleSlot }: ManifestationSummaryCardProps) {
+export function ManifestationSummaryCard({
+  catalog,
+  detail,
+  extraItems,
+  showRequester = false,
+  titleSlot,
+}: ManifestationSummaryCardProps) {
   const statusContract = getManifestationStatusContract(detail.status)
   const statusStyle = getManifestationStatusStyle(detail.status)
   const areaLabel = buildAreaLabel(catalog, detail.campusId, detail.administrativeUnitId)
@@ -68,6 +75,35 @@ export function ManifestationSummaryCard({ catalog, detail, extraItems, titleSlo
           {statusContract.viewLabel}
         </span>
       </div>
+
+      {showRequester ? (
+        <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm" aria-labelledby="manifestation-requester-title">
+          <p
+            className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase"
+            id="manifestation-requester-title"
+          >
+            Solicitante
+          </p>
+          {detail.author === null ? (
+            <p className="mt-3 text-base leading-7 font-semibold text-home-text">Manifestação anônima</p>
+          ) : (
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">Nome</dt>
+                <dd className="mt-2 text-lg leading-7 font-semibold text-home-text break-words">
+                  {detail.author.name}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">E-mail</dt>
+                <dd className="mt-2 text-lg leading-7 font-semibold text-home-text break-words">
+                  {detail.author.email}
+                </dd>
+              </div>
+            </dl>
+          )}
+        </section>
+      ) : null}
 
       <dl className="mt-6 grid gap-4 sm:grid-cols-2">
         {items.map((item) => (

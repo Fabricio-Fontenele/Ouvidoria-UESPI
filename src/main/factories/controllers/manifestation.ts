@@ -4,6 +4,7 @@ import { AddManifestationMessageUseCase } from '#src/application/use-cases/add-m
 import { EvaluateManifestationUseCase } from '#src/application/use-cases/evaluate-manifestation/evaluate-manifestation-use-case.js'
 import { FinalizeManifestationUseCase } from '#src/application/use-cases/finalize-manifestation/finalize-manifestation-use-case.js'
 import { GetManifestationDetailsUseCase } from '#src/application/use-cases/get-manifestation-details/get-manifestation-details-use-case.js'
+import { GetUserManifestationMetricsUseCase } from '#src/application/use-cases/get-user-manifestation-metrics/get-user-manifestation-metrics-use-case.js'
 import { ListUserManifestationsUseCase } from '#src/application/use-cases/list-user-manifestations/list-user-manifestations-use-case.js'
 import { GetManifestationAttachmentDownloadUrlUseCase } from '#src/application/use-cases/manifestation-attachments/get-manifestation-attachment-download-url-use-case.js'
 import { GetTrackedManifestationAttachmentDownloadUrlUseCase } from '#src/application/use-cases/manifestation-attachments/get-tracked-manifestation-attachment-download-url-use-case.js'
@@ -21,6 +22,7 @@ import { GetManifestationAttachmentDownloadUrlController } from '#src/presentati
 import { GetManifestationDetailsController } from '#src/presentation/controllers/manifestation/get-manifestation-details.controller.js'
 import { GetTrackedManifestationAttachmentDownloadUrlController } from '#src/presentation/controllers/manifestation/get-tracked-manifestation-attachment-download-url.controller.js'
 import { GetTrackedManifestationDetailsController } from '#src/presentation/controllers/manifestation/get-tracked-manifestation-details.controller.js'
+import { GetUserManifestationMetricsController } from '#src/presentation/controllers/manifestation/get-user-manifestation-metrics.controller.js'
 import { ListUserManifestationsController } from '#src/presentation/controllers/manifestation/list-user-manifestations.controller.js'
 import { RegisterManifestationController } from '#src/presentation/controllers/manifestation/register-manifestation.controller.js'
 import { TrackManifestationByProtocolController } from '#src/presentation/controllers/manifestation/track-manifestation-by-protocol.controller.js'
@@ -107,6 +109,11 @@ export function makeGetManifestationDetailsController(): GetManifestationDetails
 export function makeListUserManifestationsController(): ListUserManifestationsController {
   const useCase = new ListUserManifestationsUseCase(infrastructure.manifestationsRepository)
   return new ListUserManifestationsController(useCase)
+}
+
+export function makeGetUserManifestationMetricsController(): GetUserManifestationMetricsController {
+  const useCase = new GetUserManifestationMetricsUseCase(infrastructure.manifestationsRepository)
+  return new GetUserManifestationMetricsController(useCase)
 }
 
 export function makeTrackManifestationByProtocolController(): TrackManifestationByProtocolController {

@@ -1,7 +1,9 @@
 import type { ManifestationDetail, ManifestationMessageEntry } from './manifestation-detail-contract'
 import type { ManifestationStatus } from './manifestation-status-contract'
+import type { ManifestationStatusTotals } from './manifestation-status-contract'
 import type { ManifestationSummary } from './manifestation-summary-contract'
 import type { ManifestationType } from './manifestation-type-contract'
+import type { PaginationMeta } from '../pagination/pagination-contract'
 import type { TrackedManifestationDetail } from './tracked-manifestation-contract'
 
 export interface CreateManifestationInput {
@@ -70,6 +72,16 @@ export interface AttachmentDownloadUrlResult {
   downloadUrl: string
 }
 
+export interface ManifestationsListResult extends PaginationMeta {
+  manifestations: ManifestationSummary[]
+  statusTotals: ManifestationStatusTotals
+}
+
+export interface ManifestationMetricsResult {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
+}
+
 export interface ManifestationsService {
   addMessage(input: AddMessageInput): Promise<ManifestationMessageEntry>
   create(input: CreateManifestationInput): Promise<CreateManifestationResult>
@@ -77,9 +89,10 @@ export interface ManifestationsService {
   finalize(manifestationId: string): Promise<void>
   getAttachmentDownloadUrl(input: GetManifestationAttachmentDownloadUrlInput): Promise<string>
   getById(id: string): Promise<ManifestationDetail>
+  getMetrics(): Promise<ManifestationMetricsResult>
   getTrackedAttachmentDownloadUrl(input: GetTrackedManifestationAttachmentDownloadUrlInput): Promise<string>
   getTrackedDetails(input: TrackManifestationInput): Promise<TrackedManifestationDetail>
-  list(page?: number): Promise<ManifestationSummary[]>
+  list(page?: number): Promise<ManifestationsListResult>
   uploadAttachment(input: UploadManifestationAttachmentInput): Promise<void>
   uploadTrackedAttachment(input: UploadTrackedManifestationAttachmentInput): Promise<void>
 }

@@ -4,19 +4,23 @@ import { buildGuaraNewManifestationHref, buildManifestationDetailsHref, routes }
 import { manifestantOnlyRoles } from '../app/access-policy'
 import type { Catalog } from '../application/catalog/catalog-types'
 import {
+  buildEmptyManifestationStatusTotals,
   getManifestationStatusContract,
   manifestationStatusContracts,
 } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
 import { getManifestationTypeLabel } from '../application/manifestations/manifestation-type-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
+import type { PaginationMeta } from '../application/pagination/pagination-contract'
 import guaraMascot from '../assets/guara-mascot.png'
 import guaraPoses from '../assets/poses-guara.webp'
 import { Icon } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
+import { PaginationControls } from '../components/navigation/pagination-controls'
 import { useCatalog } from '../hooks/use-catalog'
 import { useManifestationsService } from '../hooks/use-manifestations-service'
 import { cx } from '../utils/cx'
@@ -40,6 +44,13 @@ const filters: Filter[] = [
   { id: 'all', label: 'Todos' },
   ...manifestationStatusContracts.map((status) => ({ id: status.value, label: status.filterLabel })),
 ]
+
+const initialPagination: PaginationMeta = {
+  page: 1,
+  pageSize: 0,
+  totalItems: 0,
+  totalPages: 1,
+}
 
 function buildAreaLabel(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
   const campus = catalog?.campuses.find((entry) => entry.id === campusId)
@@ -149,17 +160,23 @@ function GuaraChatTrigger() {
   )
 }
 
-function getMetrics(items: ManifestationSummary[]): Metric[] {
-  const total = items.length
-
+function getMetrics(statusTotals: ManifestationStatusTotals, totalItems: number): Metric[] {
   return [
-    { label: 'Totais.', value: String(total).padStart(2, '0') },
+    { label: 'Totais.', value: String(totalItems).padStart(2, '0') },
     ...manifestationStatusContracts.map((status) => ({
       colorClassName: getManifestationStatusStyle(status.value).textClassName,
       label: status.metricLabel,
-      value: String(items.filter((manifestation) => manifestation.status === status.value).length).padStart(2, '0'),
+      value: String(statusTotals[status.value]).padStart(2, '0'),
     })),
   ]
+}
+
+function matchesFilter(manifestation: ManifestationSummary, filter: ManifestationFilter) {
+  if (filter === 'all') {
+    return true
+  }
+
+  return manifestation.status === filter
 }
 
 function Overview({ metrics }: { metrics: Metric[] }) {
@@ -192,14 +209,6 @@ function Overview({ metrics }: { metrics: Metric[] }) {
       </dl>
     </section>
   )
-}
-
-function matchesFilter(manifestation: ManifestationSummary, filter: ManifestationFilter) {
-  if (filter === 'all') {
-    return true
-  }
-
-  return manifestation.status === filter
 }
 
 function FilterBar({
@@ -330,6 +339,40 @@ export function HomePage() {
   const [items, setItems] = useState<ManifestationSummary[]>([])
   const [listStatus, setListStatus] = useState<ListStatus>('loading')
   const [listError, setListError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
+  const [metricsTotalItems, setMetricsTotalItems] = useState(0)
+  const [statusTotals, setStatusTotals] = useState<ManifestationStatusTotals>(buildEmptyManifestationStatusTotals)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadMetrics() {
+      try {
+        const result = await manifestationsService.getMetrics()
+
+        if (!isMounted) {
+          return
+        }
+
+        setMetricsTotalItems(result.totalItems)
+        setStatusTotals(result.statusTotals)
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setMetricsTotalItems(0)
+        setStatusTotals(buildEmptyManifestationStatusTotals())
+      }
+    }
+
+    void loadMetrics()
+
+    return () => {
+      isMounted = false
+    }
+  }, [manifestationsService])
 
   useEffect(() => {
     let isMounted = true
@@ -339,13 +382,19 @@ export function HomePage() {
       setListError(null)
 
       try {
-        const fetched = await manifestationsService.list(1)
+        const fetched = await manifestationsService.list(page)
 
         if (!isMounted) {
           return
         }
 
-        setItems(fetched)
+        setItems(fetched.manifestations)
+        setPagination({
+          page: fetched.page,
+          pageSize: fetched.pageSize,
+          totalItems: fetched.totalItems,
+          totalPages: fetched.totalPages,
+        })
         setListStatus('ready')
       } catch (loadError) {
         if (!isMounted) {
@@ -363,9 +412,9 @@ export function HomePage() {
     return () => {
       isMounted = false
     }
-  }, [manifestationsService])
+  }, [manifestationsService, page])
 
-  const metrics = useMemo(() => getMetrics(items), [items])
+  const metrics = useMemo(() => getMetrics(statusTotals, metricsTotalItems), [metricsTotalItems, statusTotals])
   const filteredManifestations = useMemo(
     () =>
       searchManifestations(
@@ -374,8 +423,24 @@ export function HomePage() {
       ),
     [items, activeFilter, search],
   )
-  const hasNoManifestations = items.length === 0
-  const hasNoFilteredResults = items.length > 0 && filteredManifestations.length === 0
+  const hasActiveFilter = activeFilter !== 'all'
+  const hasSearch = search.trim().length > 0
+  const hasNoManifestations = items.length === 0 && !hasActiveFilter && !hasSearch
+  const hasNoFilteredResults =
+    !hasNoManifestations && filteredManifestations.length === 0 && (hasActiveFilter || hasSearch)
+  const filteredTotalItems = activeFilter === 'all' ? pagination.totalItems : statusTotals[activeFilter]
+  const pageSize = pagination.pageSize > 0 ? pagination.pageSize : 1
+  const filteredTotalPages = Math.ceil(filteredTotalItems / pageSize)
+  const shouldShowPagination =
+    !hasNoManifestations && !hasSearch && filteredManifestations.length > 0 && filteredTotalPages > 1
+  const handleFilterChange = (filter: ManifestationFilter) => {
+    setActiveFilter(filter)
+    setPage(1)
+  }
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   return (
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
@@ -399,8 +464,8 @@ export function HomePage() {
 
             <div className="space-y-6" id="buscar-manifestacao">
               <div className="flex w-full flex-col items-start gap-5">
-                <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
-                <SearchField onSearchChange={setSearch} search={search} />
+                <FilterBar activeFilter={activeFilter} onFilterChange={handleFilterChange} />
+                <SearchField onSearchChange={handleSearchChange} search={search} />
               </div>
 
               {listStatus === 'loading' ? (
@@ -423,6 +488,17 @@ export function HomePage() {
                   {filteredManifestations.map((manifestation) => (
                     <ManifestationCard catalog={catalog} key={manifestation.id} manifestation={manifestation} />
                   ))}
+                </div>
+              ) : null}
+
+              {listStatus === 'ready' && shouldShowPagination ? (
+                <div className="mt-8">
+                  <PaginationControls
+                    ariaLabel="Paginação das minhas manifestações"
+                    onPageChange={setPage}
+                    page={pagination.page}
+                    totalPages={filteredTotalPages}
+                  />
                 </div>
               ) : null}
 

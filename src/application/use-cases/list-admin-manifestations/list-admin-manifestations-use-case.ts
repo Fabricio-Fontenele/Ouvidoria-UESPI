@@ -1,7 +1,12 @@
 import type { ManifestationListItemDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import type { AdminManifestationFilters } from '#src/application/repositories/admin-manifestation-filters.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import {
+  buildManifestationsPaginationMetadata,
+  type PaginationMetadata,
+} from '#src/application/repositories/pagination-params.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
+import type { ManifestationStatus } from '#src/domain/entities/manifestation.js'
 import { UserRole } from '#src/domain/entities/user.js'
 
 import { InvalidPageNumberError } from '../list-user-manifestations/errors/invalid-page-number-error.js'
@@ -14,8 +19,9 @@ interface ListAdminManifestationsInput {
   filters?: AdminManifestationFilters
 }
 
-interface ListAdminManifestationsOutput {
+interface ListAdminManifestationsOutput extends PaginationMetadata {
   manifestations: ManifestationListItemDTO[]
+  statusTotals: Record<ManifestationStatus, number>
 }
 
 export class ListAdminManifestationsUseCase implements UseCase<
@@ -42,8 +48,11 @@ export class ListAdminManifestationsUseCase implements UseCase<
       throw new NotAllowedToManageManifestationError()
     }
 
-    const manifestations = await this.manifestationsRepository.findManyForAdmin(filters ?? {}, { page })
+    const { manifestations, statusTotals, totalItems } = await this.manifestationsRepository.findManyForAdmin(
+      filters ?? {},
+      { page },
+    )
 
-    return { manifestations }
+    return { manifestations, statusTotals, ...buildManifestationsPaginationMetadata(page, totalItems) }
   }
 }
