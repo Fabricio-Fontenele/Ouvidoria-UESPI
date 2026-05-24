@@ -15,4 +15,4 @@ COPY . .
 
 EXPOSE 3333
 
-CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm dev"]
+CMD ["sh", "-c", "pnpm prisma generate && pnpm prisma migrate deploy && pnpm db:seed && pnpm dev"]
