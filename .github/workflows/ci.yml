@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -7,31 +7,73 @@ on:
       - master
   pull_request:
 
+# Cancela execuções em andamento apenas para PRs (economiza CI).
+# Em push na main NÃO cancela, para um deploy nunca ser interrompido no meio.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  validate:
+  backend:
+    name: Validar backend
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Enable Corepack
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.33.0 --activate
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:ci
 
-      - name: Show tool versions
-        run: |
-          node --version
-          pnpm --version
+  ai-api:
+    name: Validar ai-api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ouvidoria/ai-api type:check
+      - run: pnpm --filter @ouvidoria/ai-api test
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  web:
+    name: Validar web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web lint
+      - run: pnpm --filter web test
+      - run: pnpm --filter web build
 
-      - name: Run CI checks
-        run: pnpm check:ci
+  deploy:
+    name: Deploy (VM)
+    needs: [backend, ai-api, web]
+    # Só deploya em push na main E com TODOS os jobs de validação verdes.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_SSH_PORT }}
+          script_stop: true
+          script: |
+            set -e
+            cd ~/projects/Ouvidoria-UESPI
+            git fetch --quiet origin main
+            git reset --hard origin/main
+            bash scripts/deploy.sh
