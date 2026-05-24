@@ -42,13 +42,14 @@ const ombudsmanMenuItems: MenuItem[] = [
 
 const publicMenuItems: MenuItem[] = [
   { href: routes.landing, icon: 'home', label: 'Início' },
-  { href: '#o-que-e', icon: 'info', label: 'O que é' },
-  { href: '#tipos', icon: 'file-text', label: 'Tipos de manifestação' },
-  { href: '#como-funciona', icon: 'braces', label: 'Como funciona' },
-  { href: routes.track, icon: 'search', label: 'Consultar manifestação' },
-  { href: routes.privacy, icon: 'shield', label: 'Privacidade' },
+  { href: `${routes.landing}#registro`, icon: 'edit', label: 'Registrar manifestação' },
+  { href: `${routes.landing}#o-que-e`, icon: 'info', label: 'O que é' },
+  { href: `${routes.landing}#tipos`, icon: 'file-text', label: 'Tipos de manifestação' },
+  { href: `${routes.landing}#como-funciona`, icon: 'braces', label: 'Como funciona' },
+  { href: `${routes.landing}#consultar-manifestacao`, icon: 'search', label: 'Consultar manifestação' },
+  { href: `${routes.landing}#guara`, icon: 'message-circle', label: 'Fale com o Guará' },
   { href: routes.login, icon: 'user', label: 'Acessar sistema' },
-  { href: '#faq', icon: 'help', label: 'FAQ' },
+  { href: routes.faq, icon: 'help', label: 'FAQ' },
 ]
 
 const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -209,7 +210,10 @@ function AppSideMenu({
           </button>
         </div>
 
-        <nav aria-label={isAuthenticated ? 'Menu autenticado' : 'Menu público'} className="mt-8">
+        <nav
+          aria-label={isAuthenticated ? 'Menu autenticado' : 'Menu público'}
+          className="mt-8 min-h-0 overflow-y-auto pr-1"
+        >
           <ul className="space-y-2">
             {menuItems.map((item) => (
               <li key={`${item.label}-${item.href}`}>

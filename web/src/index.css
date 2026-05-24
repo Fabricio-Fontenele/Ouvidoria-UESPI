@@ -84,6 +84,57 @@
   input {
     font: inherit;
   }
+
+  a[href],
+  button:not(:disabled),
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer utilities {
+  @keyframes guara-bubble-in {
+    0% {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+    }
+
+    70% {
+      opacity: 1;
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes guara-bubble-out {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    100% {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+    }
+  }
+
+  .animate-guara-bubble-in {
+    animation: guara-bubble-in 260ms ease-out both;
+    transform-origin: right bottom;
+  }
+
+  .animate-guara-bubble-out {
+    animation: guara-bubble-out 220ms ease-in both;
+    transform-origin: right bottom;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
