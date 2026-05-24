@@ -313,8 +313,8 @@ function HeroSection() {
           Sua voz constrói a nossa <span className="text-landing-blue">universidade.</span>
         </h1>
         <p className="mt-4 text-[11px] leading-[1.75] text-landing-text md:mt-5 md:max-w-xs md:text-[15px] md:leading-6">
-          O canal oficial para manifestações, sugestões e elogios. Participe ativamente da evolução acadêmica e
-          administrativa da UESPI.
+          Registre sua manifestação pelo canal oficial da UESPI. E, se precisar de ajuda para organizar as ideias, o
+          Guará acompanha você nessa jornada, orientando o relato até a Ouvidoria.
         </p>
       </div>
     </section>
@@ -365,9 +365,9 @@ function GuaraCallout() {
               Fale com o Guará
             </h2>
             <p className="mt-3 text-[13px] leading-[1.7] text-landing-brown md:text-[15px] md:leading-7">
-              O Guará é o assistente virtual da Ouvidoria UESPI: ele conversa com você em linguagem simples, tira
-              dúvidas sobre o canal e ajuda a organizar seu relato antes do registro. Quando for possível seguir pelo
-              chat, ele prepara um rascunho para você revisar e enviar com segurança.
+              O Guará é o assistente virtual da Ouvidoria UESPI. Ele conversa com você de forma simples, ajuda a
+              entender qual caminho seguir e organiza as informações principais do seu relato, deixando tudo mais claro
+              para revisar antes de enviar.
             </p>
           </div>
 
