@@ -485,109 +485,112 @@ export function OmbudsmanHomePage() {
   return (
     <div className="min-h-svh bg-login-bg font-sans text-home-text">
       <AuthenticatedAppShell allowedRoles={ombudsmanAreaRoles}>
-        <main className="mx-auto w-full max-w-6xl px-5 pt-8 pb-12 min-[390px]:px-7 sm:px-8 md:pt-12 lg:px-12">
-          <header className="max-w-2xl">
-            <h1 className="max-w-[440px] text-[42px] leading-[1.06] font-black text-home-text sm:text-6xl sm:leading-[1.08]">
-              Dashboard de Demandas
-            </h1>
-            <p className="mt-4 max-w-xl text-base leading-[26px] text-home-brown">
-              Acompanhe e atue nas manifestações da Ouvidoria. Use os filtros para priorizar o que precisa de resposta.
-            </p>
-          </header>
+        <div className="flex min-h-[calc(100svh-5.5rem)] flex-col md:min-h-[calc(100svh-6rem)]">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-5 pt-8 pb-12 min-[390px]:px-7 sm:px-8 md:pt-12 lg:px-12">
+            <header className="max-w-2xl">
+              <h1 className="max-w-[440px] text-[42px] leading-[1.06] font-black text-home-text sm:text-6xl sm:leading-[1.08]">
+                Dashboard de Demandas
+              </h1>
+              <p className="mt-4 max-w-xl text-base leading-[26px] text-home-brown">
+                Acompanhe e atue nas manifestações da Ouvidoria. Use os filtros para priorizar o que precisa de
+                resposta.
+              </p>
+            </header>
 
-          <MetricCards loadStatus={metricsLoadStatus} statusTotals={statusTotals} />
+            <MetricCards loadStatus={metricsLoadStatus} statusTotals={statusTotals} />
 
-          <section
-            aria-labelledby="ombudsman-demands-title"
-            className="mt-12 rounded-lg bg-home-action px-4 py-6 sm:px-6 md:px-8 md:py-8"
-            id="demandas"
-          >
-            <h2 className="sr-only" id="ombudsman-demands-title">
-              Demandas da Ouvidoria
-            </h2>
+            <section
+              aria-labelledby="ombudsman-demands-title"
+              className="mt-12 rounded-lg bg-home-action px-4 py-6 sm:px-6 md:px-8 md:py-8"
+              id="demandas"
+            >
+              <h2 className="sr-only" id="ombudsman-demands-title">
+                Demandas da Ouvidoria
+              </h2>
 
-            <div className="flex w-full flex-col items-start gap-5">
-              <SearchField onSearchChange={handleSearchChange} search={search} />
+              <div className="flex w-full flex-col items-start gap-5">
+                <SearchField onSearchChange={handleSearchChange} search={search} />
 
-              <div className="mx-auto grid w-full gap-2 md:w-[92%] xl:w-[94%] sm:grid-cols-2 lg:grid-cols-3">
-                <FilterSelect
-                  id="ombudsman-status-filter"
-                  label="Status"
-                  onChange={handleStatusFilterChange}
-                  options={statusOptions}
-                  value={statusFilter}
-                />
-                <FilterSelect
-                  id="ombudsman-type-filter"
-                  label="Tipo"
-                  onChange={handleTypeFilterChange}
-                  options={typeOptions}
-                  value={typeFilter}
-                />
-                <DateFilterInput
-                  id="ombudsman-date-filter"
-                  label="Data"
-                  onChange={handleDateFilterChange}
-                  value={dateFilter}
-                />
-              </div>
-            </div>
-
-            {loadStatus === 'loading' ? (
-              <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 text-center text-sm leading-6 text-home-brown">
-                Carregando manifestações...
-              </div>
-            ) : null}
-
-            {loadStatus === 'error' ? (
-              <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
-                <h2 className="text-xl leading-7 font-bold text-home-text">
-                  Não foi possível carregar as manifestações
-                </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
-                  {loadError ?? 'Tente novamente em alguns instantes.'}
-                </p>
-              </div>
-            ) : null}
-
-            {loadStatus === 'ready' ? (
-              filteredManifestations.length > 0 ? (
-                <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                  {filteredManifestations.map((manifestation) => (
-                    <ManifestationCard catalog={catalog} key={manifestation.id} manifestation={manifestation} />
-                  ))}
+                <div className="mx-auto grid w-full gap-2 md:w-[92%] xl:w-[94%] sm:grid-cols-2 lg:grid-cols-3">
+                  <FilterSelect
+                    id="ombudsman-status-filter"
+                    label="Status"
+                    onChange={handleStatusFilterChange}
+                    options={statusOptions}
+                    value={statusFilter}
+                  />
+                  <FilterSelect
+                    id="ombudsman-type-filter"
+                    label="Tipo"
+                    onChange={handleTypeFilterChange}
+                    options={typeOptions}
+                    value={typeFilter}
+                  />
+                  <DateFilterInput
+                    id="ombudsman-date-filter"
+                    label="Data"
+                    onChange={handleDateFilterChange}
+                    value={dateFilter}
+                  />
                 </div>
-              ) : (
+              </div>
+
+              {loadStatus === 'loading' ? (
+                <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 text-center text-sm leading-6 text-home-brown">
+                  Carregando manifestações...
+                </div>
+              ) : null}
+
+              {loadStatus === 'error' ? (
                 <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
-                  <h2 className="text-xl leading-7 font-bold text-home-text">Nenhuma manifestação encontrada</h2>
+                  <h2 className="text-xl leading-7 font-bold text-home-text">
+                    Não foi possível carregar as manifestações
+                  </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
-                    Ajuste a busca ou limpe os filtros para voltar à lista de demandas da Ouvidoria.
+                    {loadError ?? 'Tente novamente em alguns instantes.'}
                   </p>
-                  <button
-                    className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
-                    onClick={handleClearFilters}
-                    type="button"
-                  >
-                    Limpar filtros
-                  </button>
                 </div>
-              )
-            ) : null}
+              ) : null}
 
-            {loadStatus === 'ready' && manifestations.length > 0 ? (
-              <div className="mt-8">
-                <PaginationControls
-                  ariaLabel="Paginação das demandas da Ouvidoria"
-                  onPageChange={setPage}
-                  page={pagination.page}
-                  totalPages={pagination.totalPages}
-                />
-              </div>
-            ) : null}
-          </section>
-        </main>
+              {loadStatus === 'ready' ? (
+                filteredManifestations.length > 0 ? (
+                  <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+                    {filteredManifestations.map((manifestation) => (
+                      <ManifestationCard catalog={catalog} key={manifestation.id} manifestation={manifestation} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-6 rounded-lg bg-home-surface px-6 py-8 shadow-home-card">
+                    <h2 className="text-xl leading-7 font-bold text-home-text">Nenhuma manifestação encontrada</h2>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-home-brown">
+                      Ajuste a busca ou limpe os filtros para voltar à lista de demandas da Ouvidoria.
+                    </p>
+                    <button
+                      className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+                      onClick={handleClearFilters}
+                      type="button"
+                    >
+                      Limpar filtros
+                    </button>
+                  </div>
+                )
+              ) : null}
 
-        <SiteFooter variant="ombudsman" />
+              {loadStatus === 'ready' && manifestations.length > 0 ? (
+                <div className="mt-8">
+                  <PaginationControls
+                    ariaLabel="Paginação das demandas da Ouvidoria"
+                    onPageChange={setPage}
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                  />
+                </div>
+              ) : null}
+            </section>
+          </main>
+
+          <SiteFooter className="mt-0" variant="ombudsman" />
+        </div>
       </AuthenticatedAppShell>
     </div>
   )
