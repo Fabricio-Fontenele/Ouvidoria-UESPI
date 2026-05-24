@@ -48,11 +48,11 @@ const ombudsmanMenuItems: MenuItem[] = [
 const publicMenuItems: MenuItem[] = [
   { href: routes.landing, icon: 'home', label: 'Início' },
   { href: `${routes.landing}#registro`, icon: 'edit', label: 'Registrar manifestação' },
-  { href: `${routes.landing}#o-que-e`, icon: 'info', label: 'O que é' },
-  { href: `${routes.landing}#tipos`, icon: 'file-text', label: 'Tipos de manifestação' },
-  { href: `${routes.landing}#como-funciona`, icon: 'braces', label: 'Como funciona' },
   { href: `${routes.landing}#consultar-manifestacao`, icon: 'search', label: 'Consultar manifestação' },
   { href: `${routes.landing}#guara`, icon: 'message-circle', label: 'Fale com o Guará' },
+  { href: `${routes.landing}#tipos`, icon: 'file-text', label: 'Tipos de manifestação' },
+  { href: `${routes.landing}#como-funciona`, icon: 'braces', label: 'Como funciona' },
+  { href: `${routes.landing}#o-que-e`, icon: 'info', label: 'O que é' },
   { href: routes.login, icon: 'user', label: 'Acessar sistema' },
   { href: routes.faq, icon: 'help', label: 'FAQ' },
 ]

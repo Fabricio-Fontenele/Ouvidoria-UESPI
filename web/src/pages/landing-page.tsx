@@ -313,8 +313,8 @@ function HeroSection() {
           Sua voz constrói a nossa <span className="text-landing-blue">universidade.</span>
         </h1>
         <p className="mt-4 text-[11px] leading-[1.75] text-landing-text md:mt-5 md:max-w-xs md:text-[15px] md:leading-6">
-          Registre sua manifestação pelo canal oficial da UESPI. E, se precisar de ajuda para organizar as ideias, o
-          Guará acompanha você nessa jornada, orientando o relato até a Ouvidoria.
+          Sua participação ajuda a melhorar a UESPI. Registre sua manifestação pelo canal oficial da universidade e
+          conte com o Guará para orientar seu relato de forma simples, clara e segura.
         </p>
       </div>
     </section>
@@ -408,8 +408,8 @@ function GuaraCallout() {
 
 function OmbudsmanOverviewSection() {
   return (
-    <section className="px-4 pb-10 md:px-0 md:pb-16">
-      <div className="px-1 md:px-0" id="o-que-e">
+    <section className="px-4 pb-10 md:px-0 md:pb-16" id="o-que-e">
+      <div className="px-1 md:px-0">
         <SectionPill label="Sobre o canal" variant="highlight" />
         <h2 className="mt-3 max-w-md text-[24px] leading-tight font-black text-landing-text md:text-4xl">
           O que é a Ouvidoria?
@@ -431,36 +431,40 @@ function OmbudsmanOverviewSection() {
           ))}
         </div>
       </div>
+    </section>
+  )
+}
 
-      <div className="pt-8 md:pt-12" id="tipos">
-        <SectionPill label="Manifestações" variant="blue" />
-        <div className="mt-3 max-w-2xl">
-          <h2 className="text-[22px] leading-tight font-black text-landing-text md:text-3xl">Tipos de manifestação</h2>
-          <p className="mt-2 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
-            Escolha o tipo que melhor representa sua necessidade no momento do registro.
-          </p>
-        </div>
+function ManifestationTypesSection() {
+  return (
+    <section className="px-4 pb-10 md:px-0 md:pb-16" id="tipos">
+      <SectionPill label="Manifestações" variant="blue" />
+      <div className="mt-3 max-w-2xl">
+        <h2 className="text-[22px] leading-tight font-black text-landing-text md:text-3xl">Tipos de manifestação</h2>
+        <p className="mt-2 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
+          Escolha o tipo que melhor representa sua necessidade no momento do registro.
+        </p>
+      </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {manifestationTypes.map((type) => (
-            <article
-              className="rounded-lg border border-landing-chip bg-landing-surface p-4 shadow-landing-step"
-              key={type.label}
-            >
-              <div className="flex items-start gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-landing-blue/10 text-landing-blue">
-                  <Icon className="size-5" name={type.icon} />
-                </span>
-                <div>
-                  <h3 className="text-sm leading-5 font-black text-landing-text md:text-base">{type.label}</h3>
-                  <p className="mt-1 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
-                    {type.description}
-                  </p>
-                </div>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        {manifestationTypes.map((type) => (
+          <article
+            className="rounded-lg border border-landing-chip bg-landing-surface p-4 shadow-landing-step"
+            key={type.label}
+          >
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-landing-blue/10 text-landing-blue">
+                <Icon className="size-5" name={type.icon} />
+              </span>
+              <div>
+                <h3 className="text-sm leading-5 font-black text-landing-text md:text-base">{type.label}</h3>
+                <p className="mt-1 text-[12px] leading-5 text-landing-menu md:text-sm md:leading-6">
+                  {type.description}
+                </p>
               </div>
-            </article>
-          ))}
-        </div>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   )
@@ -730,9 +734,10 @@ export function LandingPage() {
         <HeroSection />
         <LoginCallout onRegisterClick={openRegistrationModal} />
         <TrackManifestationSection />
-        <OmbudsmanOverviewSection />
-        <StepsSection />
         <GuaraCallout />
+        <ManifestationTypesSection />
+        <StepsSection />
+        <OmbudsmanOverviewSection />
       </main>
       <FloatingGuaraShortcut />
       <SiteFooter />
