@@ -2,6 +2,7 @@ import type { AuthenticatedUserRole } from '../application/auth/auth-types'
 
 export const routes = {
   evaluation: '/evaluation',
+  faq: '/faq',
   guara: '/guara',
   home: '/home',
   landing: '/',
@@ -10,6 +11,7 @@ export const routes = {
   manifestationForm: '/manifestation-form',
   ombudsmanManifestation: '/ombudsman/manifestation',
   ombudsmanHome: '/ombudsman/home',
+  privacy: '/privacy',
   sign: '/sign',
   track: '/track',
 } as const

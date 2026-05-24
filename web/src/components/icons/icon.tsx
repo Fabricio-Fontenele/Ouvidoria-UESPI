@@ -17,6 +17,7 @@ export type IconName =
   | 'help'
   | 'home'
   | 'info'
+  | 'instagram'
   | 'lock'
   | 'lock-open'
   | 'log-out'
@@ -31,6 +32,7 @@ export type IconName =
   | 'star'
   | 'upload-cloud'
   | 'user'
+  | 'youtube'
   | 'x'
 
 interface IconProps extends ComponentProps<'svg'> {
@@ -185,6 +187,15 @@ export function Icon({ className, name, ...props }: IconProps) {
         </svg>
       )
 
+    case 'instagram':
+      return (
+        <svg {...sharedProps}>
+          <rect height="18" rx="5" width="18" x="3" y="3" />
+          <circle cx="12" cy="12" r="4" />
+          <path d="M17.5 6.5h.01" />
+        </svg>
+      )
+
     case 'lock':
       return (
         <svg {...sharedProps}>
@@ -309,6 +320,13 @@ export function Icon({ className, name, ...props }: IconProps) {
         <svg {...sharedProps}>
           <path d="M20 21a8 8 0 0 0-16 0" />
           <circle cx="12" cy="7" r="4" />
+        </svg>
+      )
+
+    case 'youtube':
+      return (
+        <svg {...sharedProps} fill="currentColor" stroke="none">
+          <path d="M21.6 7.2a2.7 2.7 0 0 0-1.9-1.9C18 4.8 12 4.8 12 4.8s-6 0-7.7.5a2.7 2.7 0 0 0-1.9 1.9A28.2 28.2 0 0 0 2 12a28.2 28.2 0 0 0 .4 4.8 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28.2 28.2 0 0 0 22 12a28.2 28.2 0 0 0-.4-4.8ZM10 15.3V8.7l5.8 3.3Z" />
         </svg>
       )
   }
