@@ -165,6 +165,14 @@ function AnswerComposer({
   )
 }
 
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .trim()
+}
+
 function ForwardAction({
   catalog,
   detail,
@@ -177,7 +185,9 @@ function ForwardAction({
   onForwarded: () => void
 }) {
   const fieldId = useId()
+  const searchFieldId = useId()
   const [administrativeUnitId, setAdministrativeUnitId] = useState('')
+  const [search, setSearch] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -186,6 +196,21 @@ function ForwardAction({
   }
 
   const campuses = catalog?.campuses ?? []
+  const normalizedSearch = normalizeText(search)
+  const filteredCampuses =
+    normalizedSearch === ''
+      ? campuses
+      : campuses
+          .map((campus) => {
+            const campusMatches =
+              normalizeText(campus.label).includes(normalizedSearch) ||
+              (campus.city !== null && normalizeText(campus.city).includes(normalizedSearch))
+            const administrativeUnits = campusMatches
+              ? campus.administrativeUnits
+              : campus.administrativeUnits.filter((unit) => normalizeText(unit.label).includes(normalizedSearch))
+            return { ...campus, administrativeUnits }
+          })
+          .filter((campus) => campus.administrativeUnits.length > 0)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -232,30 +257,53 @@ function ForwardAction({
       ) : null}
 
       <form className="mt-4 grid gap-4" onSubmit={(event) => void handleSubmit(event)}>
-        <label className="text-sm font-bold text-home-text" htmlFor={fieldId}>
-          Setor responsável
-        </label>
-        <select
-          className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={isSubmitting || campuses.length === 0}
-          id={fieldId}
-          onChange={(event) => {
-            setAdministrativeUnitId(event.target.value)
-            setError(null)
-          }}
-          value={administrativeUnitId}
-        >
-          <option value="">Selecione um setor...</option>
-          {campuses.map((campus) => (
-            <optgroup key={campus.id} label={campus.label}>
-              {campus.administrativeUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.label}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <div className="grid gap-2">
+          <label className="text-sm font-bold text-home-text" htmlFor={searchFieldId}>
+            Buscar setor
+          </label>
+          <input
+            className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none placeholder:text-home-brown/70 focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting || campuses.length === 0}
+            id={searchFieldId}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Filtrar por setor, campus ou cidade..."
+            type="search"
+            value={search}
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-bold text-home-text" htmlFor={fieldId}>
+            Setor responsável
+          </label>
+          <select
+            className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting || campuses.length === 0}
+            id={fieldId}
+            onChange={(event) => {
+              setAdministrativeUnitId(event.target.value)
+              setError(null)
+            }}
+            value={administrativeUnitId}
+          >
+            <option value="">Selecione um setor...</option>
+            {filteredCampuses.map((campus) => (
+              <optgroup
+                key={campus.id}
+                label={campus.city !== null ? `${campus.label} (${campus.city})` : campus.label}
+              >
+                {campus.administrativeUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          {filteredCampuses.length === 0 && search.trim() !== '' ? (
+            <p className="text-xs text-home-brown">Nenhum setor encontrado para “{search}”.</p>
+          ) : null}
+        </div>
         <div className="flex justify-end">
           <button
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
