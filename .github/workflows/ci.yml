@@ -44,17 +44,19 @@ jobs:
   web:
     name: Validar web
     runs-on: ubuntu-latest
+    # web é um projeto standalone (fora do workspace pnpm) e usa npm.
+    defaults:
+      run:
+        working-directory: web
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter web lint
-      - run: pnpm --filter web test
-      - run: pnpm --filter web build
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
 
   deploy:
     name: Deploy (VM)
