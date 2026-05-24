@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ManifestationDetail } from '../manifestations/manifestation-detail-contract'
 import type { ManifestationStatus } from '../manifestations/manifestation-status-contract'
 
-import { canAnswer, canCancel, canFinalize } from './ombudsman-policy'
+import { canAnswer, canCancel, canFinalize, canForward } from './ombudsman-policy'
 
 function buildDetail(status: ManifestationStatus): ManifestationDetail {
   return {
@@ -66,6 +66,19 @@ describe('ombudsman-policy', () => {
       expect(canCancel(buildDetail('answered'))).toBe(false)
       expect(canCancel(buildDetail('finalized'))).toBe(false)
       expect(canCancel(buildDetail('canceled'))).toBe(false)
+    })
+  })
+
+  describe('canForward', () => {
+    it('allows forwarding while the manifestation is open', () => {
+      expect(canForward(buildDetail('in_analysis'))).toBe(true)
+      expect(canForward(buildDetail('awaiting_unit'))).toBe(true)
+      expect(canForward(buildDetail('answered'))).toBe(true)
+    })
+
+    it('blocks forwarding after closure', () => {
+      expect(canForward(buildDetail('finalized'))).toBe(false)
+      expect(canForward(buildDetail('canceled'))).toBe(false)
     })
   })
 })

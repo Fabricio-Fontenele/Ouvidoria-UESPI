@@ -15,5 +15,7 @@ export function canCancel(detail: ManifestationDetail): boolean {
 }
 
 export function canForward(detail: ManifestationDetail): boolean {
-  return detail.status === 'in_analysis'
+  // Espelha o backend: encaminhar enquanto a manifestação estiver aberta
+  // (in_analysis, awaiting_unit ou answered). Terminais (finalized/canceled) não.
+  return detail.status === 'in_analysis' || detail.status === 'awaiting_unit' || detail.status === 'answered'
 }

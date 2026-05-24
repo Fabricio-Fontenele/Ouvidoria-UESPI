@@ -203,22 +203,26 @@ describe('Manifestation', () => {
     expect(manifestation.forwardedToUnitId?.getValue()).toBe('unit-2')
   })
 
-  it('refuses to forward a manifestation that is already awaiting the unit response', () => {
+  it('re-forwards an awaiting-unit manifestation to a different unit', () => {
     const manifestation = buildManifestation({ status: ManifestationStatus.AWAITING_UNIT })
 
-    expect(() => {
-      manifestation.forwardToUnit(AdministrativeUnitId.create('unit-3'))
-    }).toThrow(ManifestationStatusTransitionNotAllowedError)
+    manifestation.forwardToUnit(AdministrativeUnitId.create('unit-3'))
+
     expect(manifestation.status).toBe(ManifestationStatus.AWAITING_UNIT)
+    expect(manifestation.forwardedToUnitId?.getValue()).toBe('unit-3')
   })
 
-  it('refuses to forward awaiting, terminal or answered manifestations', () => {
-    for (const status of [
-      ManifestationStatus.AWAITING_UNIT,
-      ManifestationStatus.ANSWERED,
-      ManifestationStatus.CANCELED,
-      ManifestationStatus.FINALIZED,
-    ]) {
+  it('forwards an answered manifestation back to a unit (reopens to awaiting unit)', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.ANSWERED })
+
+    manifestation.forwardToUnit(AdministrativeUnitId.create('unit-2'))
+
+    expect(manifestation.status).toBe(ManifestationStatus.AWAITING_UNIT)
+    expect(manifestation.forwardedToUnitId?.getValue()).toBe('unit-2')
+  })
+
+  it('refuses to forward terminal manifestations', () => {
+    for (const status of [ManifestationStatus.CANCELED, ManifestationStatus.FINALIZED]) {
       const manifestation = buildManifestation({ status })
 
       expect(() => {

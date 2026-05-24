@@ -150,7 +150,11 @@ export class Manifestation extends Entity<ManifestationProps> {
   }
 
   forwardToUnit(administrativeUnitId: AdministrativeUnitId): void {
-    if (this.props.status !== ManifestationStatus.IN_ANALYSIS) {
+    // Encaminhar é permitido enquanto a manifestação estiver aberta (qualquer estado
+    // que ainda recebe mensagens): in_analysis, awaiting_unit (re-encaminhar / corrigir
+    // o setor) e answered (o ouvidor respondeu e decidiu acionar um setor). Só os estados
+    // terminais (canceled, finalized) recusam.
+    if (this.props.status === ManifestationStatus.CANCELED || this.props.status === ManifestationStatus.FINALIZED) {
       throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.AWAITING_UNIT)
     }
 
