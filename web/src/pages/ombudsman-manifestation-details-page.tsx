@@ -6,7 +6,8 @@ import type {
   ManifestationAttachmentInfo,
   ManifestationDetail,
 } from '../application/manifestations/manifestation-detail-contract'
-import { canAnswer, canCancel, canFinalize } from '../application/ombudsman/ombudsman-policy'
+import type { Catalog } from '../application/catalog/catalog-types'
+import { canAnswer, canCancel, canFinalize, canForward } from '../application/ombudsman/ombudsman-policy'
 import { ombudsmanReplyLimits } from '../application/ombudsman/ombudsman-reply-limits'
 import type { OmbudsmanService, OmbudsmanStatusChange } from '../application/ombudsman/ombudsman-service'
 import { ConfirmDialog } from '../components/feedback/confirm-dialog'
@@ -152,6 +153,117 @@ function AnswerComposer({
           >
             {isSubmitting ? 'Enviando...' : 'Enviar resposta'}
             <Icon className="size-4" name="send" />
+          </button>
+        </div>
+        {error !== null ? (
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </form>
+    </section>
+  )
+}
+
+function ForwardAction({
+  catalog,
+  detail,
+  ombudsmanService,
+  onForwarded,
+}: {
+  catalog: Catalog | null
+  detail: ManifestationDetail
+  ombudsmanService: OmbudsmanService
+  onForwarded: () => void
+}) {
+  const fieldId = useId()
+  const [administrativeUnitId, setAdministrativeUnitId] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!canForward(detail)) {
+    return null
+  }
+
+  const campuses = catalog?.campuses ?? []
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (administrativeUnitId === '') {
+      setError('Selecione o setor responsável para encaminhar.')
+      return
+    }
+
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      await ombudsmanService.forwardToUnit({ administrativeUnitId, manifestationId: detail.id })
+      setAdministrativeUnitId('')
+      onForwarded()
+    } catch (forwardError) {
+      const message =
+        forwardError instanceof Error ? forwardError.message : 'Não foi possível encaminhar agora. Tente novamente.'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <section
+      aria-labelledby="ombudsman-forward-title"
+      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
+    >
+      <h3 className="text-xl font-black text-home-text" id="ombudsman-forward-title">
+        Encaminhar ao setor responsável
+      </h3>
+      <p className="mt-2 text-sm leading-6 text-home-brown">
+        Após acionar o setor responsável (por e-mail ou ofício), registre o encaminhamento aqui. O status passa para
+        “Aguardando setor” e o autor acompanha que a apuração está em andamento. Ao receber o retorno, responda
+        normalmente.
+      </p>
+
+      {detail.forwardedToUnit !== null ? (
+        <p className="mt-4 rounded-2xl bg-home-action/40 px-4 py-3 text-sm leading-6 text-home-text">
+          Aguardando retorno de <strong className="font-bold">{detail.forwardedToUnit.name}</strong>.
+        </p>
+      ) : null}
+
+      <form className="mt-4 grid gap-4" onSubmit={(event) => void handleSubmit(event)}>
+        <label className="text-sm font-bold text-home-text" htmlFor={fieldId}>
+          Setor responsável
+        </label>
+        <select
+          className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
+          disabled={isSubmitting || campuses.length === 0}
+          id={fieldId}
+          onChange={(event) => {
+            setAdministrativeUnitId(event.target.value)
+            setError(null)
+          }}
+          value={administrativeUnitId}
+        >
+          <option value="">Selecione um setor...</option>
+          {campuses.map((campus) => (
+            <optgroup key={campus.id} label={campus.label}>
+              {campus.administrativeUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <div className="flex justify-end">
+          <button
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+            disabled={isSubmitting || administrativeUnitId === ''}
+            type="submit"
+          >
+            {isSubmitting ? 'Encaminhando...' : 'Encaminhar ao setor'}
+            <Icon className="size-4" name="chevron-right" />
           </button>
         </div>
         {error !== null ? (
@@ -416,6 +528,12 @@ export function OmbudsmanManifestationDetailsPage() {
               <ManifestationTimelineCard history={detail.history} />
               <ManifestationMessagesThread messages={detail.messages} perspective="institutional" />
               <AnswerComposer detail={detail} ombudsmanService={ombudsmanService} onAnswered={refetch} />
+              <ForwardAction
+                catalog={catalog}
+                detail={detail}
+                ombudsmanService={ombudsmanService}
+                onForwarded={refetch}
+              />
               <StatusActions detail={detail} ombudsmanService={ombudsmanService} onChanged={refetch} />
             </div>
           ) : null}

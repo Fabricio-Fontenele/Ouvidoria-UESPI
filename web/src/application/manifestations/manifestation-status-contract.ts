@@ -1,4 +1,4 @@
-export type ManifestationStatus = 'answered' | 'canceled' | 'finalized' | 'in_analysis'
+export type ManifestationStatus = 'answered' | 'awaiting_unit' | 'canceled' | 'finalized' | 'in_analysis'
 
 export interface ManifestationStatusContract {
   filterLabel: string
@@ -13,6 +13,12 @@ export const manifestationStatusContracts: ManifestationStatusContract[] = [
     metricLabel: 'Em análise.',
     value: 'in_analysis',
     viewLabel: 'Em análise',
+  },
+  {
+    filterLabel: 'Aguardando setor',
+    metricLabel: 'Aguardando setor.',
+    value: 'awaiting_unit',
+    viewLabel: 'Aguardando setor',
   },
   {
     filterLabel: 'Respondidas',

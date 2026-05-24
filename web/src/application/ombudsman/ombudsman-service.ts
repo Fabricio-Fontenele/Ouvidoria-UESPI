@@ -37,8 +37,14 @@ export interface GetAdminAttachmentDownloadUrlInput {
   manifestationId: string
 }
 
+export interface ForwardManifestationToUnitInput {
+  administrativeUnitId: string
+  manifestationId: string
+}
+
 export interface OmbudsmanService {
   answer(input: AnswerManifestationInput): Promise<void>
+  forwardToUnit(input: ForwardManifestationToUnitInput): Promise<void>
   getAttachmentDownloadUrl(input: GetAdminAttachmentDownloadUrlInput): Promise<string>
   getById(id: string): Promise<ManifestationDetail>
   list(filters: OmbudsmanListFilters): Promise<OmbudsmanListResult>

@@ -13,6 +13,7 @@ function buildDetail(overrides: Partial<ManifestationDetail> = {}): Manifestatio
     campusId: 'campus-1',
     createdAt: '2026-05-01T10:00:00.000Z',
     description: 'Descrição da manifestação para os testes de policy.',
+    forwardedToUnit: null,
     history: [],
     id: 'manifestation-1',
     involvedPeople: null,

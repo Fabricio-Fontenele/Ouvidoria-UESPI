@@ -2,6 +2,7 @@ import type { ManifestationDetail } from '../../application/manifestations/manif
 import type { ManifestationSummary } from '../../application/manifestations/manifestation-summary-contract'
 import type {
   AnswerManifestationInput,
+  ForwardManifestationToUnitInput,
   GetAdminAttachmentDownloadUrlInput,
   OmbudsmanListFilters,
   OmbudsmanListResult,
@@ -43,6 +44,13 @@ export class HttpOmbudsmanService implements OmbudsmanService {
   async answer(input: AnswerManifestationInput): Promise<void> {
     await apiFetch<unknown>(`/admin/manifestations/${input.manifestationId}/answer`, {
       body: { content: input.content },
+      method: 'POST',
+    })
+  }
+
+  async forwardToUnit(input: ForwardManifestationToUnitInput): Promise<void> {
+    await apiFetch<unknown>(`/admin/manifestations/${input.manifestationId}/forward`, {
+      body: { administrativeUnitId: input.administrativeUnitId },
       method: 'POST',
     })
   }
