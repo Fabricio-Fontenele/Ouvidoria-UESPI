@@ -18,6 +18,11 @@ interface MenuItem {
   label: string
 }
 
+interface HeaderNavItem {
+  href: string
+  label: string
+}
+
 const manifestantMenuItems: MenuItem[] = [
   { href: routes.home, icon: 'home', label: 'Início' },
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
@@ -50,6 +55,12 @@ const publicMenuItems: MenuItem[] = [
   { href: `${routes.landing}#guara`, icon: 'message-circle', label: 'Fale com o Guará' },
   { href: routes.login, icon: 'user', label: 'Acessar sistema' },
   { href: routes.faq, icon: 'help', label: 'FAQ' },
+]
+
+const publicHeaderNavItems: HeaderNavItem[] = [
+  { href: `${routes.landing}#registro`, label: 'Registrar' },
+  { href: routes.track, label: 'Consultar' },
+  { href: routes.faq, label: 'FAQ' },
 ]
 
 const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -242,7 +253,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
   return (
     <>
       <header className="relative z-40 h-22 w-full flex-none bg-login-surface shadow-login-header md:h-24">
-        <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[52px_1fr_40px] items-center gap-3 px-5 min-[361px]:gap-6 min-[361px]:px-[34px] sm:px-8 md:h-22 md:grid-cols-[60px_1fr_52px] lg:px-12">
+        <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[52px_1fr_auto] items-center gap-3 px-5 min-[361px]:gap-6 min-[361px]:px-[34px] sm:px-8 md:h-22 md:grid-cols-[60px_minmax(0,1fr)_auto] lg:px-12">
           <a className="justify-self-start" href={homeHref} aria-label="Página inicial">
             <img
               alt="Brasão da UESPI"
@@ -250,20 +261,40 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
               src={uespiLogo}
             />
           </a>
-          <strong className="text-center text-lg leading-8 font-bold whitespace-nowrap text-login-blue min-[361px]:text-xl md:text-[22px]">
+          <strong
+            className={cx(
+              'text-center text-lg leading-8 font-bold whitespace-nowrap text-login-blue min-[361px]:text-xl md:text-[22px]',
+              !isAuthenticated && 'md:text-left',
+            )}
+          >
             Ouvidoria UESPI
           </strong>
-          <button
-            aria-controls="project-menu"
-            aria-expanded={isMenuOpen}
-            aria-label="Abrir menu"
-            className={cx(iconButtonClasses, 'justify-self-end')}
-            onClick={() => setIsMenuOpen(true)}
-            ref={menuButtonRef}
-            type="button"
-          >
-            <Icon className="size-[22px] md:size-6" name="menu" />
-          </button>
+          <div className="flex items-center justify-end gap-2 justify-self-end">
+            {!isAuthenticated ? (
+              <nav aria-label="Navegação principal" className="hidden items-center gap-1 md:flex">
+                {publicHeaderNavItems.map((item) => (
+                  <a
+                    className="inline-flex min-h-10 items-center justify-center rounded-lg px-3 text-sm leading-5 font-bold text-login-brown no-underline transition duration-150 hover:bg-login-blue/10 hover:text-login-blue active:bg-login-field focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue lg:px-4"
+                    href={item.href}
+                    key={item.label}
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
+            ) : null}
+            <button
+              aria-controls="project-menu"
+              aria-expanded={isMenuOpen}
+              aria-label="Abrir menu"
+              className={iconButtonClasses}
+              onClick={() => setIsMenuOpen(true)}
+              ref={menuButtonRef}
+              type="button"
+            >
+              <Icon className="size-[22px] md:size-6" name="menu" />
+            </button>
+          </div>
         </div>
       </header>
 
