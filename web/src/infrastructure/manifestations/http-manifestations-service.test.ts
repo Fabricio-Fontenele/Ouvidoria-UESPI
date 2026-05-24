@@ -102,6 +102,13 @@ describe('HttpManifestationsService attachments', () => {
           manifestations: [],
           page: 3,
           pageSize: 20,
+          statusTotals: {
+            answered: 10,
+            awaiting_unit: 8,
+            canceled: 3,
+            finalized: 20,
+            in_analysis: 50,
+          },
           totalItems: 91,
           totalPages: 5,
         }),
@@ -119,6 +126,13 @@ describe('HttpManifestationsService attachments', () => {
       manifestations: [],
       page: 3,
       pageSize: 20,
+      statusTotals: {
+        answered: 10,
+        awaiting_unit: 8,
+        canceled: 3,
+        finalized: 20,
+        in_analysis: 50,
+      },
       totalItems: 91,
       totalPages: 5,
     })

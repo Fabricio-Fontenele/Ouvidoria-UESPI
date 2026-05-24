@@ -2,6 +2,7 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { ManifestationListItemDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import { MANIFESTATIONS_PAGE_SIZE } from '#src/application/repositories/pagination-params.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
 import { ListAdminManifestationsUseCase } from '#src/application/use-cases/list-admin-manifestations/list-admin-manifestations-use-case.js'
 import { InvalidPageNumberError } from '#src/application/use-cases/list-user-manifestations/errors/invalid-page-number-error.js'
@@ -40,6 +41,13 @@ describe('ListAdminManifestationsUseCase', () => {
     authorUserId: 'user-1',
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
   })
+  const statusTotals = {
+    [ManifestationStatus.ANSWERED]: 5,
+    [ManifestationStatus.AWAITING_UNIT]: 4,
+    [ManifestationStatus.CANCELED]: 3,
+    [ManifestationStatus.FINALIZED]: 2,
+    [ManifestationStatus.IN_ANALYSIS]: 27,
+  }
 
   beforeEach(() => {
     manifestationsRepository = mockDeep<ManifestationsRepository>()
@@ -63,7 +71,7 @@ describe('ListAdminManifestationsUseCase', () => {
     }
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
-    manifestationsRepository.findManyForAdmin.mockResolvedValue({ manifestations, totalItems: 41 })
+    manifestationsRepository.findManyForAdmin.mockResolvedValue({ manifestations, statusTotals, totalItems: 41 })
 
     const result = await sut.execute({
       requesterUserId: 'ombudsman-1',
@@ -76,9 +84,10 @@ describe('ListAdminManifestationsUseCase', () => {
     expect(result).toStrictEqual({
       manifestations,
       page: 2,
-      pageSize: 20,
+      pageSize: MANIFESTATIONS_PAGE_SIZE,
+      statusTotals,
       totalItems: 41,
-      totalPages: 3,
+      totalPages: 14,
     })
   })
 
@@ -86,7 +95,7 @@ describe('ListAdminManifestationsUseCase', () => {
     const manifestations = [buildManifestation('manifestation-1')]
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.ADMIN, 'admin-1'))
-    manifestationsRepository.findManyForAdmin.mockResolvedValue({ manifestations, totalItems: 1 })
+    manifestationsRepository.findManyForAdmin.mockResolvedValue({ manifestations, statusTotals, totalItems: 1 })
 
     const result = await sut.execute({
       requesterUserId: 'admin-1',
@@ -97,7 +106,8 @@ describe('ListAdminManifestationsUseCase', () => {
     expect(result).toStrictEqual({
       manifestations,
       page: 1,
-      pageSize: 20,
+      pageSize: MANIFESTATIONS_PAGE_SIZE,
+      statusTotals,
       totalItems: 1,
       totalPages: 1,
     })

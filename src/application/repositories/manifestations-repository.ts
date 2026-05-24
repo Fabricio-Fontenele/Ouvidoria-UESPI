@@ -2,13 +2,14 @@ import type {
   ManifestationDetailsDTO,
   ManifestationListItemDTO,
 } from '#src/application/dto/manifestation-query-dtos.js'
-import type { Manifestation } from '#src/domain/entities/manifestation.js'
+import type { Manifestation, ManifestationStatus } from '#src/domain/entities/manifestation.js'
 
 import type { AdminManifestationFilters } from './admin-manifestation-filters.js'
 import type { PaginationParams } from './pagination-params.js'
 
 export interface ManifestationsPage {
   manifestations: ManifestationListItemDTO[]
+  statusTotals: Record<ManifestationStatus, number>
   totalItems: number
 }
 

@@ -4,10 +4,12 @@ import { buildGuaraNewManifestationHref, buildManifestationDetailsHref, routes }
 import { manifestantOnlyRoles } from '../app/access-policy'
 import type { Catalog } from '../application/catalog/catalog-types'
 import {
+  buildEmptyManifestationStatusTotals,
   getManifestationStatusContract,
   manifestationStatusContracts,
 } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
 import { getManifestationTypeLabel } from '../application/manifestations/manifestation-type-contract'
 import { searchManifestations } from '../application/manifestations/search-manifestations'
@@ -158,15 +160,13 @@ function GuaraChatTrigger() {
   )
 }
 
-function getMetrics(items: ManifestationSummary[]): Metric[] {
-  const total = items.length
-
+function getMetrics(statusTotals: ManifestationStatusTotals, totalItems: number): Metric[] {
   return [
-    { label: 'Totais.', value: String(total).padStart(2, '0') },
+    { label: 'Totais.', value: String(totalItems).padStart(2, '0') },
     ...manifestationStatusContracts.map((status) => ({
       colorClassName: getManifestationStatusStyle(status.value).textClassName,
       label: status.metricLabel,
-      value: String(items.filter((manifestation) => manifestation.status === status.value).length).padStart(2, '0'),
+      value: String(statusTotals[status.value]).padStart(2, '0'),
     })),
   ]
 }
@@ -341,6 +341,7 @@ export function HomePage() {
   const [listError, setListError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
+  const [statusTotals, setStatusTotals] = useState<ManifestationStatusTotals>(buildEmptyManifestationStatusTotals)
 
   useEffect(() => {
     let isMounted = true
@@ -357,6 +358,7 @@ export function HomePage() {
         }
 
         setItems(fetched.manifestations)
+        setStatusTotals(fetched.statusTotals)
         setPagination({
           page: fetched.page,
           pageSize: fetched.pageSize,
@@ -382,7 +384,7 @@ export function HomePage() {
     }
   }, [manifestationsService, page])
 
-  const metrics = useMemo(() => getMetrics(items), [items])
+  const metrics = useMemo(() => getMetrics(statusTotals, pagination.totalItems), [pagination.totalItems, statusTotals])
   const filteredManifestations = useMemo(
     () =>
       searchManifestations(

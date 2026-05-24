@@ -1,5 +1,6 @@
 import type { ManifestationDetail } from '../manifestations/manifestation-detail-contract'
 import type { ManifestationStatus } from '../manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../manifestations/manifestation-summary-contract'
 import type { ManifestationType } from '../manifestations/manifestation-type-contract'
 import type { PaginationMeta } from '../pagination/pagination-contract'
@@ -16,6 +17,7 @@ export interface OmbudsmanListFilters {
 
 export interface OmbudsmanListResult extends PaginationMeta {
   manifestations: ManifestationSummary[]
+  statusTotals: ManifestationStatusTotals
 }
 
 export type OmbudsmanStatusChange = 'canceled' | 'finalized'

@@ -70,7 +70,7 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
 
   async findManyByAuthorUserId(authorUserId: string, pagination: PaginationParams): Promise<ManifestationsPage> {
     const where: Prisma.ManifestationWhereInput = { authorUserId }
-    const [records, totalItems] = await this.prisma.$transaction([
+    const [records, totalItems, statusCounts] = await this.prisma.$transaction([
       this.prisma.manifestation.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -78,9 +78,14 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
         take: MANIFESTATIONS_PAGE_SIZE,
       }),
       this.prisma.manifestation.count({ where }),
+      this.prisma.manifestation.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
     ])
 
-    return { manifestations: records.map(toListItemDTO), totalItems }
+    return { manifestations: records.map(toListItemDTO), statusTotals: buildStatusTotals(statusCounts), totalItems }
   }
 
   async findManyForAdmin(
@@ -89,7 +94,7 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
   ): Promise<ManifestationsPage> {
     const where = buildAdminManifestationWhere(filters)
 
-    const [records, totalItems] = await this.prisma.$transaction([
+    const [records, totalItems, statusCounts] = await this.prisma.$transaction([
       this.prisma.manifestation.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -97,9 +102,14 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
         take: MANIFESTATIONS_PAGE_SIZE,
       }),
       this.prisma.manifestation.count({ where }),
+      this.prisma.manifestation.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
     ])
 
-    return { manifestations: records.map(toListItemDTO), totalItems }
+    return { manifestations: records.map(toListItemDTO), statusTotals: buildStatusTotals(statusCounts), totalItems }
   }
 
   async save(manifestation: Manifestation): Promise<void> {
@@ -115,6 +125,24 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
       },
     })
   }
+}
+
+function buildStatusTotals(
+  statusCounts: Array<{ status: PrismaManifestationStatus; _count: { _all: number } }>,
+): Record<ManifestationStatus, number> {
+  const totals: Record<ManifestationStatus, number> = {
+    [ManifestationStatus.ANSWERED]: 0,
+    [ManifestationStatus.AWAITING_UNIT]: 0,
+    [ManifestationStatus.CANCELED]: 0,
+    [ManifestationStatus.FINALIZED]: 0,
+    [ManifestationStatus.IN_ANALYSIS]: 0,
+  }
+
+  for (const count of statusCounts) {
+    totals[count.status as ManifestationStatus] = count._count._all
+  }
+
+  return totals
 }
 
 function buildAdminManifestationWhere(filters: AdminManifestationFilters): Prisma.ManifestationWhereInput {

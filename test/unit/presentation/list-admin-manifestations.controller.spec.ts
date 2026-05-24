@@ -39,7 +39,14 @@ describe('ListAdminManifestationsController', () => {
     useCase.execute.mockResolvedValue({
       manifestations: [],
       page: 1,
-      pageSize: 20,
+      pageSize: 3,
+      statusTotals: {
+        answered: 0,
+        awaiting_unit: 0,
+        canceled: 0,
+        finalized: 0,
+        in_analysis: 0,
+      },
       totalItems: 0,
       totalPages: 0,
     })

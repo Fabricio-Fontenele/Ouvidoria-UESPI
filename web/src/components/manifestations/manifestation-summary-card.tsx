@@ -85,9 +85,7 @@ export function ManifestationSummaryCard({
             Solicitante
           </p>
           {detail.author === null ? (
-            <p className="mt-3 text-base leading-7 font-semibold text-home-text">
-              Manifestação anônima
-            </p>
+            <p className="mt-3 text-base leading-7 font-semibold text-home-text">Manifestação anônima</p>
           ) : (
             <dl className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>

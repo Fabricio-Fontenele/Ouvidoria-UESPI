@@ -21,6 +21,8 @@ import type {
   RawTrackedManifestationDetail,
   TrackedManifestationDetail,
 } from '../../application/manifestations/tracked-manifestation-contract'
+import type { ManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
+import { buildEmptyManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
 import { mapTrackedManifestationDetail } from '../../application/manifestations/tracked-manifestation-contract'
 import { apiFetch, publicApiFetch } from '../http/api-client'
 
@@ -31,6 +33,7 @@ interface ListResponse {
   manifestations: ManifestationSummary[]
   page?: number
   pageSize?: number
+  statusTotals?: ManifestationStatusTotals
   totalItems?: number
   totalPages?: number
 }
@@ -128,6 +131,7 @@ export class HttpManifestationsService implements ManifestationsService {
       manifestations: response.manifestations,
       page: response.page ?? page,
       pageSize: response.pageSize ?? response.manifestations.length,
+      statusTotals: response.statusTotals ?? buildEmptyManifestationStatusTotals(),
       totalItems: response.totalItems ?? response.manifestations.length,
       totalPages: response.totalPages ?? 1,
     }

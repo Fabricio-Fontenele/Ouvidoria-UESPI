@@ -96,6 +96,13 @@ describe('HttpOmbudsmanService', () => {
           manifestations: [],
           page: 2,
           pageSize: 20,
+          statusTotals: {
+            answered: 12,
+            awaiting_unit: 9,
+            canceled: 4,
+            finalized: 16,
+            in_analysis: 20,
+          },
           totalItems: 61,
           totalPages: 4,
         }),
@@ -129,6 +136,13 @@ describe('HttpOmbudsmanService', () => {
       manifestations: [],
       page: 2,
       pageSize: 20,
+      statusTotals: {
+        answered: 12,
+        awaiting_unit: 9,
+        canceled: 4,
+        finalized: 16,
+        in_analysis: 20,
+      },
       totalItems: 61,
       totalPages: 4,
     })

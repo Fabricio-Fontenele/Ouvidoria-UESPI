@@ -10,6 +10,8 @@ import type {
   UpdateManifestationStatusInput,
 } from '../../application/ombudsman/ombudsman-service'
 import { apiFetch } from '../http/api-client'
+import type { ManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
+import { buildEmptyManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
 import type { RawManifestationDetail } from '../manifestations/manifestation-detail-mapper'
 import { mapManifestationDetail } from '../manifestations/manifestation-detail-mapper'
 
@@ -17,6 +19,7 @@ interface ListResponse {
   manifestations: ManifestationSummary[]
   page?: number
   pageSize?: number
+  statusTotals?: ManifestationStatusTotals
   totalItems?: number
   totalPages?: number
 }
@@ -80,6 +83,7 @@ export class HttpOmbudsmanService implements OmbudsmanService {
       manifestations: response.manifestations,
       page: response.page ?? requestedPage,
       pageSize: response.pageSize ?? response.manifestations.length,
+      statusTotals: response.statusTotals ?? buildEmptyManifestationStatusTotals(),
       totalItems: response.totalItems ?? response.manifestations.length,
       totalPages: response.totalPages ?? 1,
     }

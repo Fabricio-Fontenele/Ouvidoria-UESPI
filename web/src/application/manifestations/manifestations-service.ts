@@ -1,5 +1,6 @@
 import type { ManifestationDetail, ManifestationMessageEntry } from './manifestation-detail-contract'
 import type { ManifestationStatus } from './manifestation-status-contract'
+import type { ManifestationStatusTotals } from './manifestation-status-contract'
 import type { ManifestationSummary } from './manifestation-summary-contract'
 import type { ManifestationType } from './manifestation-type-contract'
 import type { PaginationMeta } from '../pagination/pagination-contract'
@@ -73,6 +74,7 @@ export interface AttachmentDownloadUrlResult {
 
 export interface ManifestationsListResult extends PaginationMeta {
   manifestations: ManifestationSummary[]
+  statusTotals: ManifestationStatusTotals
 }
 
 export interface ManifestationsService {
