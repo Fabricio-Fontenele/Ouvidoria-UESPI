@@ -1,117 +1,355 @@
-# Backend Core for the Institutional Ombudsman System
+<div align="center">
 
-This repository contains the backend core for the UESPI Institutional Ombudsman System.
+# 🦅 Ouvidoria UESPI
 
-The current scope is intentionally limited to the `domain` and `application` layers. Business rules should remain traceable to the PRD, Cockburn use cases, and feature specs under [doc/](./doc).
+### Sistema de Ouvidoria Institucional da Universidade Estadual do Piauí
 
-## Current Scope
+_Plataforma para registro, encaminhamento e acompanhamento de manifestações (denúncias, reclamações, sugestões e elogios), com um assistente virtual — o **Guará** — que orienta o cidadão e ajuda a montar o rascunho da manifestação._
 
-- `src/domain/`: entities and value objects
-- `src/application/`: use cases and infrastructure contracts
-- `test/unit/`: unit tests for domain and application behavior
-- `doc/`: PRD, Cockburn references, feature specs, and technical plans
+![Node](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-ESM-3178C6?logo=typescript&logoColor=white)
+![Fastify](https://img.shields.io/badge/Fastify-5-000000?logo=fastify&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-+pgvector-4169E1?logo=postgresql&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-v1-1C3C3C?logo=langchain&logoColor=white)
+![Gemini](https://img.shields.io/badge/Google_Gemini-RAG-8E75B2?logo=googlegemini&logoColor=white)
 
-Out of scope unless explicitly requested:
+</div>
 
-- HTTP controllers and transport layers
-- ORM models, migrations, and database adapters
-- queues, jobs, and background workers
-- direct filesystem, environment, or network integrations
+---
 
-## Stack
+## 📑 Sumário
 
-- Node.js 22
-- `pnpm` 10
-- TypeScript ESM with `NodeNext`
-- Vitest
-- ESLint + Prettier
+- [Sobre o projeto](#-sobre-o-projeto)
+- [Equipe](#-equipe)
+- [Arquitetura](#-arquitetura)
+- [Stack utilizada](#-stack-utilizada)
+- [Padrões de projeto](#-padrões-de-projeto)
+- [Estrutura de pastas](#-estrutura-de-pastas)
+- [Pré-requisitos](#-pré-requisitos)
+- [Passo a passo de instalação e execução](#-passo-a-passo-de-instalação-e-execução)
+- [Variáveis de ambiente](#-variáveis-de-ambiente)
+- [Comandos úteis](#-comandos-úteis)
+- [Testes e qualidade](#-testes-e-qualidade)
+- [Vocabulário de domínio](#-vocabulário-de-domínio)
 
-## Commands
+---
+
+## 🎯 Sobre o projeto
+
+A **Ouvidoria UESPI** é o canal oficial pelo qual a comunidade acadêmica e a sociedade comunicam demandas à universidade. Este repositório implementa a plataforma de ponta a ponta:
+
+- um **backend** em Clean Architecture (Fastify + Prisma) que cuida de autenticação, manifestações, encaminhamento às unidades responsáveis e trilha de auditoria;
+- um **frontend** em React para manifestantes, ouvidores e administradores;
+- um **microserviço de IA** (`ai-api`) que hospeda o assistente virtual **Guará**, capaz de responder dúvidas institucionais com base em documentos oficiais (RAG) e ajudar o usuário a preparar o rascunho de uma manifestação.
+
+As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn)** e às especificações em [`doc/`](./doc).
+
+> O **Guará** é inspirado no pássaro guará, ave típica do Delta do Parnaíba, no Piauí. Seu tom é acolhedor, simples e direto.
+
+---
+
+## 👥 Equipe
+
+Projeto desenvolvido para a Universidade Estadual do Piauí (UESPI).
+
+| Integrante                                                                  | Papel           |
+| --------------------------------------------------------------------------- | --------------- |
+| **Erick**                                                                   | Desenvolvimento |
+| **Fabricio** ([@Fabricio-Fontenele](https://github.com/Fabricio-Fontenele)) | Desenvolvimento |
+| **Gabriel**                                                                 | Desenvolvimento |
+| **Kauã**                                                                    | Desenvolvimento |
+
+**Orientador:** Prof. **Dário Brito Calçada**
+
+---
+
+## 🏛️ Arquitetura
+
+O sistema é dividido em **três aplicações** que se comunicam apenas por contratos bem definidos:
+
+```mermaid
+flowchart TB
+    subgraph Front["🖥️  web — React 19 + Vite + Tailwind"]
+        UI["Interface<br/>Manifestante · Ouvidor · Admin"]
+    end
+
+    subgraph Back["⚙️  ouvidoria-backend-core — Fastify + Prisma"]
+        direction TB
+        PRE["presentation<br/>controllers · validators"]
+        APP["application<br/>use cases · contratos (ports)"]
+        DOM["domain<br/>entidades · value objects"]
+        INF["infra<br/>Prisma · JWT · bcrypt · AiGateway"]
+        MAIN["main<br/>composition root · rotas Fastify"]
+        PRE --> APP
+        APP --> DOM
+        INF -. implementa .-> APP
+        MAIN --> PRE
+    end
+
+    subgraph IA["🦅  ai-api — microserviço RAG"]
+        RAG["LangChain v1 · Gemini · pgVector"]
+    end
+
+    UI -->|HTTP / JSON| MAIN
+    INF -->|"AiGateway (HTTP)"| RAG
+    MAIN --> DB[("PostgreSQL<br/>dados da ouvidoria")]
+    RAG --> VDB[("PostgreSQL + pgvector<br/>base de conhecimento")]
+```
+
+### Backend — Clean Architecture
+
+O fluxo de dependência aponta **sempre para dentro** (`domain` não conhece ninguém; `main` conhece todos):
+
+```
+domain → application → presentation → infra → main
+```
+
+- **`domain/`** — entidades (`Manifestation`, `User`, `ManifestationMessage`) e value objects (`Email`, `Password`, `Protocol`, `UniqueEntityId`). Puro: sem framework, banco, env ou rede. As **transições de status** vivem no agregado `Manifestation` (ex.: `recordAdministrativeAnswer()`, `transitionStatusAdministratively()`, `finalizeByAuthor()`).
+- **`application/`** — casos de uso (`UseCase<Input, Output>`) e os **contratos** (interfaces) de tudo que é infraestrutural: repositórios, criptografia, token, geração de protocolo e o `AiGateway`.
+- **`presentation/`** — camada HTTP agnóstica de framework (`BaseController`, `Validator<T>`); traduz entrada, chama o caso de uso e mapeia erros para semântica HTTP.
+- **`infra/`** — adapters concretos: Prisma (repositórios e mappers), `bcryptjs`, JWT, geradores de protocolo, e o `HttpAiGateway`/`FakeAiGateway`.
+- **`main/`** — composition root: `config/env.ts` (zod), `factories/` (wiring) e `routes/` (plugins Fastify).
+
+### Trilha de auditoria sem tabela de auditoria
+
+O histórico da manifestação é **reconstruído a partir das mensagens** (`manifestation_messages`): eventos como `status_changed` e `finalized_by_author` são mensagens **de sistema** cujo conteúdo é um JSON, persistidas na **mesma transação** (`$transaction`) da atualização do agregado — garantindo que o log nunca diverge do estado.
+
+### Microserviço de IA (`ai-api`)
+
+Pacote independente (`@ouvidoria/ai-api`) com seu próprio `package.json`, `tsconfig`, `docker-compose` (pgVector na porta 5433) e `.env`. O backend o consome **apenas** pelo contrato `AiGateway` (`src/infra/ai/http-ai-gateway.ts`) — não importa nada do `ai-api` em runtime. A escolha entre o `FakeAiGateway` (em processo) e o `HttpAiGateway` (real) é feita pela env `AI_GATEWAY_PROVIDER`.
+
+O **pipeline RAG**: documentos oficiais em `ai-api/docs/knowledge-base/` → _chunking_ ciente de cabeçalhos → embeddings (Gemini) → pgVector → recuperação por similaridade → montagem de prompt → resposta estruturada validada por zod.
+
+---
+
+## 🧰 Stack utilizada
+
+### Backend (`ouvidoria-backend-core`)
+
+| Categoria           | Tecnologia                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| Runtime / linguagem | Node.js 22 · TypeScript (ESM `NodeNext`)                                                 |
+| Gerenciador         | pnpm 10 (workspace)                                                                      |
+| HTTP                | Fastify 5 (`@fastify/jwt`, `@fastify/cors`, `@fastify/rate-limit`, `@fastify/multipart`) |
+| Banco / ORM         | PostgreSQL · Prisma 7 (`@prisma/adapter-pg`)                                             |
+| Validação           | Zod 4                                                                                    |
+| Auth / cripto       | `jsonwebtoken` (HS256) · `bcryptjs`                                                      |
+| Testes / qualidade  | Vitest · ESLint (strict + type-checked) · Prettier                                       |
+
+### Microserviço de IA (`@ouvidoria/ai-api`)
+
+| Categoria | Tecnologia                                                                     |
+| --------- | ------------------------------------------------------------------------------ |
+| HTTP      | Fastify 5 · `@fastify/helmet`                                                  |
+| IA / RAG  | LangChain v1 (`@langchain/community`, `core`, `google-genai`, `textsplitters`) |
+| Modelo    | Google Gemini (chat + embeddings)                                              |
+| Vetores   | PostgreSQL + `pgvector`                                                        |
+
+### Frontend (`web`)
+
+| Categoria   | Tecnologia                                    |
+| ----------- | --------------------------------------------- |
+| UI          | React 19 · Vite                               |
+| Estilo      | Tailwind CSS 4                                |
+| Formulários | React Hook Form + `@hookform/resolvers` + Zod |
+| Testes      | Vitest                                        |
+
+---
+
+## 🧩 Padrões de projeto
+
+| Padrão                                    | Onde aparece                                                                                                   |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Clean Architecture / Ports & Adapters** | Separação `domain → application → presentation → infra → main`; contratos na aplicação, adapters na infra      |
+| **Use Case**                              | Toda regra de negócio implementa `UseCase<Input, Output>` com um único `execute()`                             |
+| **Repository**                            | `ManifestationsRepository`, `UsersRepository`, `CatalogRepository`… (interfaces na aplicação, Prisma na infra) |
+| **Gateway**                               | `AiGateway` isola o microserviço de IA do backend                                                              |
+| **Strategy (via env)**                    | `FakeAiGateway` × `HttpAiGateway` selecionados por `AI_GATEWAY_PROVIDER`                                       |
+| **Decorator**                             | `CachedCatalogRepository` envolve o repositório de catálogo com cache + TTL                                    |
+| **Composition Root / Factory**            | `src/main/factories/*` montam casos de uso + validadores + adapters                                            |
+| **Aggregate Root**                        | `Manifestation` concentra invariantes e transições de status                                                   |
+| **Value Object**                          | `Email`, `Password`, `Protocol`, `UniqueEntityId`                                                              |
+| **DTO**                                   | DTOs de leitura (query-side) na aplicação                                                                      |
+| **RAG (Retrieval-Augmented Generation)**  | Pipeline de ingestão + recuperação no `ai-api`                                                                 |
+
+---
+
+## 📁 Estrutura de pastas
+
+```
+projeto-ouvidoria/
+├── src/                      # Backend (ouvidoria-backend-core)
+│   ├── domain/               # entidades + value objects (puro)
+│   ├── application/          # casos de uso + contratos (ports)
+│   ├── presentation/         # controllers + validators (agnóstico de framework)
+│   ├── infra/                # Prisma, JWT, bcrypt, AiGateway…
+│   └── main/                 # composition root + rotas Fastify
+├── prisma/                   # schema, migrations e seed
+├── test/                     # testes (unit/ e e2e/) espelhando src/
+├── ai-api/                   # microserviço de IA (RAG + Gemini)
+│   ├── src/                  # mesma estrutura em camadas
+│   └── docs/knowledge-base/  # documentos oficiais ingeridos (RAG)
+├── web/                      # frontend React + Vite + Tailwind
+├── doc/                      # PRD, casos de uso (Cockburn), specs, planos
+├── docker-compose.yml        # stack completa (2 Postgres + ai-api + backend + web)
+└── README.md
+```
+
+---
+
+## ✅ Pré-requisitos
+
+- **Node.js 22** (`>=22 <23`)
+- **pnpm 10** (`npm i -g pnpm`)
+- **Docker** + Docker Compose (para os bancos PostgreSQL)
+- Uma **chave da API do Google Gemini** (Google AI Studio) — necessária para o `ai-api`
+
+---
+
+## 🚀 Passo a passo de instalação e execução
+
+> Há dois caminhos: **(A) tudo via Docker** (mais rápido para ver rodando) e **(B) desenvolvimento local** (hot-reload em cada serviço). Comece clonando o repositório.
 
 ```bash
-pnpm build
-pnpm type:check
-pnpm lint
-pnpm format
-pnpm test
-pnpm test:coverage
+git clone https://github.com/Fabricio-Fontenele/Ouvidoria-UESPI.git
+cd Ouvidoria-UESPI
+pnpm install
+```
+
+### A) Subir a stack completa via Docker
+
+```bash
+# 1. Configure os arquivos de ambiente (veja a seção "Variáveis de ambiente")
+cp .env.example .env                 # backend
+cp ai-api/.env.sample ai-api/.env    # ai-api  (coloque sua GOOGLE_API_KEY aqui)
+
+# 2. Suba tudo (2 Postgres + ai-api + backend + web)
+docker compose up -d --build
+
+# 3. ⚠️ Ingerir a base de conhecimento do Guará (o índice começa VAZIO)
+docker compose exec ai-api pnpm ingest:reset
+
+# 4. Verifique a saúde
+curl localhost:3333/health     # backend  -> {"status":"ok"}
+curl localhost:4000/ready      # ai-api   -> hasIndexedChunks:true
+```
+
+Acesse o frontend em **http://localhost:5173**.
+
+### B) Desenvolvimento local (hot-reload)
+
+```bash
+# 1. Suba apenas os bancos
+pnpm db:up                                   # Postgres do backend (porta 5432)
+pnpm --filter @ouvidoria/ai-api db:up        # pgVector do ai-api  (porta 5433)
+
+# 2. Backend: aplique migrations + seed
+pnpm prisma migrate deploy
+pnpm db:seed
+
+# 3. ai-api: ingerir a base de conhecimento (chamadas reais de embedding)
+pnpm --filter @ouvidoria/ai-api ingest:reset
+
+# 4. Rode os três serviços (terminais separados)
+pnpm --filter @ouvidoria/ai-api dev          # ai-api  -> :4000
+pnpm dev                                     # backend -> :3333
+pnpm --filter web dev                        # web     -> :5173
+```
+
+> 💡 O backend usa a flag `--env-file` do Node 22 para carregar o `.env` **antes** de qualquer `import`, evitando a corrida de carregamento do Prisma (`DATABASE_URL must be set...`).
+
+---
+
+## 🔐 Variáveis de ambiente
+
+**Backend (`.env`)** — destaques:
+
+| Variável                | Descrição                                                            |
+| ----------------------- | -------------------------------------------------------------------- |
+| `DATABASE_URL`          | conexão do Postgres principal                                        |
+| `JWT_SECRET`            | segredo HS256 para os tokens                                         |
+| `AI_GATEWAY_PROVIDER`   | `http` (usa o `ai-api`) ou `fake` (em processo)                      |
+| `AI_SERVICE_BASE_URL`   | URL do `ai-api` (ex.: `http://localhost:4000`)                       |
+| `AI_SERVICE_API_KEY`    | chave compartilhada — **deve ser igual** ao `AI_API_KEY` do `ai-api` |
+| `AI_SERVICE_TIMEOUT_MS` | timeout da chamada ao `ai-api` (padrão 30000)                        |
+
+**`ai-api/.env`** — destaques:
+
+| Variável                                             | Descrição                                               |
+| ---------------------------------------------------- | ------------------------------------------------------- |
+| `GOOGLE_API_KEY`                                     | chave do Google Gemini                                  |
+| `GOOGLE_CHAT_MODEL`                                  | modelo de chat (recomendado: `models/gemini-2.5-flash`) |
+| `GOOGLE_EMBEDDING_MODEL` / `GOOGLE_EMBEDDING_DIMS`   | modelo e dimensões dos embeddings                       |
+| `AI_API_KEY`                                         | chave compartilhada com o backend                       |
+| `RAG_TOP_K` / `RAG_CHUNK_SIZE` / `RAG_CHUNK_OVERLAP` | parâmetros do RAG                                       |
+
+> Os arquivos `.env` **não** são versionados. Use `.env.example` e `ai-api/.env.sample` como base.
+
+---
+
+## 🛠️ Comandos úteis
+
+**Backend (raiz):**
+
+```bash
+pnpm dev              # servidor com hot-reload
+pnpm build            # compila para build/
+pnpm test             # testes unitários (Vitest)
+pnpm test:e2e         # testes e2e (requer Postgres via pnpm db:up)
+pnpm check            # gate completo: format + lint + type-check + unit
+pnpm db:up / db:down  # Postgres via Docker
+pnpm db:seed          # popula catálogo (campi/unidades) e usuários demo
+```
+
+**ai-api:**
+
+```bash
+pnpm --filter @ouvidoria/ai-api dev            # servidor :4000
+pnpm --filter @ouvidoria/ai-api ingest:reset   # reconstrói o índice vetorial
+pnpm --filter @ouvidoria/ai-api test           # testes
+```
+
+**web:**
+
+```bash
+pnpm --filter web dev      # Vite dev server :5173
+pnpm --filter web build    # build de produção
+```
+
+---
+
+## 🧪 Testes e qualidade
+
+- **Unitários** (`test/unit/`) espelham a árvore de produção; mock via `vitest-mock-extended` contra os **contratos** — sem banco/HTTP/cripto reais.
+- **E2E** (`test/e2e/`) rodam contra um Postgres real, cada spec em um schema isolado (`e2e_<uuid>`).
+- **Gate local** antes de abrir PR:
+
+```bash
 pnpm check
 ```
 
-Run a single spec with:
+A tipagem é **estrita** (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`…) e o ESLint roda o preset **strict + type-checked**.
 
-```bash
-pnpm vitest run test/unit/application/sign-in-use-case.spec.ts
-```
+---
 
-Database and Prisma helpers:
+## 📚 Vocabulário de domínio
 
-```bash
-pnpm db:up
-pnpm db:down
-pnpm db:logs
-pnpm prisma:format
-pnpm prisma:validate
-```
+Termos canônicos — usados de forma consistente em todo o código (não use `ticket`, `issue` ou `chamado`):
 
-## Local Database
+- **`User`** — papéis: `manifestant`, `ombudsman`, `admin`
+- **`Manifestation`**, **`Protocol`**, **`Attachment`**
+- **`ManifestationType`**: `report` (denúncia) · `complaint` (reclamação) · `suggestion` (sugestão) · `compliment` (elogio)
+- **`ManifestationStatus`**: `in_analysis` · `answered` · `canceled` · `finalized`
 
-The repository includes a local PostgreSQL setup via Docker Compose for Prisma-based persistence work.
+---
 
-1. Copy the environment file:
+<div align="center">
 
-```bash
-cp .env.example .env
-```
+Desenvolvido com 💚 por **Erick · Fabricio · Gabriel · Kauã** — orientação do Prof. **Dário Brito Calçada**
+<br/>
+Universidade Estadual do Piauí — UESPI
 
-2. Start the database:
-
-```bash
-pnpm db:up
-```
-
-3. Check container logs if needed:
-
-```bash
-pnpm db:logs
-```
-
-The default connection string is:
-
-```bash
-postgresql://postgres:postgres@localhost:5432/ouvidoria?schema=public
-```
-
-This matches the value documented in `.env.example`.
-
-To stop the local database:
-
-```bash
-pnpm db:down
-```
-
-## Architecture Rules
-
-- `src/domain/` must stay independent from application, framework, and infrastructure code.
-- `src/application/` may depend on domain objects and application contracts, but not on concrete implementations.
-- Repository, cryptography, token, protocol, and AI dependencies must remain interfaces in the application layer.
-- Use cases orchestrate flows and delegate invariants to domain entities and value objects.
-
-## Domain Vocabulary
-
-Use the current project terms consistently:
-
-- `User` with roles `manifestant`, `ombudsman`, and `admin`
-- `Manifestation`, `Protocol`, and `Attachment`
-- `ManifestationType`: `report`, `complaint`, `suggestion`, `compliment`
-- `ManifestationStatus`: `in_analysis`, `answered`, `canceled`, `finalized`
-
-## Quality Gate
-
-Before opening a PR, run:
-
-```bash
-pnpm check
-```
-
-Prefer `pnpm test:coverage` when touching central business behavior.
+</div>
