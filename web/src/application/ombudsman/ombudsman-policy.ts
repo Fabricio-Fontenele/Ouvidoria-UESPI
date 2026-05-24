@@ -13,5 +13,5 @@ export function canCancel(detail: ManifestationDetail): boolean {
 }
 
 export function canForward(detail: ManifestationDetail): boolean {
-  return detail.status === 'in_analysis' || detail.status === 'awaiting_unit'
+  return detail.status === 'in_analysis'
 }

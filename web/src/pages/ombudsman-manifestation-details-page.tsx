@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { ombudsmanAreaRoles } from '../app/access-policy'
 import { getSearchParams, routes } from '../app/routes'
@@ -173,6 +173,13 @@ function normalizeText(value: string): string {
     .trim()
 }
 
+interface SectorOption {
+  campusLabel: string
+  id: string
+  label: string
+  searchText: string
+}
+
 function ForwardAction({
   catalog,
   detail,
@@ -184,33 +191,52 @@ function ForwardAction({
   ombudsmanService: OmbudsmanService
   onForwarded: () => void
 }) {
-  const fieldId = useId()
-  const searchFieldId = useId()
+  const inputId = useId()
+  const listboxId = useId()
   const [administrativeUnitId, setAdministrativeUnitId] = useState('')
-  const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (containerRef.current !== null && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [])
 
   if (!canForward(detail)) {
     return null
   }
 
-  const campuses = catalog?.campuses ?? []
-  const normalizedSearch = normalizeText(search)
-  const filteredCampuses =
-    normalizedSearch === ''
-      ? campuses
-      : campuses
-          .map((campus) => {
-            const campusMatches =
-              normalizeText(campus.label).includes(normalizedSearch) ||
-              (campus.city !== null && normalizeText(campus.city).includes(normalizedSearch))
-            const administrativeUnits = campusMatches
-              ? campus.administrativeUnits
-              : campus.administrativeUnits.filter((unit) => normalizeText(unit.label).includes(normalizedSearch))
-            return { ...campus, administrativeUnits }
-          })
-          .filter((campus) => campus.administrativeUnits.length > 0)
+  const options: SectorOption[] = (catalog?.campuses ?? []).flatMap((campus) => {
+    const campusLabel = campus.city !== null ? `${campus.label} (${campus.city})` : campus.label
+    return campus.administrativeUnits.map((unit) => ({
+      campusLabel,
+      id: unit.id,
+      label: unit.label,
+      searchText: normalizeText(`${unit.label} ${campus.label} ${campus.city ?? ''}`),
+    }))
+  })
+  const normalizedQuery = normalizeText(query)
+  const matches =
+    normalizedQuery === '' ? options : options.filter((option) => option.searchText.includes(normalizedQuery))
+  const hasCatalog = options.length > 0
+
+  function selectOption(option: SectorOption) {
+    setAdministrativeUnitId(option.id)
+    setQuery(`${option.label} — ${option.campusLabel}`)
+    setIsOpen(false)
+    setError(null)
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -226,6 +252,7 @@ function ForwardAction({
     try {
       await ombudsmanService.forwardToUnit({ administrativeUnitId, manifestationId: detail.id })
       setAdministrativeUnitId('')
+      setQuery('')
       onForwarded()
     } catch (forwardError) {
       const message =
@@ -257,52 +284,58 @@ function ForwardAction({
       ) : null}
 
       <form className="mt-4 grid gap-4" onSubmit={(event) => void handleSubmit(event)}>
-        <div className="grid gap-2">
-          <label className="text-sm font-bold text-home-text" htmlFor={searchFieldId}>
-            Buscar setor
-          </label>
-          <input
-            className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none placeholder:text-home-brown/70 focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSubmitting || campuses.length === 0}
-            id={searchFieldId}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Filtrar por setor, campus ou cidade..."
-            type="search"
-            value={search}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <label className="text-sm font-bold text-home-text" htmlFor={fieldId}>
+        <div className="grid gap-2" ref={containerRef}>
+          <label className="text-sm font-bold text-home-text" htmlFor={inputId}>
             Setor responsável
           </label>
-          <select
-            className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSubmitting || campuses.length === 0}
-            id={fieldId}
-            onChange={(event) => {
-              setAdministrativeUnitId(event.target.value)
-              setError(null)
-            }}
-            value={administrativeUnitId}
-          >
-            <option value="">Selecione um setor...</option>
-            {filteredCampuses.map((campus) => (
-              <optgroup
-                key={campus.id}
-                label={campus.city !== null ? `${campus.label} (${campus.city})` : campus.label}
+          <div className="relative">
+            <input
+              aria-autocomplete="list"
+              aria-controls={listboxId}
+              aria-expanded={isOpen}
+              autoComplete="off"
+              className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none placeholder:text-home-brown/70 focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={isSubmitting || !hasCatalog}
+              id={inputId}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setAdministrativeUnitId('')
+                setIsOpen(true)
+                setError(null)
+              }}
+              onFocus={() => setIsOpen(true)}
+              placeholder="Digite para buscar o setor (nome, campus ou cidade)..."
+              role="combobox"
+              type="text"
+              value={query}
+            />
+            {isOpen && hasCatalog ? (
+              <ul
+                className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-login-brown/10 bg-white py-1 shadow-login-frame"
+                id={listboxId}
+                role="listbox"
               >
-                {campus.administrativeUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          {filteredCampuses.length === 0 && search.trim() !== '' ? (
-            <p className="text-xs text-home-brown">Nenhum setor encontrado para “{search}”.</p>
-          ) : null}
+                {matches.length === 0 ? (
+                  <li className="px-4 py-3 text-sm leading-6 text-home-brown">Nenhum setor encontrado.</li>
+                ) : (
+                  matches.map((option) => (
+                    <li aria-selected={option.id === administrativeUnitId} key={option.id} role="option">
+                      <button
+                        className="block w-full px-4 py-2 text-left transition duration-150 hover:bg-home-action/60 focus-visible:bg-home-action/60 focus-visible:outline-none"
+                        onClick={() => {
+                          selectOption(option)
+                        }}
+                        type="button"
+                      >
+                        <span className="block text-sm font-semibold text-home-text">{option.label}</span>
+                        <span className="block text-xs text-home-brown">{option.campusLabel}</span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            ) : null}
+          </div>
         </div>
         <div className="flex justify-end">
           <button

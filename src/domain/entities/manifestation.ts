@@ -150,10 +150,7 @@ export class Manifestation extends Entity<ManifestationProps> {
   }
 
   forwardToUnit(administrativeUnitId: AdministrativeUnitId): void {
-    if (
-      this.props.status !== ManifestationStatus.IN_ANALYSIS &&
-      this.props.status !== ManifestationStatus.AWAITING_UNIT
-    ) {
+    if (this.props.status !== ManifestationStatus.IN_ANALYSIS) {
       throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.AWAITING_UNIT)
     }
 

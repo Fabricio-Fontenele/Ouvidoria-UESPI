@@ -103,4 +103,5 @@ como follow-up; este design cobre o contrato de backend.
 - Nome do status: `awaiting_unit` (vocabulário `AdministrativeUnit`).
 - Manifestante vê o **nome** do setor (transparente; a manifestação já exibe a
   unidade dela).
-- Re-encaminhar permitido enquanto `awaiting_unit` (troca o setor-alvo).
+- Encaminhar só a partir de `in_analysis`. Uma vez em `awaiting_unit`, **não** é permitido
+  reencaminhar — o ouvidor aguarda o retorno e então responde (ou volta a análise/cancela).
