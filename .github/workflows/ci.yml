@@ -70,7 +70,6 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           port: ${{ secrets.VM_SSH_PORT }}
-          script_stop: true
           script: |
             set -e
             cd ~/projects/Ouvidoria-UESPI
