@@ -13,11 +13,18 @@ export interface ManifestationsPage {
   totalItems: number
 }
 
+export interface ManifestationMetrics {
+  statusTotals: Record<ManifestationStatus, number>
+  totalItems: number
+}
+
 export interface ManifestationsRepository {
   findById(manifestationId: string): Promise<Manifestation | null>
   findByProtocol(protocol: string): Promise<Manifestation | null>
   findDetailsById(manifestationId: string): Promise<ManifestationDetailsDTO | null>
   findManyByAuthorUserId(authorUserId: string, paginationParams: PaginationParams): Promise<ManifestationsPage>
   findManyForAdmin(filters: AdminManifestationFilters, paginationParams: PaginationParams): Promise<ManifestationsPage>
+  getMetricsByAuthorUserId(authorUserId: string): Promise<ManifestationMetrics>
+  getMetricsForAdmin(filters: AdminManifestationFilters): Promise<ManifestationMetrics>
   save(manifestation: Manifestation): Promise<void>
 }

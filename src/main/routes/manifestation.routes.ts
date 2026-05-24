@@ -18,6 +18,7 @@ import {
   makeGetManifestationDetailsController,
   makeGetTrackedManifestationAttachmentDownloadUrlController,
   makeGetTrackedManifestationDetailsController,
+  makeGetUserManifestationMetricsController,
   makeListUserManifestationsController,
   makeRegisterManifestationController,
   makeTrackManifestationByProtocolController,
@@ -63,6 +64,12 @@ export async function registerManifestationRoutes(app: FastifyInstance): Promise
     '/manifestations',
     { preHandler: [...authenticatedManifestant] },
     adaptRoute(makeListUserManifestationsController()),
+  )
+
+  app.get(
+    '/manifestations/metrics',
+    { preHandler: [...authenticatedManifestant] },
+    adaptRoute(makeGetUserManifestationMetricsController()),
   )
 
   app.get(

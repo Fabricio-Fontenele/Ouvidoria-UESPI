@@ -341,7 +341,38 @@ export function HomePage() {
   const [listError, setListError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
+  const [metricsTotalItems, setMetricsTotalItems] = useState(0)
   const [statusTotals, setStatusTotals] = useState<ManifestationStatusTotals>(buildEmptyManifestationStatusTotals)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadMetrics() {
+      try {
+        const result = await manifestationsService.getMetrics()
+
+        if (!isMounted) {
+          return
+        }
+
+        setMetricsTotalItems(result.totalItems)
+        setStatusTotals(result.statusTotals)
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setMetricsTotalItems(0)
+        setStatusTotals(buildEmptyManifestationStatusTotals())
+      }
+    }
+
+    void loadMetrics()
+
+    return () => {
+      isMounted = false
+    }
+  }, [manifestationsService])
 
   useEffect(() => {
     let isMounted = true
@@ -358,7 +389,6 @@ export function HomePage() {
         }
 
         setItems(fetched.manifestations)
-        setStatusTotals(fetched.statusTotals)
         setPagination({
           page: fetched.page,
           pageSize: fetched.pageSize,
@@ -384,7 +414,7 @@ export function HomePage() {
     }
   }, [manifestationsService, page])
 
-  const metrics = useMemo(() => getMetrics(statusTotals, pagination.totalItems), [pagination.totalItems, statusTotals])
+  const metrics = useMemo(() => getMetrics(statusTotals, metricsTotalItems), [metricsTotalItems, statusTotals])
   const filteredManifestations = useMemo(
     () =>
       searchManifestations(

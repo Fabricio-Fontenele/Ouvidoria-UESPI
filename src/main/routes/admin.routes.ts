@@ -9,6 +9,7 @@ import {
   makeForwardManifestationToUnitController,
   makeGetAdminManifestationAttachmentDownloadUrlController,
   makeGetAdminManifestationDetailsController,
+  makeGetAdminManifestationMetricsController,
   makeListAdminManifestationsController,
   makeUpdateManifestationStatusController,
 } from '../factories/controllers/admin.js'
@@ -17,6 +18,8 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
   const preHandler = [ensureAuthenticated, requireRoles(UserRole.OMBUDSMAN, UserRole.ADMIN)]
 
   app.get('/admin/manifestations', { preHandler }, adaptRoute(makeListAdminManifestationsController()))
+
+  app.get('/admin/manifestations/metrics', { preHandler }, adaptRoute(makeGetAdminManifestationMetricsController()))
 
   app.get(
     '/admin/manifestations/:manifestationId',

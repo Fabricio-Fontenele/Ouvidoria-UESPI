@@ -4,6 +4,7 @@ import type {
   AnswerManifestationInput,
   ForwardManifestationToUnitInput,
   GetAdminAttachmentDownloadUrlInput,
+  OmbudsmanMetricsResult,
   OmbudsmanListFilters,
   OmbudsmanListResult,
   OmbudsmanService,
@@ -22,6 +23,11 @@ interface ListResponse {
   statusTotals?: ManifestationStatusTotals
   totalItems?: number
   totalPages?: number
+}
+
+interface MetricsResponse {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
 }
 
 interface DetailResponse {
@@ -71,6 +77,12 @@ export class HttpOmbudsmanService implements OmbudsmanService {
   async getById(id: string): Promise<ManifestationDetail> {
     const response = await apiFetch<DetailResponse>(`/admin/manifestations/${id}`)
     return mapManifestationDetail(response.manifestation)
+  }
+
+  async getMetrics(filters: Omit<OmbudsmanListFilters, 'page' | 'status'>): Promise<OmbudsmanMetricsResult> {
+    return apiFetch<MetricsResponse>('/admin/manifestations/metrics', {
+      query: buildListQuery({ ...filters, page: undefined, status: undefined }),
+    })
   }
 
   async list(filters: OmbudsmanListFilters): Promise<OmbudsmanListResult> {

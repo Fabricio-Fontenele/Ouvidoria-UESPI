@@ -77,6 +77,11 @@ export interface ManifestationsListResult extends PaginationMeta {
   statusTotals: ManifestationStatusTotals
 }
 
+export interface ManifestationMetricsResult {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
+}
+
 export interface ManifestationsService {
   addMessage(input: AddMessageInput): Promise<ManifestationMessageEntry>
   create(input: CreateManifestationInput): Promise<CreateManifestationResult>
@@ -84,6 +89,7 @@ export interface ManifestationsService {
   finalize(manifestationId: string): Promise<void>
   getAttachmentDownloadUrl(input: GetManifestationAttachmentDownloadUrlInput): Promise<string>
   getById(id: string): Promise<ManifestationDetail>
+  getMetrics(): Promise<ManifestationMetricsResult>
   getTrackedAttachmentDownloadUrl(input: GetTrackedManifestationAttachmentDownloadUrlInput): Promise<string>
   getTrackedDetails(input: TrackManifestationInput): Promise<TrackedManifestationDetail>
   list(page?: number): Promise<ManifestationsListResult>

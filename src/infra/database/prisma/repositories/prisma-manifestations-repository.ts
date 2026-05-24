@@ -15,6 +15,7 @@ import type {
 } from '#src/application/dto/manifestation-query-dtos.js'
 import type { AdminManifestationFilters } from '#src/application/repositories/admin-manifestation-filters.js'
 import type {
+  ManifestationMetrics,
   ManifestationsPage,
   ManifestationsRepository,
 } from '#src/application/repositories/manifestations-repository.js'
@@ -112,6 +113,15 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
     return { manifestations: records.map(toListItemDTO), statusTotals: buildStatusTotals(statusCounts), totalItems }
   }
 
+  async getMetricsByAuthorUserId(authorUserId: string): Promise<ManifestationMetrics> {
+    const where: Prisma.ManifestationWhereInput = { authorUserId }
+    return this.getMetrics(where)
+  }
+
+  async getMetricsForAdmin(filters: AdminManifestationFilters): Promise<ManifestationMetrics> {
+    return this.getMetrics(buildAdminManifestationWhere(filters))
+  }
+
   async save(manifestation: Manifestation): Promise<void> {
     const data = manifestationMapper.toPersistence(manifestation)
     await this.prisma.manifestation.upsert({
@@ -124,6 +134,19 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
         attendantUserId: data.attendantUserId,
       },
     })
+  }
+
+  private async getMetrics(where: Prisma.ManifestationWhereInput): Promise<ManifestationMetrics> {
+    const [totalItems, statusCounts] = await this.prisma.$transaction([
+      this.prisma.manifestation.count({ where }),
+      this.prisma.manifestation.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+    ])
+
+    return { statusTotals: buildStatusTotals(statusCounts), totalItems }
   }
 }
 

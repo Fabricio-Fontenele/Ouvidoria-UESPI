@@ -11,6 +11,7 @@ import type {
   EvaluateInput,
   GetManifestationAttachmentDownloadUrlInput,
   GetTrackedManifestationAttachmentDownloadUrlInput,
+  ManifestationMetricsResult,
   ManifestationsListResult,
   ManifestationsService,
   TrackManifestationInput,
@@ -36,6 +37,11 @@ interface ListResponse {
   statusTotals?: ManifestationStatusTotals
   totalItems?: number
   totalPages?: number
+}
+
+interface MetricsResponse {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
 }
 
 interface DetailResponse {
@@ -99,6 +105,10 @@ export class HttpManifestationsService implements ManifestationsService {
   async getById(id: string): Promise<ManifestationDetail> {
     const response = await apiFetch<DetailResponse>(`/manifestations/${id}`)
     return mapManifestationDetail(response.manifestation)
+  }
+
+  async getMetrics(): Promise<ManifestationMetricsResult> {
+    return apiFetch<MetricsResponse>('/manifestations/metrics')
   }
 
   async getTrackedAttachmentDownloadUrl(input: GetTrackedManifestationAttachmentDownloadUrlInput): Promise<string> {

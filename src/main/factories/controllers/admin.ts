@@ -3,6 +3,7 @@ import { z, type ZodType } from 'zod'
 import { AnswerManifestationUseCase } from '#src/application/use-cases/answer-manifestation/answer-manifestation-use-case.js'
 import { ForwardManifestationToUnitUseCase } from '#src/application/use-cases/forward-manifestation-to-unit/forward-manifestation-to-unit-use-case.js'
 import { GetAdminManifestationDetailsUseCase } from '#src/application/use-cases/get-admin-manifestation-details/get-admin-manifestation-details-use-case.js'
+import { GetAdminManifestationMetricsUseCase } from '#src/application/use-cases/get-admin-manifestation-metrics/get-admin-manifestation-metrics-use-case.js'
 import { ListAdminManifestationsUseCase } from '#src/application/use-cases/list-admin-manifestations/list-admin-manifestations-use-case.js'
 import { GetAdminManifestationAttachmentDownloadUrlUseCase } from '#src/application/use-cases/manifestation-attachments/get-admin-manifestation-attachment-download-url-use-case.js'
 import { UpdateManifestationStatusUseCase } from '#src/application/use-cases/update-manifestation-status/update-manifestation-status-use-case.js'
@@ -12,6 +13,7 @@ import { AnswerManifestationController } from '#src/presentation/controllers/adm
 import { ForwardManifestationToUnitController } from '#src/presentation/controllers/admin/forward-manifestation-to-unit.controller.js'
 import { GetAdminManifestationAttachmentDownloadUrlController } from '#src/presentation/controllers/admin/get-admin-manifestation-attachment-download-url.controller.js'
 import { GetAdminManifestationDetailsController } from '#src/presentation/controllers/admin/get-admin-manifestation-details.controller.js'
+import { GetAdminManifestationMetricsController } from '#src/presentation/controllers/admin/get-admin-manifestation-metrics.controller.js'
 import { ListAdminManifestationsController } from '#src/presentation/controllers/admin/list-admin-manifestations.controller.js'
 import { UpdateManifestationStatusController } from '#src/presentation/controllers/admin/update-manifestation-status.controller.js'
 
@@ -66,6 +68,14 @@ export function makeListAdminManifestationsController(): ListAdminManifestations
     infrastructure.usersRepository,
   )
   return new ListAdminManifestationsController(useCase)
+}
+
+export function makeGetAdminManifestationMetricsController(): GetAdminManifestationMetricsController {
+  const useCase = new GetAdminManifestationMetricsUseCase(
+    infrastructure.manifestationsRepository,
+    infrastructure.usersRepository,
+  )
+  return new GetAdminManifestationMetricsController(useCase)
 }
 
 export function makeGetAdminManifestationAttachmentDownloadUrlController(): GetAdminManifestationAttachmentDownloadUrlController {

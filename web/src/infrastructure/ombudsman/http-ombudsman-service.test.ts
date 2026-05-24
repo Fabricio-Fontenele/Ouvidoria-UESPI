@@ -166,6 +166,56 @@ describe('HttpOmbudsmanService', () => {
     expect(parsed.searchParams.get('to')).toBeNull()
   })
 
+  it('builds the metrics URL without status or page filters', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        buildJsonResponse({
+          statusTotals: {
+            answered: 12,
+            awaiting_unit: 9,
+            canceled: 4,
+            finalized: 16,
+            in_analysis: 20,
+          },
+          totalItems: 61,
+        }),
+      ),
+    )
+    const service = new HttpOmbudsmanService()
+
+    const result = await service.getMetrics({
+      administrativeUnitId: 'unit-1',
+      campusId: 'campus-1',
+      from: '2026-05-01T00:00:00.000Z',
+      to: '2026-05-31T23:59:59.999Z',
+      type: 'complaint',
+    })
+
+    const [url, init] = getFetchCall()
+    const parsed = new URL(String(url))
+
+    expect(parsed.origin + parsed.pathname).toBe(`${apiBaseUrl}/admin/manifestations/metrics`)
+    expect(parsed.searchParams.get('page')).toBeNull()
+    expect(parsed.searchParams.get('status')).toBeNull()
+    expect(parsed.searchParams.get('type')).toBe('complaint')
+    expect(parsed.searchParams.get('campusId')).toBe('campus-1')
+    expect(parsed.searchParams.get('administrativeUnitId')).toBe('unit-1')
+    expect(parsed.searchParams.get('from')).toBe('2026-05-01T00:00:00.000Z')
+    expect(parsed.searchParams.get('to')).toBe('2026-05-31T23:59:59.999Z')
+    expect((init?.headers as Headers).get('Authorization')).toBe('Bearer token-abc')
+    expect(result).toStrictEqual({
+      statusTotals: {
+        answered: 12,
+        awaiting_unit: 9,
+        canceled: 4,
+        finalized: 16,
+        in_analysis: 20,
+      },
+      totalItems: 61,
+    })
+  })
+
   it('narrows enums in getById through the shared mapper', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(buildJsonResponse({ manifestation: detailFixture })))
     const service = new HttpOmbudsmanService()

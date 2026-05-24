@@ -6,10 +6,12 @@ import { buildLocalDayRange, formatBrazilianShortDate } from '../app/date-utils'
 import { buildOmbudsmanManifestationDetailsHref } from '../app/routes'
 import type { Catalog } from '../application/catalog/catalog-types'
 import {
+  buildEmptyManifestationStatusTotals,
   getManifestationStatusContract,
   manifestationStatusContracts,
 } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../application/manifestations/manifestation-status-contract'
 import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
 import {
   getManifestationTypeLabel,
@@ -60,6 +62,7 @@ const dashboardMetricCards: Array<{
   icon: IconName
   iconClassName: string
   label: string
+  status: ManifestationStatus
 }> = [
   {
     anchorId: 'em-analise',
@@ -67,6 +70,7 @@ const dashboardMetricCards: Array<{
     icon: 'clock',
     iconClassName: 'text-home-blue',
     label: 'Em análise',
+    status: 'in_analysis',
   },
   {
     anchorId: 'respondidas',
@@ -74,6 +78,7 @@ const dashboardMetricCards: Array<{
     icon: 'message-circle',
     iconClassName: 'text-home-blue',
     label: 'Respondidas',
+    status: 'answered',
   },
   {
     anchorId: 'finalizadas',
@@ -81,6 +86,7 @@ const dashboardMetricCards: Array<{
     icon: 'check-circle',
     iconClassName: 'text-home-success',
     label: 'Finalizadas',
+    status: 'finalized',
   },
 ]
 
@@ -147,19 +153,45 @@ function buildFiltersForRequest({
   return filters
 }
 
-function MetricCards() {
+function buildMetricsFiltersForRequest({
+  typeFilter,
+  dateFilter,
+}: {
+  typeFilter: TypeFilter
+  dateFilter: DateFilter
+}): Omit<OmbudsmanListFilters, 'page' | 'status'> {
+  const filters: Omit<OmbudsmanListFilters, 'page' | 'status'> = {}
+
+  if (typeFilter !== FILTER_ALL_VALUE) {
+    filters.type = typeFilter
+  }
+
+  if (dateFilter !== FILTER_ALL_VALUE) {
+    const range = buildLocalDayRange(dateFilter)
+
+    if (range !== null) {
+      filters.from = range.from
+      filters.to = range.to
+    }
+  }
+
+  return filters
+}
+
+function MetricCards({
+  loadStatus,
+  statusTotals,
+}: {
+  loadStatus: LoadStatus
+  statusTotals: ManifestationStatusTotals
+}) {
   return (
     <section aria-labelledby="ombudsman-metrics-title" className="mt-10">
       <h2 className="sr-only" id="ombudsman-metrics-title">
         Indicadores das demandas
       </h2>
 
-      <p className="rounded-2xl bg-home-action/60 px-4 py-3 text-sm leading-6 text-home-brown">
-        Aguardando endpoint de métricas administrativas. Os totais abaixo serão preenchidos assim que o backend expuser
-        os indicadores agregados.
-      </p>
-
-      <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
         {dashboardMetricCards.map((metric) => (
           <div className={metricCardClasses.join(' ')} id={metric.anchorId} key={metric.label}>
             <div className="absolute inset-x-0 top-0 h-1 bg-home-blue/80 opacity-0 transition duration-150 group-hover:opacity-100" />
@@ -173,9 +205,11 @@ function MetricCards() {
               </span>
             </dt>
             <dd className="mt-5 flex items-end justify-between gap-3">
-              <span className="text-4xl leading-none font-black tabular-nums text-home-text md:text-5xl">—</span>
+              <span className="text-4xl leading-none font-black tabular-nums text-home-text md:text-5xl">
+                {loadStatus === 'loading' ? '—' : String(statusTotals[metric.status]).padStart(2, '0')}
+              </span>
               <span className="rounded-full bg-home-action px-3 py-1 text-[11px] leading-4 font-bold text-home-brown">
-                em breve
+                demandas
               </span>
             </dd>
           </div>
@@ -362,6 +396,8 @@ export function OmbudsmanHomePage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(FILTER_ALL_VALUE)
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
+  const [metricsLoadStatus, setMetricsLoadStatus] = useState<LoadStatus>('loading')
+  const [statusTotals, setStatusTotals] = useState<ManifestationStatusTotals>(buildEmptyManifestationStatusTotals)
 
   const statusOptions: FilterSelectOption[] = manifestationStatusContracts.map((status) => ({
     label: status.filterLabel,
@@ -371,6 +407,38 @@ export function OmbudsmanHomePage() {
     label: type.label,
     value: type.value,
   }))
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadMetrics() {
+      setMetricsLoadStatus('loading')
+
+      try {
+        const result = await ombudsmanService.getMetrics(buildMetricsFiltersForRequest({ dateFilter, typeFilter }))
+
+        if (!isMounted) {
+          return
+        }
+
+        setStatusTotals(result.statusTotals)
+        setMetricsLoadStatus('ready')
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setStatusTotals(buildEmptyManifestationStatusTotals())
+        setMetricsLoadStatus('error')
+      }
+    }
+
+    void loadMetrics()
+
+    return () => {
+      isMounted = false
+    }
+  }, [dateFilter, ombudsmanService, typeFilter])
 
   useEffect(() => {
     let isMounted = true
@@ -452,7 +520,7 @@ export function OmbudsmanHomePage() {
             </p>
           </header>
 
-          <MetricCards />
+          <MetricCards loadStatus={metricsLoadStatus} statusTotals={statusTotals} />
 
           <section
             aria-labelledby="ombudsman-demands-title"

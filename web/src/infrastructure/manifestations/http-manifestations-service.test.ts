@@ -137,4 +137,38 @@ describe('HttpManifestationsService attachments', () => {
       totalPages: 5,
     })
   })
+
+  it('returns manifestation metrics from the API', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        buildJsonResponse({
+          statusTotals: {
+            answered: 3,
+            awaiting_unit: 2,
+            canceled: 1,
+            finalized: 4,
+            in_analysis: 5,
+          },
+          totalItems: 15,
+        }),
+      ),
+    )
+    const service = new HttpManifestationsService()
+
+    const result = await service.getMetrics()
+    const [url] = getFetchCall()
+
+    expect(url).toBe(`${apiBaseUrl}/manifestations/metrics`)
+    expect(result).toStrictEqual({
+      statusTotals: {
+        answered: 3,
+        awaiting_unit: 2,
+        canceled: 1,
+        finalized: 4,
+        in_analysis: 5,
+      },
+      totalItems: 15,
+    })
+  })
 })

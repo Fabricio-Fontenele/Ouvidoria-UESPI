@@ -20,6 +20,11 @@ export interface OmbudsmanListResult extends PaginationMeta {
   statusTotals: ManifestationStatusTotals
 }
 
+export interface OmbudsmanMetricsResult {
+  statusTotals: ManifestationStatusTotals
+  totalItems: number
+}
+
 export type OmbudsmanStatusChange = 'canceled' | 'finalized'
 
 export interface AnswerManifestationInput {
@@ -47,6 +52,7 @@ export interface OmbudsmanService {
   forwardToUnit(input: ForwardManifestationToUnitInput): Promise<void>
   getAttachmentDownloadUrl(input: GetAdminAttachmentDownloadUrlInput): Promise<string>
   getById(id: string): Promise<ManifestationDetail>
+  getMetrics(filters: Omit<OmbudsmanListFilters, 'page' | 'status'>): Promise<OmbudsmanMetricsResult>
   list(filters: OmbudsmanListFilters): Promise<OmbudsmanListResult>
   updateStatus(input: UpdateManifestationStatusInput): Promise<void>
 }
