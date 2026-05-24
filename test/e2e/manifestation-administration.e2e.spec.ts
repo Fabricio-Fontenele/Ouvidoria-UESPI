@@ -43,7 +43,7 @@ async function createIdentifiedManifestation(manifestantToken: string): Promise<
       isAnonymous: false,
       type: 'complaint',
       campusId: 'campus-professor-alexandre-alves-de-oliveira',
-      administrativeUnitId: 'unit-direcao-parnaiba',
+      administrativeUnitId: 'unit-direcao-professor-alexandre-alves-de-oliveira',
       description: 'Houve atraso no atendimento.',
     },
   })
@@ -222,6 +222,81 @@ describe('Manifestation administration with traceability (e2e)', () => {
     expect(response.statusCode).toBe(409)
   })
 
+  it('forwards a manifestation to a responsible unit and lets the ombudsman answer afterwards', async () => {
+    const app = await getApp()
+    await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+
+    const manifestantToken = await signIn('manifestant@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+    const manifestation = await createIdentifiedManifestation(manifestantToken)
+
+    const forwardResponse = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/forward`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { administrativeUnitId: 'unit-reitoria' },
+    })
+    expect(forwardResponse.statusCode).toBe(200)
+    expect(
+      forwardResponse.json<{ manifestation: { status: string; forwardedToUnit: { id: string } } }>(),
+    ).toMatchObject({
+      manifestation: { status: 'awaiting_unit', forwardedToUnit: { id: 'unit-reitoria' } },
+    })
+
+    const afterForward = await app.inject({
+      method: 'GET',
+      url: `/admin/manifestations/${manifestation.id}`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+    })
+    const forwarded = afterForward.json<{
+      manifestation: {
+        status: string
+        forwardedToUnit: { id: string; name: string } | null
+        history: { type: string; fromStatus: string | null; toStatus: string | null }[]
+      }
+    }>()
+    expect(forwarded.manifestation.status).toBe('awaiting_unit')
+    expect(forwarded.manifestation.forwardedToUnit?.id).toBe('unit-reitoria')
+    const forwardEntry = forwarded.manifestation.history.find((h) => h.type === 'forwarded_to_unit')
+    expect(forwardEntry?.fromStatus).toBe('in_analysis')
+    expect(forwardEntry?.toStatus).toBe('awaiting_unit')
+
+    const answerResponse = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/answer`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { content: 'O setor responsável retornou e a situação foi resolvida.' },
+    })
+    expect(answerResponse.statusCode).toBe(201)
+
+    const afterAnswer = await app.inject({
+      method: 'GET',
+      url: `/admin/manifestations/${manifestation.id}`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+    })
+    expect(afterAnswer.json<{ manifestation: { status: string } }>().manifestation.status).toBe('answered')
+  })
+
+  it('rejects forwarding to an unknown administrative unit with 404', async () => {
+    const app = await getApp()
+    await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+
+    const manifestantToken = await signIn('manifestant@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+    const manifestation = await createIdentifiedManifestation(manifestantToken)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/forward`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { administrativeUnitId: 'unit-inexistente' },
+    })
+
+    expect(response.statusCode).toBe(404)
+  })
+
   it('rejects an ombudsman trying to open an identified manifestation (403)', async () => {
     const app = await getApp()
     await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
@@ -235,7 +310,7 @@ describe('Manifestation administration with traceability (e2e)', () => {
         isAnonymous: false,
         type: 'complaint',
         campusId: 'campus-professor-alexandre-alves-de-oliveira',
-        administrativeUnitId: 'unit-direcao-parnaiba',
+        administrativeUnitId: 'unit-direcao-professor-alexandre-alves-de-oliveira',
         description: 'Ouvidor abrindo em nome próprio.',
       },
     })

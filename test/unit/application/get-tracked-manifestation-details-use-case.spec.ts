@@ -100,12 +100,22 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
         status: details.status,
         campusId: details.campusId,
         administrativeUnitId: details.administrativeUnitId,
+        forwardedToUnit: details.forwardedToUnit,
         createdAt: details.createdAt,
         attachments: publicAttachment === undefined ? [] : [publicAttachment],
       },
     })
     expect(Object.keys(result.manifestation).sort()).toStrictEqual(
-      ['protocol', 'type', 'status', 'campusId', 'administrativeUnitId', 'createdAt', 'attachments'].sort(),
+      [
+        'protocol',
+        'type',
+        'status',
+        'campusId',
+        'administrativeUnitId',
+        'forwardedToUnit',
+        'createdAt',
+        'attachments',
+      ].sort(),
     )
   })
 

@@ -116,6 +116,7 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         involvedPeople: details.involvedPeople,
         authorUserId: 'user-1',
         attendantUserId: null,
+        forwardedToUnit: details.forwardedToUnit,
         createdAt: details.createdAt,
         history: details.history,
         messages: details.messages,

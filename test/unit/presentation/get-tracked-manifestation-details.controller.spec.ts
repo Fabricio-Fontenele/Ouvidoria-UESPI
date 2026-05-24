@@ -57,6 +57,7 @@ describe('GetTrackedManifestationDetailsController', () => {
         status: ManifestationStatus.IN_ANALYSIS,
         campusId: 'campus-1',
         administrativeUnitId: 'unit-1',
+        forwardedToUnit: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
         attachments: [],
       },

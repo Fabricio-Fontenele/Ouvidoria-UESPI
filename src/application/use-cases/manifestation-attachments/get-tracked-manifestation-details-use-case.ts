@@ -6,10 +6,10 @@ import type {
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
+import { isTrackingVisibleAttachmentDTO } from './public-attachment-visibility.js'
 import { AnonymousManifestationAccessService } from '../anonymous-manifestation-access/anonymous-manifestation-access-service.js'
 import { ManifestationTrackingNotFoundError } from '../anonymous-manifestation-access/errors/manifestation-tracking-not-found-error.js'
 import type { UseCase } from '../use-case.js'
-import { isTrackingVisibleAttachmentDTO } from './public-attachment-visibility.js'
 
 interface GetTrackedManifestationDetailsInput {
   protocol: string
@@ -23,6 +23,7 @@ interface GetTrackedManifestationDetailsOutput {
     status: ManifestationStatus
     campusId: string
     administrativeUnitId: string
+    forwardedToUnit: { id: string; name: string } | null
     createdAt: Date
     attachments: ManifestationAttachmentDTO[]
   }
@@ -72,6 +73,7 @@ function buildTrackedManifestationOutput(manifestation: ManifestationDetailsDTO)
     status: manifestation.status,
     campusId: manifestation.campusId,
     administrativeUnitId: manifestation.administrativeUnitId,
+    forwardedToUnit: manifestation.forwardedToUnit,
     createdAt: manifestation.createdAt,
     attachments: manifestation.attachments.filter(isTrackingVisibleAttachmentDTO),
   }
