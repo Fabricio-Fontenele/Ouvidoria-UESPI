@@ -27,7 +27,7 @@ describe('SendAiMessageUseCase', () => {
   const request = {
     history: [{ role: 'user' as const, content: 'Como acompanho meu protocolo?' }],
     message: 'Quero saber o prazo de resposta da ouvidoria.',
-    userRole: null,
+    userRole: 'manifestant' as const,
     campuses: catalog.campuses,
     administrativeUnits: catalog.administrativeUnits,
   }
@@ -105,7 +105,7 @@ describe('SendAiMessageUseCase', () => {
     expect(promptBuild).toHaveBeenCalledWith({
       history: request.history,
       message: request.message,
-      userRole: null,
+      userRole: 'manifestant',
       contextChunks,
       catalog,
     })
@@ -329,5 +329,72 @@ describe('SendAiMessageUseCase', () => {
     expect(result.intent).toBe('manifestation_draft_ready')
     expect(result.shouldOpenManifestationDraft).toBe(false)
     expect(result.missingFields).toStrictEqual(['administrativeUnitId'])
+  })
+
+  it('drops a non-report draft for an anonymous user (only denúncia is allowed for anonymous)', async () => {
+    llmCompleteStructured.mockResolvedValue({
+      answer: 'Vou montar sua reclamação.',
+      intent: 'manifestation_draft_ready',
+      confidence: 0.9,
+      shouldOpenManifestationDraft: true,
+      draft: {
+        type: 'complaint',
+        campusId: 'campus-parnaiba',
+        administrativeUnitId: 'unit-direcao-parnaiba',
+        description: 'Demora no atendimento.',
+        involvedPeople: null,
+      },
+      missingFields: [],
+    })
+
+    const result = await sut.execute({ ...request, userRole: null })
+
+    expect(result.draft).toBeNull()
+    expect(result.shouldOpenManifestationDraft).toBe(false)
+    expect(result.missingFields).toStrictEqual(['type', 'campusId', 'administrativeUnitId', 'description'])
+  })
+
+  it('keeps a report draft for an anonymous user', async () => {
+    llmCompleteStructured.mockResolvedValue({
+      answer: 'Vou montar sua denúncia.',
+      intent: 'manifestation_draft_ready',
+      confidence: 0.9,
+      shouldOpenManifestationDraft: true,
+      draft: {
+        type: 'report',
+        campusId: 'campus-parnaiba',
+        administrativeUnitId: 'unit-direcao-parnaiba',
+        description: 'Assédio no setor.',
+        involvedPeople: null,
+      },
+      missingFields: [],
+    })
+
+    const result = await sut.execute({ ...request, userRole: null })
+
+    expect(result.draft?.type).toBe('report')
+    expect(result.shouldOpenManifestationDraft).toBe(true)
+  })
+
+  it('drops any draft for ombudsman/admin (informative mode only)', async () => {
+    llmCompleteStructured.mockResolvedValue({
+      answer: 'Resposta informativa.',
+      intent: 'manifestation_candidate',
+      confidence: 0.8,
+      shouldOpenManifestationDraft: true,
+      draft: {
+        type: 'report',
+        campusId: 'campus-parnaiba',
+        administrativeUnitId: 'unit-direcao-parnaiba',
+        description: 'Algo relatado.',
+        involvedPeople: null,
+      },
+      missingFields: [],
+    })
+
+    const result = await sut.execute({ ...request, userRole: 'ombudsman' })
+
+    expect(result.draft).toBeNull()
+    expect(result.shouldOpenManifestationDraft).toBe(false)
   })
 })

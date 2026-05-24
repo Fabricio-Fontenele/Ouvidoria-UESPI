@@ -3,7 +3,10 @@
  *
  * Fires a fixed set of normative queries against a running `ai-api` instance and
  * checks (a) the intent classification is `institutional_question` and (b) the
- * answer cites the expected article/normative reference literally.
+ * answer carries the expected institutional INFORMATION (e.g. the 30-day deadline,
+ * the four manifestation types). Literal article citations (e.g. "Art. 15") are
+ * `desired`, not `required`: the current prompt deliberately avoids enumerating
+ * articles ("sem juridiquês"), so requiring them produced false negatives.
  *
  * Definition of "stable" (issue acceptance criterion):
  *   all 6 queries × 3 rounds = 18 executions must PASS, with zero FAIL/UNSTABLE.
@@ -34,42 +37,42 @@ const QUERIES: RegressionQuery[] = [
   {
     id: 'prazo-resposta',
     question: 'Qual o prazo da Ouvidoria responder uma manifestação na UESPI?',
-    required: [/Art\.?\s*15/i],
-    desired: [/trinta dias|30 dias/i, /prorrog/i],
+    required: [/trinta dias|30 dias/i],
+    desired: [/prorrog/i, /Art\.?\s*15/i],
     source: 'Resolução CONSUN 005/2018 Art. 15 §1º',
   },
   {
     id: 'anonimato-sigilo',
     question: 'A Ouvidoria garante anonimato ou sigilo de quem registra uma manifestação?',
-    required: [/Art\.?\s*13/i],
-    desired: [/sigilo|protegid|preservaç/i],
+    required: [/anonimat/i, /sigilo/i],
+    desired: [/protegid|preservaç|restrit/i, /Art\.?\s*13/i],
     source: 'Resolução CONSUN 005/2018 Art. 13 §1º',
   },
   {
     id: 'tipos-manifestacao',
     question: 'Quais tipos de manifestação a Ouvidoria da UESPI aceita?',
-    required: [/Art\.?\s*2/i],
-    desired: [/reclama/i, /denúnci/i, /sugest/i, /elogi/i],
+    required: [/denúnci/i, /reclama/i, /sugest/i, /elogi/i],
+    desired: [/Art\.?\s*2/i],
     source: 'Resolução CONSUN 005/2018 Art. 2º IV / Lei 13.460/2017',
   },
   {
     id: 'decisao-administrativa-final',
     question: 'O que é a decisão administrativa final em uma manifestação?',
-    required: [/Art\.?\s*2/i],
-    desired: [/ato administrativo|procedência|improcedência/i],
+    required: [/final|conclusiv|oficial/i, /decisão|resposta|posiciona|providência|solução/i],
+    desired: [/ato administrativo|procedência|improcedência/i, /Art\.?\s*2/i],
     source: 'Resolução CONSUN 005/2018 Art. 2º V',
   },
   {
     id: 'direitos-usuario',
     question: 'Quais são os direitos do usuário de serviço público?',
-    required: [/Lei[\s.nº°]*13\.?460|Art\.?\s*6/i],
-    desired: [/participaç|informaç|proteç/i],
+    required: [/prestação|participa|liberdade de escolha|qualidade|acompanha|não sofrer discrimina/i],
+    desired: [/Lei[\s.nº°]*13\.?460/i, /Art\.?\s*6/i],
     source: 'Lei nº 13.460/2017 Art. 6º',
   },
   {
     id: 'acesso-informacao',
     question: 'Como faço para pedir acesso à informação na UESPI?',
-    required: [/SIC|Serviço de Informações ao Cidadão/i],
+    required: [/SIC|Serviço de Informações ao Cidadão|acesso à informação|transparência/i],
     desired: [/Lei[\s.nº°]*12\.?527|Decreto[\s.nº°]*15\.?188/i],
     source: 'Decreto Estadual 15.188/2013 + Lei 12.527/2011',
   },

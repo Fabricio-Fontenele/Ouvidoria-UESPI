@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
 import type { SendAiMessageUseCase } from '#src/application/use-cases/send-ai-message/send-ai-message-use-case.js'
 import { UserRole } from '#src/domain/entities/user.js'
+import { AiServiceError } from '#src/infra/ai/ai-service-error.js'
 import {
   SendAiMessageController,
   type SendAiMessageBody,
@@ -32,6 +33,10 @@ describe('SendAiMessageController', () => {
     baseRequest = { body: validBody, params: {}, query: {}, headers: {} }
 
     sut = new SendAiMessageController(useCase, validator)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('returns 200 with the AI response and forwards userRole=null for anonymous callers', async () => {
@@ -81,6 +86,23 @@ describe('SendAiMessageController', () => {
     expect(response.statusCode).toBe(400)
     expect(response.body).toBe(validationError)
     expect(useCase.execute.mock.calls).toHaveLength(0)
+  })
+
+  it('returns 200 with the fallback response and logs the kind when the AI service errors', async () => {
+    validator.validate.mockReturnValue({ success: true, data: validBody })
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    useCase.execute.mockRejectedValue(
+      new AiServiceError('timeout', 'ai-api timed out after 30000ms', new Error('TimeoutError')),
+    )
+
+    const response = await sut.handle(baseRequest)
+
+    expect(response.statusCode).toBe(200)
+    expect((response.body as { answer: string }).answer).toContain('dificuldade para responder')
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+    const logged = warnSpy.mock.calls[0]?.[0] as string
+    expect(logged).toContain('kind=timeout')
+    expect(logged).toContain('cause=TimeoutError')
   })
 
   it('returns 500 with a ServerError when the AI gateway fails', async () => {

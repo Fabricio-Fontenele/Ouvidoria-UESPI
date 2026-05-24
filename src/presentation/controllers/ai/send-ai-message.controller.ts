@@ -50,6 +50,11 @@ export class SendAiMessageController extends BaseController {
 
   protected override mapError(error: unknown): HttpResponse | null {
     if (error instanceof AiServiceError) {
+      const cause = error.cause instanceof Error ? error.cause.message : undefined
+      console.warn(
+        `[ai] fallback triggered kind=${error.kind} message=${error.message}` +
+          (cause !== undefined ? ` cause=${cause}` : ''),
+      )
       return ok(AI_SERVICE_FALLBACK_RESPONSE)
     }
     return null
