@@ -6,6 +6,7 @@ import { ensureAuthenticated, requireRoles } from '#src/infra/http/fastify/middl
 
 import {
   makeAnswerManifestationController,
+  makeForwardManifestationToUnitController,
   makeGetAdminManifestationAttachmentDownloadUrlController,
   makeGetAdminManifestationDetailsController,
   makeListAdminManifestationsController,
@@ -39,5 +40,11 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
     '/admin/manifestations/:manifestationId/status',
     { preHandler },
     adaptRoute(makeUpdateManifestationStatusController()),
+  )
+
+  app.post(
+    '/admin/manifestations/:manifestationId/forward',
+    { preHandler },
+    adaptRoute(makeForwardManifestationToUnitController()),
   )
 }
