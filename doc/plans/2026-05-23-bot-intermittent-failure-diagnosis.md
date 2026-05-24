@@ -127,7 +127,7 @@ Dependem do diagnóstico da etapa 1:
 ## 6. Status
 
 - [x] Diagnóstico documentado
-- [ ] Etapa 1 — log instrumentado em `mapError`
+- [x] Etapa 1 — log instrumentado em `mapError` (`src/presentation/controllers/ai/send-ai-message.controller.ts`; `console.warn` com `kind`/`message`/`cause`; coberto por teste em `test/unit/presentation/send-ai-message.controller.spec.ts`)
 - [ ] Etapa 2 — mitigação aplicada após coletar dado real
 
 ## 7. Observação relacionada
