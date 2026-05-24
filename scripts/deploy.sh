@@ -32,8 +32,10 @@ pnpm build
 sudo systemctl restart "$BACKEND_SERVICE"
 
 echo "==> Frontend: build + publicação em $WEB_ROOT"
-pnpm --filter web build
-rsync -a --delete web/dist/ "$WEB_ROOT/"
+# web é projeto standalone (fora do workspace pnpm) e usa npm.
+(cd web && npm ci && npm run build)
+# -rlpt (sem -o/-g): não tenta preservar dono/grupo, evitando chgrp negado para não-root.
+rsync -rlpt --delete web/dist/ "$WEB_ROOT/"
 
 echo "==> ai-api: rebuild do container"
 docker compose up -d --build ai-api

@@ -60,7 +60,7 @@ sudo chmod 440 /etc/sudoers.d/ouvidoria-deploy
 
 1. `pnpm install --frozen-lockfile`
 2. **backend**: `prisma migrate deploy` → `pnpm build` → `systemctl restart ouvidoria-backend`
-3. **frontend**: `pnpm --filter web build` → publica `web/dist/` em `/var/www/ouvidoria`
+3. **frontend** (npm, projeto standalone): `npm ci && npm run build` em `web/` → publica `web/dist/` em `/var/www/ouvidoria`
 4. **ai-api**: `docker compose up -d --build ai-api`
 5. **smoke test**: `curl /health` (backend) e `/ready` (ai-api) — falha o deploy se algum não responder
 
