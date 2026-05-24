@@ -28,6 +28,7 @@ interface GetAdminManifestationDetailsOutput {
     description: string
     involvedPeople: string | null
     authorUserId: string | null
+    author: { id: string; name: string; email: string } | null
     attendantUserId: string | null
     forwardedToUnit: { id: string; name: string } | null
     createdAt: Date
@@ -73,6 +74,7 @@ export class GetAdminManifestationDetailsUseCase implements UseCase<
         description: manifestation.description,
         involvedPeople: manifestation.involvedPeople,
         authorUserId: manifestation.authorUserId,
+        author: manifestation.author,
         attendantUserId: manifestation.attendantUserId,
         forwardedToUnit: manifestation.forwardedToUnit,
         createdAt: manifestation.createdAt,

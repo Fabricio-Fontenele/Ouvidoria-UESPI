@@ -43,6 +43,13 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
     const record = await this.prisma.manifestation.findUnique({
       where: { id: manifestationId },
       include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         forwardedToUnit: true,
         attachments: {
           orderBy: { createdAt: 'asc' },
@@ -80,10 +87,10 @@ export class PrismaManifestationsRepository implements ManifestationsRepository 
   ): Promise<ManifestationListItemDTO[]> {
     const where: Prisma.ManifestationWhereInput = {}
     if (filters.status !== undefined) {
-      where.status = filters.status as PrismaManifestationStatus
+      where.status = filters.status
     }
     if (filters.type !== undefined) {
-      where.type = filters.type as PrismaManifestationType
+      where.type = filters.type
     }
     if (filters.campusId !== undefined) {
       where.campusId = filters.campusId
@@ -161,6 +168,7 @@ interface ManifestationRow {
   description: string
   involvedPeople: string | null
   authorUserId: string | null
+  author: { id: string; name: string; email: string } | null
   attendantUserId: string | null
   forwardedToUnit: { id: string; name: string } | null
   createdAt: Date
@@ -241,6 +249,10 @@ function buildDetailsDTO(
     description: manifestation.description,
     involvedPeople: manifestation.involvedPeople,
     authorUserId: manifestation.authorUserId,
+    author:
+      manifestation.author === null
+        ? null
+        : { id: manifestation.author.id, name: manifestation.author.name, email: manifestation.author.email },
     attendantUserId: manifestation.attendantUserId,
     forwardedToUnit:
       manifestation.forwardedToUnit === null
