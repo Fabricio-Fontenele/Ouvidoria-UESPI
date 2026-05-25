@@ -383,6 +383,18 @@ export class Manifestation extends Entity<ManifestationProps> {
 
 ---
 
-## 20. Observação final
+## 20. Mensageria anônima por protocolo (acompanhamento bidirecional)
 
-Esta feature documenta o recorte público de acompanhamento de manifestação anônima por protocolo. Evoluções futuras como exibição controlada de resposta administrativa pública, rotação de `accessCode` ou bloqueio por tentativas devem ser tratadas em especificações complementares, preservando o princípio de não exposição de dados internos.
+O acompanhamento anônimo deixou de ser somente leitura de status e passou a expor a conversa e permitir respostas, sempre autorizado por protocolo + `accessCode` (nunca por sessão autenticada):
+
+- **Leitura**: `POST /manifestations/track/details` retorna, além de status/unidades/anexos, o campo `messages` — a conversa (mensagens do manifestante anônimo e respostas administrativas). Os `senderUserId` internos são intencionalmente omitidos; o front recebe apenas `senderType` (`anonymous_manifestant`, `ombudsman`, `admin`), preservando o princípio de não exposição de dados internos. Mensagens de sistema continuam fora da conversa (são derivadas para o histórico).
+- **Escrita**: `POST /manifestations/track/messages` (público, sem middleware de autenticação) recebe `{ protocol, accessCode, content }`. O `AddTrackedManifestationMessageUseCase` reusa `AnonymousManifestationAccessService.getAuthorizedManifestation` para validar protocolo + código, exige `Manifestation.canReceiveMessages()` (status não cancelado/finalizado) e persiste a mensagem com `senderType = anonymous_manifestant` e `senderUserId = null`.
+- **Erros**: protocolo/código inválidos → `404` (`ManifestationTrackingNotFoundError`); manifestação fechada → `409` (`ManifestationInteractionNotAllowedError`); conteúdo vazio → `400` (`InvalidManifestationMessageContentError`).
+
+O erro compartilhado `ManifestationInteractionNotAllowedError` vive em `src/application/use-cases/manifestation-messaging/errors/`, pois agora é lançado tanto pelo fluxo identificado (`add-manifestation-message`) quanto pelo anônimo (`add-tracked-manifestation-message`).
+
+---
+
+## 21. Observação final
+
+Esta feature documenta o recorte público de acompanhamento de manifestação anônima por protocolo, incluindo a exibição controlada de respostas administrativas e o envio de mensagens pelo manifestante anônimo (seção 20). Evoluções futuras como rotação de `accessCode` ou bloqueio por tentativas devem ser tratadas em especificações complementares, preservando o princípio de não exposição de dados internos.
