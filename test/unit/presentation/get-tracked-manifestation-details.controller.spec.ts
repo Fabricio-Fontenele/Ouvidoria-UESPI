@@ -59,6 +59,7 @@ describe('GetTrackedManifestationDetailsController', () => {
         administrativeUnitId: 'unit-1',
         forwardedToUnit: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
+        messages: [],
         attachments: [],
       },
     })

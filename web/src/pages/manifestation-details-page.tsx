@@ -13,11 +13,11 @@ import {
   getRemainingAttachmentSlots,
   validateAttachmentFiles,
 } from '../application/manifestations/attachment-policy'
-import { canEvaluate, canSendMessage } from '../application/manifestations/manifestation-policy'
+import { canEvaluate, canFinalize, canSendMessage } from '../application/manifestations/manifestation-policy'
 import { FinalizeAction } from '../components/manifestations/finalize-action'
 import { ManifestationAttachmentsList } from '../components/manifestations/manifestation-attachments-list'
+import { CasePanelBlock, ManifestationCasePanel } from '../components/manifestations/manifestation-case-panel'
 import { ManifestationMessagesThread } from '../components/manifestations/manifestation-messages-thread'
-import { ManifestationSummaryCard } from '../components/manifestations/manifestation-summary-card'
 import { ManifestationTimelineCard } from '../components/manifestations/manifestation-timeline-card'
 import { formatFileSize } from '../components/forms/form-file-utils'
 import { Icon } from '../components/icons/icon'
@@ -54,20 +54,15 @@ function NotFoundCard({ description, title }: { description: string; title: stri
 
 function DescriptionCard({ detail }: { detail: ManifestationDetail }) {
   return (
-    <section
-      aria-labelledby="manifestation-description-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h2 className="text-2xl font-black text-home-text" id="manifestation-description-title">
+    <section aria-labelledby="manifestation-description-title">
+      <h2 className="text-lg font-black text-home-text" id="manifestation-description-title">
         Descrição da manifestação
       </h2>
-      <p className="mt-5 text-lg leading-7 text-home-text sm:text-xl break-words whitespace-pre-line">
-        {detail.description}
-      </p>
+      <p className="mt-3 text-base leading-7 break-words whitespace-pre-line text-home-text">{detail.description}</p>
       {detail.involvedPeople !== null && detail.involvedPeople.length > 0 ? (
-        <div className="mt-6 rounded-2xl bg-home-action/40 p-4">
-          <p className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">Pessoas envolvidas</p>
-          <p className="mt-2 text-base leading-6 text-home-text break-words">{detail.involvedPeople}</p>
+        <div className="mt-4 rounded-xl bg-home-action/40 p-3">
+          <p className="text-[11px] font-bold tracking-[0.14em] text-home-brown/70 uppercase">Pessoas envolvidas</p>
+          <p className="mt-1 text-sm leading-6 break-words text-home-text">{detail.involvedPeople}</p>
         </div>
       ) : null}
     </section>
@@ -131,64 +126,54 @@ function AttachmentsUploadForm({ detail, onUploaded }: { detail: ManifestationDe
   }
 
   return (
-    <section
-      aria-labelledby="manifestation-attachments-upload-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-xl font-black text-home-text" id="manifestation-attachments-upload-title">
-          Enviar novos anexos
-        </h3>
-        <span className="rounded-full bg-home-chip px-4 py-2 text-sm font-bold text-home-brown">
-          {remainingSlots} vaga{remainingSlots === 1 ? '' : 's'}
-        </span>
-      </div>
+    <form className="mt-3" onSubmit={(event) => void handleUpload(event)}>
+      <label
+        aria-disabled={!uploadEnabled}
+        className="flex min-h-16 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-home-chip bg-home-action/35 px-4 py-3 text-center text-xs leading-5 text-home-brown transition duration-150 hover:border-home-blue focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-home-blue aria-disabled:cursor-not-allowed aria-disabled:opacity-65"
+        htmlFor={fieldId}
+      >
+        <Icon className="mb-1 size-5 text-home-blue" name="upload-cloud" />
+        {uploadEnabled
+          ? `Adicionar anexos (${remainingSlots} restante${remainingSlots === 1 ? '' : 's'})`
+          : 'Limite de anexos atingido'}
+        <input
+          accept={ACCEPTED_ATTACHMENT_INPUT_ACCEPT}
+          className="sr-only"
+          disabled={!uploadEnabled || isUploading}
+          id={fieldId}
+          multiple
+          onChange={handleFileChange}
+          type="file"
+        />
+      </label>
 
-      <form className="mt-5" onSubmit={(event) => void handleUpload(event)}>
-        <label
-          aria-disabled={!uploadEnabled}
-          className="flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-home-chip bg-home-action/35 px-4 py-4 text-center text-sm leading-5 text-home-brown transition duration-150 hover:border-home-blue focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-home-blue aria-disabled:cursor-not-allowed aria-disabled:opacity-65"
-          htmlFor={fieldId}
-        >
-          <Icon className="mb-2 size-5 text-home-blue" name="upload-cloud" />
-          {uploadEnabled ? 'Selecionar anexos' : 'Limite de anexos atingido'}
-          <input
-            accept={ACCEPTED_ATTACHMENT_INPUT_ACCEPT}
-            className="sr-only"
-            disabled={!uploadEnabled || isUploading}
-            id={fieldId}
-            multiple
-            onChange={handleFileChange}
-            type="file"
-          />
-        </label>
+      {selectedFiles.length > 0 ? (
+        <ul className="mt-3 space-y-2">
+          {selectedFiles.map((file) => (
+            <li className="truncate rounded-lg bg-home-action/50 px-3 py-2 text-xs text-home-text" key={file.name}>
+              {file.name} • {formatFileSize(file.size)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
-        {selectedFiles.length > 0 ? (
-          <ul className="mt-4 space-y-2">
-            {selectedFiles.map((file) => (
-              <li className="truncate rounded-xl bg-home-action/50 px-3 py-2 text-sm text-home-text" key={file.name}>
-                {file.name} • {formatFileSize(file.size)}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
+      {selectedFiles.length > 0 ? (
         <button
-          className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-          disabled={isUploading || selectedFiles.length === 0}
+          className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+          disabled={isUploading}
           type="submit"
         >
           {isUploading ? 'Enviando...' : 'Enviar anexos'}
           <Icon className="size-4" name="upload-cloud" />
         </button>
+      ) : null}
 
-        {error !== null ? (
-          <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
-            {error}
-          </p>
-        ) : null}
-      </form>
-    </section>
+      {error !== null ? (
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs leading-5 font-bold text-red-800" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </form>
   )
 }
 
@@ -231,14 +216,11 @@ function MessageComposer({ detail, onSent }: { detail: ManifestationDetail; onSe
   }
 
   return (
-    <section
-      aria-labelledby="message-composer-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h3 className="text-xl font-black text-home-text" id="message-composer-title">
+    <section aria-labelledby="message-composer-title" className="rounded-2xl border border-login-brown/10 bg-white p-5">
+      <h3 className="text-lg font-black text-home-text" id="message-composer-title">
         Enviar mensagem
       </h3>
-      <p className="mt-2 text-sm leading-6 text-home-brown">
+      <p className="mt-1 text-sm leading-6 text-home-brown">
         Use este espaço para esclarecer detalhes do seu relato ou responder à Ouvidoria.
       </p>
 
@@ -362,7 +344,7 @@ export function ManifestationDetailsPage() {
     return (
       <div className="min-h-svh bg-login-bg font-sans text-home-text">
         <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles}>
-          <main className="mx-auto w-full max-w-4xl px-5 pt-8 pb-12 sm:px-8 md:pt-12 lg:px-12">
+          <main className="mx-auto w-full max-w-6xl px-5 pt-8 pb-12 sm:px-8 md:pt-12 lg:px-12">
             {legacyProtocol !== null && legacyProtocol.trim().length > 0 ? (
               <NotFoundCard
                 description="Este link usa um formato antigo. Volte para minhas manifestações e abra a manifestação novamente."
@@ -409,19 +391,41 @@ export function ManifestationDetailsPage() {
           ) : null}
 
           {status === 'ready' && detail !== null ? (
-            <div className="mt-8 space-y-10">
-              <ManifestationSummaryCard catalog={catalog} detail={detail} />
-              <DescriptionCard detail={detail} />
-              <ManifestationAttachmentsList
-                attachments={detail.attachments}
-                onResolveDownloadUrl={resolveDownloadUrl}
-              />
-              <AttachmentsUploadForm detail={detail} onUploaded={refetch} />
-              <ManifestationTimelineCard history={detail.history} />
-              <ManifestationMessagesThread messages={detail.messages} perspective="manifestant" />
-              <MessageComposer detail={detail} onSent={refetch} />
-              <FinalizeAction detail={detail} onFinalized={refetch} />
-              <EvaluationAction detail={detail} />
+            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+              <div className="order-2 space-y-6 lg:order-1">
+                <DescriptionCard detail={detail} />
+                <ManifestationMessagesThread messages={detail.messages} perspective="manifestant" />
+                <MessageComposer detail={detail} onSent={refetch} />
+                <ManifestationTimelineCard history={detail.history} />
+              </div>
+
+              <div className="order-1 lg:order-2">
+                <ManifestationCasePanel catalog={catalog} detail={detail}>
+                  <CasePanelBlock
+                    action={
+                      <span className="rounded-full bg-home-chip px-2.5 py-1 text-xs font-bold text-home-brown">
+                        {detail.attachments.length}
+                      </span>
+                    }
+                    title="Anexos"
+                  >
+                    <ManifestationAttachmentsList
+                      attachments={detail.attachments}
+                      onResolveDownloadUrl={resolveDownloadUrl}
+                    />
+                    <AttachmentsUploadForm detail={detail} onUploaded={refetch} />
+                  </CasePanelBlock>
+
+                  {canFinalize(detail) || canEvaluate(detail) ? (
+                    <CasePanelBlock title="Ações">
+                      <div className="space-y-3">
+                        <FinalizeAction detail={detail} onFinalized={refetch} />
+                        <EvaluationAction detail={detail} />
+                      </div>
+                    </CasePanelBlock>
+                  ) : null}
+                </ManifestationCasePanel>
+              </div>
             </div>
           ) : null}
         </main>

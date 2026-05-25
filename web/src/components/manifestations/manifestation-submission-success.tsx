@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { buildManifestationDetailsHref, routes } from '../../app/routes'
 import { manifestantOnlyRoles } from '../../app/access-policy'
@@ -51,6 +51,14 @@ export function ManifestationSubmissionSuccess({
   const [accessCodeCopyStatus, setAccessCodeCopyStatus] = useState<'copied' | 'error' | 'idle'>('idle')
   const isAnonymous = accessCode !== null
   const renderAsPublic = !authIsLoading && !isAuthenticated
+
+  // The success screen replaces the form in place (no route change), so the window keeps the
+  // form's scroll position — landing the user below the protocol/access-code cards. Reset to the
+  // top on mount so the codes are the first thing they see (critical for anonymous submissions,
+  // where the access code is shown only once).
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [])
 
   const handleCopyProtocol = async () => {
     try {

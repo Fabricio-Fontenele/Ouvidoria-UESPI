@@ -12,6 +12,7 @@ import {
 
 import {
   makeAddManifestationMessageController,
+  makeAddTrackedManifestationMessageController,
   makeEvaluateManifestationController,
   makeFinalizeManifestationController,
   makeGetManifestationAttachmentDownloadUrlController,
@@ -29,6 +30,7 @@ import {
 export async function registerManifestationRoutes(app: FastifyInstance): Promise<void> {
   app.post('/manifestations/track', adaptRoute(makeTrackManifestationByProtocolController()))
   app.post('/manifestations/track/details', adaptRoute(makeGetTrackedManifestationDetailsController()))
+  app.post('/manifestations/track/messages', adaptRoute(makeAddTrackedManifestationMessageController()))
   app.post(
     '/manifestations/track/attachments',
     adaptMultipartRoute(makeUploadAnonymousManifestationAttachmentController(), {

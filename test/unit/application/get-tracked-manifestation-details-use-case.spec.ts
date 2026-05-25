@@ -6,6 +6,7 @@ import type { ManifestationDetailsDTO } from '#src/application/dto/manifestation
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import { ManifestationTrackingNotFoundError } from '#src/application/use-cases/anonymous-manifestation-access/errors/manifestation-tracking-not-found-error.js'
 import { GetTrackedManifestationDetailsUseCase } from '#src/application/use-cases/manifestation-attachments/get-tracked-manifestation-details-use-case.js'
+import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import { Manifestation, ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 import { AdministrativeUnitId } from '#src/domain/value-objects/administrative-unit-id.js'
 import { CampusId } from '#src/domain/value-objects/campus-id.js'
@@ -51,7 +52,22 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
     forwardedToUnit: null,
     createdAt: new Date('2026-05-10T12:00:00.000Z'),
     history: [],
-    messages: [],
+    messages: [
+      {
+        id: 'message-1',
+        senderUserId: null,
+        senderType: ManifestationMessageSenderType.ANONYMOUS_MANIFESTANT,
+        content: 'Tenho uma dúvida sobre o andamento.',
+        createdAt: new Date('2026-05-10T12:45:00.000Z'),
+      },
+      {
+        id: 'message-2',
+        senderUserId: 'ombudsman-1',
+        senderType: ManifestationMessageSenderType.OMBUDSMAN,
+        content: 'Recebemos sua manifestação e estamos analisando.',
+        createdAt: new Date('2026-05-10T13:30:00.000Z'),
+      },
+    ],
     attachments: [
       {
         id: 'attachment-1',
@@ -82,7 +98,7 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
     sut = new GetTrackedManifestationDetailsUseCase(manifestationsRepository, hashComparer)
   })
 
-  it('returns only the public tracking projection plus attachments', async () => {
+  it('returns only the public tracking projection plus attachments and messages', async () => {
     const publicAttachment = details.attachments[0]
 
     manifestationsRepository.findByProtocol.mockResolvedValue(buildAnonymousManifestation())
@@ -103,6 +119,21 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
         administrativeUnitId: details.administrativeUnitId,
         forwardedToUnit: details.forwardedToUnit,
         createdAt: details.createdAt,
+        // Internal sender user ids are dropped — only senderType is exposed to anonymous trackers.
+        messages: [
+          {
+            id: 'message-1',
+            senderType: ManifestationMessageSenderType.ANONYMOUS_MANIFESTANT,
+            content: 'Tenho uma dúvida sobre o andamento.',
+            createdAt: new Date('2026-05-10T12:45:00.000Z'),
+          },
+          {
+            id: 'message-2',
+            senderType: ManifestationMessageSenderType.OMBUDSMAN,
+            content: 'Recebemos sua manifestação e estamos analisando.',
+            createdAt: new Date('2026-05-10T13:30:00.000Z'),
+          },
+        ],
         attachments: publicAttachment === undefined ? [] : [publicAttachment],
       },
     })
@@ -115,6 +146,7 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
         'administrativeUnitId',
         'forwardedToUnit',
         'createdAt',
+        'messages',
         'attachments',
       ].sort(),
     )
