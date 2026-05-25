@@ -1,6 +1,13 @@
 export type AuthenticatedUserRole = 'admin' | 'manifestant' | 'ombudsman'
 
+export interface AttendanceRatingSummary {
+  average: number | null
+  count: number
+}
+
 export interface AuthenticatedUser {
+  attendanceRating: AttendanceRatingSummary | null
+  createdAt: string | null
   email: string | null
   id: string
   name: string | null
