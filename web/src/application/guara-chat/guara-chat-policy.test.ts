@@ -5,7 +5,7 @@ import { canApplyDraft, getGuaraChatCapabilities } from './guara-chat-policy'
 import type { GuaraChatDraft } from './guara-chat-types'
 
 function buildUser(role: AuthenticatedUser['role']): AuthenticatedUser {
-  return { email: null, id: 'user-1', name: null, role }
+  return { attendanceRating: null, createdAt: null, email: null, id: 'user-1', name: null, role }
 }
 
 function buildDraft(overrides: Partial<GuaraChatDraft> = {}): GuaraChatDraft {

@@ -109,6 +109,7 @@ describe('Anonymous manifestation (e2e)', () => {
       manifestation: {
         protocol: string
         status: string
+        messages: Array<{ senderUserId?: string }>
         attachments: Array<{ id: string; originalName: string }>
       }
     }>()
@@ -127,13 +128,14 @@ describe('Anonymous manifestation (e2e)', () => {
         'administrativeUnitId',
         'forwardedToUnit',
         'createdAt',
+        'messages',
         'attachments',
       ].sort(),
     )
     expect('description' in details.manifestation).toBe(false)
     expect('history' in details.manifestation).toBe(false)
-    expect('messages' in details.manifestation).toBe(false)
     expect('authorUserId' in details.manifestation).toBe(false)
+    expect(details.manifestation.messages.every((message) => !('senderUserId' in message))).toBe(true)
 
     const downloadUrlResponse = await app.inject({
       method: 'POST',
