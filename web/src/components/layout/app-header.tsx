@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
 import { buildGuaraNewManifestationHref, getAuthenticatedHomeRoute, navigateTo, routes } from '../../app/routes'
-import type { AuthenticatedUserRole } from '../../application/auth/auth-types'
+import type { AuthenticatedUser, AuthenticatedUserRole } from '../../application/auth/auth-types'
 import uespiLogo from '../../assets/brasao.png'
 import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
@@ -28,7 +28,6 @@ const manifestantMenuItems: MenuItem[] = [
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
   { href: buildGuaraNewManifestationHref(), icon: 'plus-circle', label: 'Novo registro' },
   { href: '#notificacoes', icon: 'bell', label: 'Notificações' },
-  { href: '#perfil', icon: 'user', label: 'Perfil' },
   { href: '#suporte', icon: 'help', label: 'Suporte' },
   { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
   { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
@@ -40,7 +39,6 @@ const ombudsmanMenuItems: MenuItem[] = [
   { href: `${routes.ombudsmanHome}#pendentes`, icon: 'clock', label: 'Pendentes' },
   { href: `${routes.ombudsmanHome}#em-analise`, icon: 'info', label: 'Em análise' },
   { href: `${routes.ombudsmanHome}#resolvidas`, icon: 'check-circle', label: 'Resolvidas' },
-  { href: '#perfil', icon: 'user', label: 'Perfil' },
   { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
   { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
 ]
@@ -66,6 +64,16 @@ const publicHeaderNavItems: HeaderNavItem[] = [
 const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 const iconButtonClasses =
   'grid size-10 place-items-center rounded-full text-login-blue transition duration-150 hover:bg-login-blue/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
+const ratingFormatter = new Intl.NumberFormat('pt-BR', {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 1,
+})
+
+const roleLabels: Record<AuthenticatedUserRole, string> = {
+  admin: 'Administrador',
+  manifestant: 'Manifestante',
+  ombudsman: 'Ouvidor',
+}
 
 function getAuthenticatedMenuItems(role: AuthenticatedUserRole | null) {
   if (role === 'ombudsman' || role === 'admin') {
@@ -110,6 +118,54 @@ function AppMenuLink({
   )
 }
 
+function AppProfileMenuItem({ user }: { user: AuthenticatedUser | null }) {
+  if (user === null) {
+    return null
+  }
+
+  const displayName = user.name ?? 'Usuário autenticado'
+  const displayEmail = user.email ?? 'E-mail não informado'
+  const rating = user.attendanceRating
+  const ratingText =
+    rating === null
+      ? null
+      : rating.count === 0 || rating.average === null
+        ? 'Sem avaliações ainda'
+        : `${ratingFormatter.format(rating.average)}/5 em ${rating.count.toString()} avaliação${
+            rating.count === 1 ? '' : 'ões'
+          }`
+
+  return (
+    <section
+      aria-label="Perfil autenticado"
+      className="relative overflow-hidden rounded-2xl border border-login-blue/10 bg-login-field/55 px-4 py-4 shadow-login-card"
+    >
+      <div className="absolute -top-10 -right-10 size-28 rounded-full bg-login-blue/10" />
+      <div className="absolute -bottom-14 -left-10 size-28 rounded-full bg-login-action/60" />
+
+      <div className="relative grid grid-cols-[48px_1fr] gap-3">
+        <span className="grid size-12 place-items-center rounded-2xl bg-login-blue text-white shadow-login-card">
+          <Icon className="size-5" name="user" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[11px] leading-4 font-black tracking-[0.12em] text-login-blue uppercase">Perfil</p>
+          <p className="mt-0.5 truncate text-base leading-6 font-black text-login-text">{displayName}</p>
+          <p className="truncate text-xs leading-5 text-login-brown">{displayEmail}</p>
+          <p className="mt-2 inline-flex rounded-full bg-login-blue/10 px-2.5 py-1 text-[11px] leading-4 font-bold text-login-blue">
+            {roleLabels[user.role]}
+          </p>
+        </div>
+      </div>
+
+      {ratingText !== null ? (
+        <p className="relative mt-3 rounded-xl bg-login-surface/90 px-3 py-2 text-xs leading-5 font-semibold text-login-brown">
+          Atendimento: <span className="font-black text-login-text">{ratingText}</span>
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
 function AppSideMenu({
   isAuthenticated,
   isOpen,
@@ -117,6 +173,7 @@ function AppSideMenu({
   openerRef,
   onSignOut,
   role,
+  user,
 }: {
   isAuthenticated: boolean
   isOpen: boolean
@@ -124,6 +181,7 @@ function AppSideMenu({
   onSignOut: () => Promise<void>
   openerRef: RefObject<HTMLButtonElement | null>
   role: AuthenticatedUserRole | null
+  user: AuthenticatedUser | null
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const menuItems = isAuthenticated ? getAuthenticatedMenuItems(role) : publicMenuItems
@@ -221,9 +279,15 @@ function AppSideMenu({
           </button>
         </div>
 
+        {isAuthenticated ? (
+          <div className="mt-7">
+            <AppProfileMenuItem user={user} />
+          </div>
+        ) : null}
+
         <nav
           aria-label={isAuthenticated ? 'Menu autenticado' : 'Menu público'}
-          className="mt-8 min-h-0 overflow-y-auto pr-1"
+          className={cx('min-h-0 overflow-y-auto pr-1', isAuthenticated ? 'mt-5' : 'mt-8')}
         >
           <ul className="space-y-2">
             {menuItems.map((item) => (
@@ -306,6 +370,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
           onSignOut={handleSignOut}
           openerRef={menuButtonRef}
           role={role}
+          user={user}
         />
       </div>
     </>

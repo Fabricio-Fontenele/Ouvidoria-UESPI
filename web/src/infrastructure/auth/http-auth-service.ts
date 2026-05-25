@@ -1,19 +1,22 @@
 import type { AuthService } from '../../application/auth/auth-service'
 import type {
+  AttendanceRatingSummary,
   AuthenticatedUserRole,
   AuthSession,
   SignInCredentials,
   SignUpCredentials,
 } from '../../application/auth/auth-types'
 import { apiFetch } from '../http/api-client'
+import { isApiError } from '../http/api-error'
 import { clearAuthToken, getAuthToken, setAuthToken } from '../http/auth-token-storage'
 
 interface SessionResponse {
   token: string
 }
 
-interface UserResponse {
+interface CurrentUserResponse {
   user: {
+    attendanceRating: AttendanceRatingSummary | null
     createdAt: string
     email: string
     id: string
@@ -68,6 +71,8 @@ function buildSessionFromToken(token: string, fallbackEmail: string | null): Aut
   return {
     token,
     user: {
+      attendanceRating: null,
+      createdAt: null,
       email: fallbackEmail,
       id: sub,
       name: null,
@@ -84,14 +89,26 @@ export class HttpAuthService implements AuthService {
       return null
     }
 
-    const session = buildSessionFromToken(token, null)
-
-    if (session === null) {
+    if (buildSessionFromToken(token, null) === null) {
       clearAuthToken()
       return null
     }
 
-    return session
+    try {
+      const response = await apiFetch<CurrentUserResponse>('/me')
+
+      return {
+        token,
+        user: response.user,
+      }
+    } catch (error) {
+      if (isApiError(error, 'UnauthenticatedError') || isApiError(error, 'UserNotFoundError')) {
+        clearAuthToken()
+        return null
+      }
+
+      throw error
+    }
   }
 
   async signIn(credentials: SignInCredentials): Promise<AuthSession> {
@@ -101,18 +118,22 @@ export class HttpAuthService implements AuthService {
       method: 'POST',
     })
 
-    const session = buildSessionFromToken(response.token, credentials.email)
-
-    if (session === null) {
+    if (buildSessionFromToken(response.token, credentials.email) === null) {
       throw new Error('Token retornado pelo servidor não pôde ser interpretado.')
     }
 
     setAuthToken(response.token)
+    const session = await this.getSession()
+
+    if (session === null) {
+      throw new Error('Não foi possível carregar os dados do usuário autenticado.')
+    }
+
     return session
   }
 
   async signUp(credentials: SignUpCredentials): Promise<AuthSession> {
-    const createdUser = await apiFetch<UserResponse>('/users', {
+    await apiFetch('/users', {
       auth: 'none',
       body: { email: credentials.email, name: credentials.name, password: credentials.password },
       method: 'POST',
@@ -124,17 +145,13 @@ export class HttpAuthService implements AuthService {
       method: 'POST',
     })
 
-    const session: AuthSession = {
-      token: sessionResponse.token,
-      user: {
-        email: createdUser.user.email,
-        id: createdUser.user.id,
-        name: createdUser.user.name,
-        role: createdUser.user.role,
-      },
+    setAuthToken(sessionResponse.token)
+    const session = await this.getSession()
+
+    if (session === null) {
+      throw new Error('Não foi possível carregar os dados do usuário autenticado.')
     }
 
-    setAuthToken(sessionResponse.token)
     return session
   }
 
