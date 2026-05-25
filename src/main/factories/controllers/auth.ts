@@ -1,8 +1,10 @@
 import { z } from 'zod'
 
+import { GetMeUseCase } from '#src/application/use-cases/get-me/get-me-use-case.js'
 import { RegisterUserUseCase } from '#src/application/use-cases/register-user/register-user.use-case.js'
 import { SignInUseCase } from '#src/application/use-cases/signin/sign-in-use-case.js'
 import { ZodValidator } from '#src/infra/http/fastify/validators/zod-validator.js'
+import { GetMeController } from '#src/presentation/controllers/auth/get-me.controller.js'
 import { RegisterUserController } from '#src/presentation/controllers/auth/register-user.controller.js'
 import { SignInController } from '#src/presentation/controllers/auth/sign-in.controller.js'
 
@@ -26,6 +28,11 @@ export function makeSignInController(): SignInController {
     infrastructure.tokenGenerator,
   )
   return new SignInController(useCase, new ZodValidator(signInSchema))
+}
+
+export function makeGetMeController(): GetMeController {
+  const useCase = new GetMeUseCase(infrastructure.usersRepository, infrastructure.manifestationEvaluationsRepository)
+  return new GetMeController(useCase)
 }
 
 export function makeRegisterUserController(): RegisterUserController {
