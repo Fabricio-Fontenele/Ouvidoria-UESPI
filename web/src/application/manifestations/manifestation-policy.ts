@@ -1,7 +1,12 @@
 import type { ManifestationDetail } from './manifestation-detail-contract'
+import type { ManifestationStatus } from './manifestation-status-contract'
+
+export function canSendMessageByStatus(status: ManifestationStatus): boolean {
+  return status === 'in_analysis' || status === 'answered'
+}
 
 export function canSendMessage(detail: ManifestationDetail): boolean {
-  return detail.status === 'in_analysis' || detail.status === 'answered'
+  return canSendMessageByStatus(detail.status)
 }
 
 export function canFinalize(detail: ManifestationDetail): boolean {

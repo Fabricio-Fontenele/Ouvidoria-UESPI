@@ -5,6 +5,7 @@ import type {
 import type { ManifestationSummary } from '../../application/manifestations/manifestation-summary-contract'
 import type {
   AddMessageInput,
+  AddTrackedMessageInput,
   AttachmentDownloadUrlResult,
   CreateManifestationInput,
   CreateManifestationResult,
@@ -20,11 +21,15 @@ import type {
 } from '../../application/manifestations/manifestations-service'
 import type {
   RawTrackedManifestationDetail,
+  RawTrackedManifestationMessage,
   TrackedManifestationDetail,
 } from '../../application/manifestations/tracked-manifestation-contract'
 import type { ManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
 import { buildEmptyManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
-import { mapTrackedManifestationDetail } from '../../application/manifestations/tracked-manifestation-contract'
+import {
+  mapTrackedManifestationDetail,
+  mapTrackedManifestationMessage,
+} from '../../application/manifestations/tracked-manifestation-contract'
 import { apiFetch, publicApiFetch } from '../http/api-client'
 
 import type { RawManifestationDetail, RawMessageEntry } from './manifestation-detail-mapper'
@@ -56,6 +61,10 @@ interface TrackedDetailResponse {
   manifestation: RawTrackedManifestationDetail
 }
 
+interface TrackedMessageResponse {
+  message: RawTrackedManifestationMessage
+}
+
 export class HttpManifestationsService implements ManifestationsService {
   async addMessage(input: AddMessageInput): Promise<ManifestationMessageEntry> {
     const response = await apiFetch<MessageResponse>(`/manifestations/${input.manifestationId}/messages`, {
@@ -64,6 +73,15 @@ export class HttpManifestationsService implements ManifestationsService {
     })
 
     return mapMessageEntry(response.message)
+  }
+
+  async addTrackedMessage(input: AddTrackedMessageInput): Promise<ManifestationMessageEntry> {
+    const response = await publicApiFetch<TrackedMessageResponse>('/manifestations/track/messages', {
+      body: { accessCode: input.accessCode, content: input.content, protocol: input.protocol },
+      method: 'POST',
+    })
+
+    return mapTrackedManifestationMessage(response.message)
   }
 
   async create(input: CreateManifestationInput): Promise<CreateManifestationResult> {

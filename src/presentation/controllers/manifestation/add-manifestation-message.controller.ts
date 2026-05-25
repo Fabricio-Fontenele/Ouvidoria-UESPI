@@ -1,7 +1,7 @@
 import type { AddManifestationMessageUseCase } from '#src/application/use-cases/add-manifestation-message/add-manifestation-message-use-case.js'
-import { ManifestationInteractionNotAllowedError } from '#src/application/use-cases/add-manifestation-message/errors/manifestation-interaction-not-allowed-error.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToAccessManifestationError } from '#src/application/use-cases/manifestation-access/errors/not-allowed-to-access-manifestation-error.js'
+import { ManifestationInteractionNotAllowedError } from '#src/application/use-cases/manifestation-messaging/errors/manifestation-interaction-not-allowed-error.js'
 import { InvalidManifestationMessageContentError } from '#src/domain/value-objects/manifestation-message-content.js'
 
 import { MissingParamError } from '../../errors/missing-param-error.js'

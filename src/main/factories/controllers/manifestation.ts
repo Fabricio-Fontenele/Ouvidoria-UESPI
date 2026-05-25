@@ -1,6 +1,7 @@
 import { z, type ZodType } from 'zod'
 
 import { AddManifestationMessageUseCase } from '#src/application/use-cases/add-manifestation-message/add-manifestation-message-use-case.js'
+import { AddTrackedManifestationMessageUseCase } from '#src/application/use-cases/add-tracked-manifestation-message/add-tracked-manifestation-message-use-case.js'
 import { EvaluateManifestationUseCase } from '#src/application/use-cases/evaluate-manifestation/evaluate-manifestation-use-case.js'
 import { FinalizeManifestationUseCase } from '#src/application/use-cases/finalize-manifestation/finalize-manifestation-use-case.js'
 import { GetManifestationDetailsUseCase } from '#src/application/use-cases/get-manifestation-details/get-manifestation-details-use-case.js'
@@ -16,6 +17,7 @@ import { TrackManifestationByProtocolUseCase } from '#src/application/use-cases/
 import { ManifestationType } from '#src/domain/entities/manifestation.js'
 import { ZodValidator } from '#src/infra/http/fastify/validators/zod-validator.js'
 import { AddManifestationMessageController } from '#src/presentation/controllers/manifestation/add-manifestation-message.controller.js'
+import { AddTrackedManifestationMessageController } from '#src/presentation/controllers/manifestation/add-tracked-manifestation-message.controller.js'
 import { EvaluateManifestationController } from '#src/presentation/controllers/manifestation/evaluate-manifestation.controller.js'
 import { FinalizeManifestationController } from '#src/presentation/controllers/manifestation/finalize-manifestation.controller.js'
 import { GetManifestationAttachmentDownloadUrlController } from '#src/presentation/controllers/manifestation/get-manifestation-attachment-download-url.controller.js'
@@ -53,6 +55,12 @@ const addMessageSchema = z.object({ content: z.string() })
 const trackByProtocolSchema = z.object({
   protocol: z.string(),
   accessCode: z.string(),
+})
+
+const trackedAddMessageSchema = z.object({
+  protocol: z.string(),
+  accessCode: z.string(),
+  content: z.string(),
 })
 
 const multipartTrackSchema = trackByProtocolSchema
@@ -170,4 +178,13 @@ export function makeGetTrackedManifestationDetailsController(): GetTrackedManife
     infrastructure.hashComparer,
   )
   return new GetTrackedManifestationDetailsController(useCase, new ZodValidator(trackByProtocolSchema))
+}
+
+export function makeAddTrackedManifestationMessageController(): AddTrackedManifestationMessageController {
+  const useCase = new AddTrackedManifestationMessageUseCase(
+    infrastructure.manifestationsRepository,
+    infrastructure.manifestationInteractionsRepository,
+    infrastructure.hashComparer,
+  )
+  return new AddTrackedManifestationMessageController(useCase, new ZodValidator(trackedAddMessageSchema))
 }

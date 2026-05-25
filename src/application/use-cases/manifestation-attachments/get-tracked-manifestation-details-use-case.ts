@@ -4,6 +4,7 @@ import type {
   ManifestationDetailsDTO,
 } from '#src/application/dto/manifestation-query-dtos.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
+import type { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
 
 import { isTrackingVisibleAttachmentDTO } from './public-attachment-visibility.js'
@@ -16,6 +17,13 @@ interface GetTrackedManifestationDetailsInput {
   accessCode: string
 }
 
+interface TrackedManifestationMessage {
+  id: string
+  senderType: ManifestationMessageSenderType
+  content: string
+  createdAt: Date
+}
+
 interface GetTrackedManifestationDetailsOutput {
   manifestation: {
     protocol: string
@@ -25,6 +33,7 @@ interface GetTrackedManifestationDetailsOutput {
     administrativeUnitId: string
     forwardedToUnit: { id: string; name: string } | null
     createdAt: Date
+    messages: TrackedManifestationMessage[]
     attachments: ManifestationAttachmentDTO[]
   }
 }
@@ -75,6 +84,14 @@ function buildTrackedManifestationOutput(manifestation: ManifestationDetailsDTO)
     administrativeUnitId: manifestation.administrativeUnitId,
     forwardedToUnit: manifestation.forwardedToUnit,
     createdAt: manifestation.createdAt,
+    // Internal sender user ids are intentionally dropped — the anonymous tracker only needs to know
+    // who is talking (`senderType`), never which internal account answered.
+    messages: manifestation.messages.map((message) => ({
+      id: message.id,
+      senderType: message.senderType,
+      content: message.content,
+      createdAt: message.createdAt,
+    })),
     attachments: manifestation.attachments.filter(isTrackingVisibleAttachmentDTO),
   }
 }

@@ -9,6 +9,7 @@ import {
   getRemainingAttachmentSlots,
   validateAttachmentFiles,
 } from '../application/manifestations/attachment-policy'
+import { canSendMessageByStatus } from '../application/manifestations/manifestation-policy'
 import type {
   TrackedManifestationAttachmentInfo,
   TrackedManifestationDetail,
@@ -19,6 +20,7 @@ import { formatFileSize } from '../components/forms/form-file-utils'
 import { Icon } from '../components/icons/icon'
 import { AppHeader } from '../components/layout/app-header'
 import { SiteFooter } from '../components/layout/site-footer'
+import { ManifestationMessagesThread } from '../components/manifestations/manifestation-messages-thread'
 import { useCatalog } from '../hooks/use-catalog'
 import { useManifestationsService } from '../hooks/use-manifestations-service'
 import { formatBrDate } from '../utils/format-date'
@@ -98,6 +100,91 @@ function PublicAttachmentItem({
         </p>
       ) : null}
     </li>
+  )
+}
+
+function TrackedMessageComposer({
+  credentials,
+  detail,
+  onSent,
+}: {
+  credentials: TrackCredentials
+  detail: TrackedManifestationDetail
+  onSent: () => void
+}) {
+  const manifestationsService = useManifestationsService()
+  const fieldId = useId()
+  const [content, setContent] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const isOpen = canSendMessageByStatus(detail.status)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const trimmed = content.trim()
+
+    if (trimmed.length === 0) {
+      setError('Escreva uma mensagem antes de enviar.')
+      return
+    }
+
+    setIsSending(true)
+    setError(null)
+
+    try {
+      await manifestationsService.addTrackedMessage({
+        accessCode: credentials.accessCode,
+        content: trimmed,
+        protocol: credentials.protocol,
+      })
+      setContent('')
+      onSent()
+    } catch {
+      setError('Não foi possível enviar a mensagem. Tente novamente.')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  return (
+    <section className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6">
+      <h2 className="text-2xl font-black text-home-text">Enviar mensagem</h2>
+      {isOpen ? (
+        <form
+          className="mt-5 rounded-[28px] border border-login-brown/10 bg-white p-4 shadow-sm"
+          onSubmit={handleSubmit}
+        >
+          <label className="block text-sm font-bold text-home-text" htmlFor={fieldId}>
+            Escreva uma atualização ou responda à Ouvidoria
+          </label>
+          <textarea
+            className="mt-3 min-h-28 w-full resize-y rounded-2xl border border-login-brown/10 bg-home-action/30 px-4 py-3 text-base leading-7 text-home-text outline-none focus:border-home-blue focus:ring-2 focus:ring-home-blue/20"
+            id={fieldId}
+            onChange={(event) => setContent(event.target.value)}
+            placeholder="Digite sua mensagem..."
+            value={content}
+          />
+          <button
+            className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+            disabled={isSending || content.trim().length === 0}
+            type="submit"
+          >
+            {isSending ? 'Enviando...' : 'Enviar mensagem'}
+            <Icon className="size-4" name="send" />
+          </button>
+          {error !== null ? (
+            <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </form>
+      ) : (
+        <p className="mt-5 rounded-2xl bg-home-chip/70 px-5 py-4 text-sm leading-6 text-home-brown">
+          Esta manifestação não recebe novas mensagens no status atual.
+        </p>
+      )}
+    </section>
   )
 }
 
@@ -194,6 +281,10 @@ function PublicTrackedDetail({
           </div>
         </dl>
       </article>
+
+      <ManifestationMessagesThread messages={detail.messages} perspective="manifestant" />
+
+      <TrackedMessageComposer credentials={credentials} detail={detail} onSent={onReload} />
 
       <section className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6">
         <h2 className="text-2xl font-black text-home-text">Anexos</h2>
