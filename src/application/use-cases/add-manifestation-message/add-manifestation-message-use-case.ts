@@ -7,8 +7,8 @@ import { ManifestationMessage, ManifestationMessageSenderType } from '#src/domai
 import { ManifestationMessageContent } from '#src/domain/value-objects/manifestation-message-content.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
+import { ManifestationInteractionNotAllowedError } from '../manifestation-messaging/errors/manifestation-interaction-not-allowed-error.js'
 import type { UseCase } from '../use-case.js'
-import { ManifestationInteractionNotAllowedError } from './errors/manifestation-interaction-not-allowed-error.js'
 
 interface AddManifestationMessageInput {
   manifestationId: string

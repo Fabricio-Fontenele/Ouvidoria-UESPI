@@ -506,11 +506,13 @@ Erro esperado:
 - quando o caso de uso de detalhamento for executado;
 - então deve lançar `NotAllowedToAccessManifestationError`.
 
-#### CT-UC05-008 - Não deve registrar mensagem em manifestação anônima
+#### CT-UC05-008 - Não deve registrar mensagem em manifestação anônima pelo fluxo identificado
 
 - dado `manifestationId` existente com autoria identificada ausente (`authorUserId` igual a `null`);
-- quando o caso de uso de envio de mensagem for executado;
+- quando o caso de uso de envio de mensagem **identificado** (`add-manifestation-message`) for executado;
 - então deve lançar `NotAllowedToAccessManifestationError`.
+
+> Nota: esta restrição vale apenas para o fluxo **identificado** (autenticado por sessão). O manifestante anônimo envia e lê mensagens pelo fluxo de rastreamento (`POST /manifestations/track/messages` e `POST /manifestations/track/details`), autorizado por protocolo + `accessCode` — ver UC5b §20.
 
 #### CT-UC05-009 - Não deve registrar mensagem com conteúdo inválido
 

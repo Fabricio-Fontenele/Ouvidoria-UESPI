@@ -64,6 +64,10 @@ export interface UploadTrackedManifestationAttachmentInput extends TrackManifest
   file: File
 }
 
+export interface AddTrackedMessageInput extends TrackManifestationInput {
+  content: string
+}
+
 export interface GetTrackedManifestationAttachmentDownloadUrlInput extends TrackManifestationInput {
   attachmentId: string
 }
@@ -84,6 +88,7 @@ export interface ManifestationMetricsResult {
 
 export interface ManifestationsService {
   addMessage(input: AddMessageInput): Promise<ManifestationMessageEntry>
+  addTrackedMessage(input: AddTrackedMessageInput): Promise<ManifestationMessageEntry>
   create(input: CreateManifestationInput): Promise<CreateManifestationResult>
   evaluate(input: EvaluateInput): Promise<void>
   finalize(manifestationId: string): Promise<void>

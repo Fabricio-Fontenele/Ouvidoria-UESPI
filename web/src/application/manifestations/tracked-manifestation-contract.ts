@@ -1,5 +1,5 @@
-import type { ManifestationAttachmentUploaderType } from './manifestation-detail-contract'
-import { narrowAttachmentUploaderType } from './manifestation-detail-contract'
+import type { ManifestationAttachmentUploaderType, ManifestationMessageEntry } from './manifestation-detail-contract'
+import { narrowAttachmentUploaderType, narrowMessageSenderType } from './manifestation-detail-contract'
 import type { ManifestationStatus } from './manifestation-status-contract'
 import type { ManifestationType } from './manifestation-type-contract'
 
@@ -17,6 +17,7 @@ export interface TrackedManifestationDetail {
   attachments: TrackedManifestationAttachmentInfo[]
   campusId: string
   createdAt: string
+  messages: ManifestationMessageEntry[]
   protocol: string
   status: ManifestationStatus
   type: ManifestationType
@@ -29,8 +30,17 @@ export interface RawTrackedManifestationAttachmentInfo extends Omit<
   uploadedByType: string
 }
 
-export interface RawTrackedManifestationDetail extends Omit<TrackedManifestationDetail, 'attachments'> {
+// The tracked endpoint never exposes internal sender user ids, so the raw message omits it.
+export interface RawTrackedManifestationMessage {
+  content: string
+  createdAt: string
+  id: string
+  senderType: string
+}
+
+export interface RawTrackedManifestationDetail extends Omit<TrackedManifestationDetail, 'attachments' | 'messages'> {
   attachments: RawTrackedManifestationAttachmentInfo[]
+  messages: RawTrackedManifestationMessage[]
 }
 
 export function mapTrackedAttachmentInfo(
@@ -42,9 +52,20 @@ export function mapTrackedAttachmentInfo(
   }
 }
 
+export function mapTrackedManifestationMessage(message: RawTrackedManifestationMessage): ManifestationMessageEntry {
+  return {
+    content: message.content,
+    createdAt: message.createdAt,
+    id: message.id,
+    senderType: narrowMessageSenderType(message.senderType),
+    senderUserId: null,
+  }
+}
+
 export function mapTrackedManifestationDetail(raw: RawTrackedManifestationDetail): TrackedManifestationDetail {
   return {
     ...raw,
     attachments: raw.attachments.map(mapTrackedAttachmentInfo),
+    messages: raw.messages.map(mapTrackedManifestationMessage),
   }
 }
