@@ -1,6 +1,9 @@
 import { Prisma, type PrismaClient } from '@prisma/client'
 
-import type { ManifestationEvaluationsRepository } from '#src/application/repositories/manifestation-evaluations-repository.js'
+import type {
+  AttendantRatingSummary,
+  ManifestationEvaluationsRepository,
+} from '#src/application/repositories/manifestation-evaluations-repository.js'
 import { ManifestationAlreadyEvaluatedError } from '#src/application/use-cases/evaluate-manifestation/errors/manifestation-already-evaluated-error.js'
 import type { ManifestationEvaluation } from '#src/domain/entities/manifestation-evaluation.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
@@ -17,6 +20,19 @@ export class PrismaManifestationEvaluationsRepository implements ManifestationEv
   async findByManifestationId(manifestationId: string): Promise<ManifestationEvaluation | null> {
     const record = await this.prisma.manifestationEvaluation.findUnique({ where: { manifestationId } })
     return record === null ? null : manifestationEvaluationMapper.toDomain(record)
+  }
+
+  async getRatingSummaryByAttendantUserId(userId: string): Promise<AttendantRatingSummary> {
+    const aggregate = await this.prisma.manifestationEvaluation.aggregate({
+      where: { attendantUserId: userId },
+      _avg: { rating: true },
+      _count: { _all: true },
+    })
+
+    return {
+      average: aggregate._avg.rating,
+      count: aggregate._count._all,
+    }
   }
 
   async save(evaluation: ManifestationEvaluation, actorUserId: string): Promise<void> {
