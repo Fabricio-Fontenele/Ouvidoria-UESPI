@@ -15,8 +15,8 @@ import { Icon } from '../components/icons/icon'
 import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../components/layout/site-footer'
 import { ManifestationAttachmentsList } from '../components/manifestations/manifestation-attachments-list'
+import { CasePanelBlock, ManifestationCasePanel } from '../components/manifestations/manifestation-case-panel'
 import { ManifestationMessagesThread } from '../components/manifestations/manifestation-messages-thread'
-import { ManifestationSummaryCard } from '../components/manifestations/manifestation-summary-card'
 import { ManifestationTimelineCard } from '../components/manifestations/manifestation-timeline-card'
 import { useCatalog } from '../hooks/use-catalog'
 import { makeOmbudsmanService } from '../infrastructure/ombudsman/ombudsman-service-factory'
@@ -49,20 +49,15 @@ function NotFoundCard({ description, title }: { description: string; title: stri
 
 function DescriptionCard({ detail }: { detail: ManifestationDetail }) {
   return (
-    <section
-      aria-labelledby="manifestation-description-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h2 className="text-2xl font-black text-home-text" id="manifestation-description-title">
+    <section aria-labelledby="manifestation-description-title">
+      <h2 className="text-lg font-black text-home-text" id="manifestation-description-title">
         Descrição da manifestação
       </h2>
-      <p className="mt-5 text-lg leading-7 text-home-text sm:text-xl break-words whitespace-pre-line">
-        {detail.description}
-      </p>
+      <p className="mt-3 text-base leading-7 break-words whitespace-pre-line text-home-text">{detail.description}</p>
       {detail.involvedPeople !== null && detail.involvedPeople.length > 0 ? (
-        <div className="mt-6 rounded-2xl bg-home-action/40 p-4">
-          <p className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">Pessoas envolvidas</p>
-          <p className="mt-2 text-base leading-6 text-home-text break-words">{detail.involvedPeople}</p>
+        <div className="mt-4 rounded-xl bg-home-action/40 p-3">
+          <p className="text-[11px] font-bold tracking-[0.14em] text-home-brown/70 uppercase">Pessoas envolvidas</p>
+          <p className="mt-1 text-sm leading-6 break-words text-home-text">{detail.involvedPeople}</p>
         </div>
       ) : null}
     </section>
@@ -115,14 +110,11 @@ function AnswerComposer({
   }
 
   return (
-    <section
-      aria-labelledby="ombudsman-answer-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h3 className="text-xl font-black text-home-text" id="ombudsman-answer-title">
+    <section aria-labelledby="ombudsman-answer-title" className="rounded-2xl border border-login-brown/10 bg-white p-5">
+      <h3 className="text-lg font-black text-home-text" id="ombudsman-answer-title">
         Enviar resposta administrativa
       </h3>
-      <p className="mt-2 text-sm leading-6 text-home-brown">
+      <p className="mt-1 text-sm leading-6 text-home-brown">
         Sua resposta é registrada no histórico e o status transita para “Respondida” quando a manifestação está em
         análise.
       </p>
@@ -264,26 +256,18 @@ function ForwardAction({
   }
 
   return (
-    <section
-      aria-labelledby="ombudsman-forward-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h3 className="text-xl font-black text-home-text" id="ombudsman-forward-title">
-        Encaminhar ao setor responsável
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-home-brown">
-        Após acionar o setor responsável (por e-mail ou ofício), registre o encaminhamento aqui. O status passa para
-        “Aguardando setor” e o autor acompanha que a apuração está em andamento. Ao receber o retorno, responda
-        normalmente.
+    <div>
+      <p className="text-xs leading-5 text-home-brown">
+        Acione o setor (e-mail/ofício) e registre aqui — o status passa para “Aguardando setor”.
       </p>
 
       {detail.forwardedToUnit !== null ? (
-        <p className="mt-4 rounded-2xl bg-home-action/40 px-4 py-3 text-sm leading-6 text-home-text">
+        <p className="mt-3 rounded-xl bg-home-action/40 px-3 py-2 text-xs leading-5 text-home-text">
           Aguardando retorno de <strong className="font-bold">{detail.forwardedToUnit.name}</strong>.
         </p>
       ) : null}
 
-      <form className="mt-4 grid gap-4" onSubmit={(event) => void handleSubmit(event)}>
+      <form className="mt-3 grid gap-3" onSubmit={(event) => void handleSubmit(event)}>
         <div className="grid gap-2" ref={containerRef}>
           <label className="text-sm font-bold text-home-text" htmlFor={inputId}>
             Setor responsável
@@ -337,23 +321,21 @@ function ForwardAction({
             ) : null}
           </div>
         </div>
-        <div className="flex justify-end">
-          <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-            disabled={isSubmitting || administrativeUnitId === ''}
-            type="submit"
-          >
-            {isSubmitting ? 'Encaminhando...' : 'Encaminhar ao setor'}
-            <Icon className="size-4" name="chevron-right" />
-          </button>
-        </div>
+        <button
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+          disabled={isSubmitting || administrativeUnitId === ''}
+          type="submit"
+        >
+          {isSubmitting ? 'Encaminhando...' : 'Encaminhar ao setor'}
+          <Icon className="size-4" name="chevron-right" />
+        </button>
         {error !== null ? (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs leading-5 font-bold text-red-800" role="alert">
             {error}
           </p>
         ) : null}
       </form>
-    </section>
+    </div>
   )
 }
 
@@ -428,20 +410,10 @@ function StatusActions({
   const dialogContent = confirmingAction !== null ? statusChangeDialogContent[confirmingAction] : null
 
   return (
-    <section
-      aria-labelledby="ombudsman-status-actions-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h3 className="text-xl font-black text-home-text" id="ombudsman-status-actions-title">
-        Atualizar status
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-home-brown">
-        Finalize a manifestação somente após registrar uma resposta. Cancele quando o atendimento não puder prosseguir.
-      </p>
-
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+    <div>
+      <div className="flex flex-col gap-2">
         <button
-          className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-home-success px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-success/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-success disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-home-success px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-success/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-success disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
           disabled={!finalizeEnabled || pendingAction !== null}
           onClick={() => setConfirmingAction('finalized')}
           type="button"
@@ -451,7 +423,7 @@ function StatusActions({
         </button>
         {cancelEnabled ? (
           <button
-            className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-home-brown px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-brown/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-brown disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-home-brown px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-brown/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-brown disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
             disabled={pendingAction !== null}
             onClick={() => setConfirmingAction('canceled')}
             type="button"
@@ -463,7 +435,7 @@ function StatusActions({
       </div>
 
       {error !== null ? (
-        <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm leading-6 font-bold text-red-800" role="alert">
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs leading-5 font-bold text-red-800" role="alert">
           {error}
         </p>
       ) : null}
@@ -484,7 +456,7 @@ function StatusActions({
         title={dialogContent?.title ?? ''}
         tone={dialogContent?.tone}
       />
-    </section>
+    </div>
   )
 }
 
@@ -554,7 +526,7 @@ export function OmbudsmanManifestationDetailsPage() {
     return (
       <div className="min-h-svh bg-login-bg font-sans text-home-text">
         <AuthenticatedAppShell allowedRoles={ombudsmanAreaRoles}>
-          <main className="mx-auto w-full max-w-4xl px-5 pt-8 pb-12 sm:px-8 md:pt-12 lg:px-12">
+          <main className="mx-auto w-full max-w-6xl px-5 pt-8 pb-12 sm:px-8 md:pt-12 lg:px-12">
             {legacyProtocol !== null && legacyProtocol.trim().length > 0 ? (
               <NotFoundCard
                 description="Este link usa um formato antigo. Volte para a lista de demandas e abra a manifestação novamente."
@@ -601,23 +573,48 @@ export function OmbudsmanManifestationDetailsPage() {
           ) : null}
 
           {loadStatus === 'ready' && detail !== null ? (
-            <div className="mt-8 space-y-10">
-              <ManifestationSummaryCard catalog={catalog} detail={detail} showRequester />
-              <DescriptionCard detail={detail} />
-              <ManifestationAttachmentsList
-                attachments={detail.attachments}
-                onResolveDownloadUrl={resolveDownloadUrl}
-              />
-              <ManifestationTimelineCard history={detail.history} />
-              <ManifestationMessagesThread messages={detail.messages} perspective="institutional" />
-              <AnswerComposer detail={detail} ombudsmanService={ombudsmanService} onAnswered={refetch} />
-              <ForwardAction
-                catalog={catalog}
-                detail={detail}
-                ombudsmanService={ombudsmanService}
-                onForwarded={refetch}
-              />
-              <StatusActions detail={detail} ombudsmanService={ombudsmanService} onChanged={refetch} />
+            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+              <div className="order-2 space-y-6 lg:order-1">
+                <DescriptionCard detail={detail} />
+                <ManifestationMessagesThread messages={detail.messages} perspective="institutional" />
+                <AnswerComposer detail={detail} ombudsmanService={ombudsmanService} onAnswered={refetch} />
+                <ManifestationTimelineCard history={detail.history} />
+              </div>
+
+              <div className="order-1 lg:order-2">
+                <ManifestationCasePanel catalog={catalog} detail={detail} showRequester>
+                  <CasePanelBlock
+                    action={
+                      <span className="rounded-full bg-home-chip px-2.5 py-1 text-xs font-bold text-home-brown">
+                        {detail.attachments.length}
+                      </span>
+                    }
+                    title="Anexos"
+                  >
+                    <ManifestationAttachmentsList
+                      attachments={detail.attachments}
+                      onResolveDownloadUrl={resolveDownloadUrl}
+                    />
+                  </CasePanelBlock>
+
+                  {canForward(detail) ? (
+                    <CasePanelBlock title="Encaminhar">
+                      <ForwardAction
+                        catalog={catalog}
+                        detail={detail}
+                        ombudsmanService={ombudsmanService}
+                        onForwarded={refetch}
+                      />
+                    </CasePanelBlock>
+                  ) : null}
+
+                  {canFinalize(detail) || canCancel(detail) ? (
+                    <CasePanelBlock title="Atualizar status">
+                      <StatusActions detail={detail} ombudsmanService={ombudsmanService} onChanged={refetch} />
+                    </CasePanelBlock>
+                  ) : null}
+                </ManifestationCasePanel>
+              </div>
             </div>
           ) : null}
         </main>

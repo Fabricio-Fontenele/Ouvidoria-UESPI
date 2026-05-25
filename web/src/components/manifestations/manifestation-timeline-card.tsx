@@ -39,20 +39,17 @@ interface ManifestationTimelineCardProps {
 
 export function ManifestationTimelineCard({ history }: ManifestationTimelineCardProps) {
   return (
-    <section
-      aria-labelledby="manifestation-timeline-title"
-      className="rounded-[32px] border border-login-brown/10 bg-white p-5 shadow-login-frame sm:p-6"
-    >
-      <h2 className="text-2xl font-black text-home-text" id="manifestation-timeline-title">
+    <section aria-labelledby="manifestation-timeline-title" className="rounded-2xl border border-login-brown/10 p-5">
+      <h2 className="text-lg font-black text-home-text" id="manifestation-timeline-title">
         Linha do tempo
       </h2>
 
       {history.length === 0 ? (
-        <p className="mt-5 rounded-2xl bg-home-chip/60 px-4 py-3 text-sm leading-6 text-home-brown">
+        <p className="mt-4 rounded-xl bg-home-chip/60 px-4 py-3 text-sm leading-6 text-home-brown">
           Nenhuma atualização registrada ainda.
         </p>
       ) : (
-        <ol className="mt-5 space-y-4">
+        <ol className="mt-4 space-y-4">
           {history.map((entry, index) => {
             const icon = historyIconByType[entry.type]
             const description = describeHistoryEntry(entry)
