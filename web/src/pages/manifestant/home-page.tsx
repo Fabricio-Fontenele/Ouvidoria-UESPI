@@ -230,7 +230,11 @@ function FilterBar({
               : 'border border-home-text bg-transparent text-home-text hover:bg-home-text/5'
             : isActive
               ? statusStyle.badgeClassName
-              : cx('border bg-transparent hover:bg-home-chip/50', statusStyle.accentClassName, statusStyle.textClassName)
+              : cx(
+                  'border bg-transparent hover:bg-home-chip/50',
+                  statusStyle.accentClassName,
+                  statusStyle.textClassName,
+                )
 
         return (
           <button

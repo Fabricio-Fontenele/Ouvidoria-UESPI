@@ -70,23 +70,34 @@ const dashboardMetricCards: Array<{
   anchorId: string
   caption: string
   icon: IconName
-  iconClassName: string
   label: string
-  status: ManifestationStatus
+  status: ManifestationStatus | null
 }> = [
+  {
+    anchorId: 'demandas',
+    caption: 'Manifestações recebidas pela Ouvidoria',
+    icon: 'file-text',
+    label: 'Total',
+    status: null,
+  },
   {
     anchorId: 'em-analise',
     caption: 'Aguardam triagem ou resposta',
     icon: 'clock',
-    iconClassName: 'text-home-blue',
     label: 'Em análise',
     status: 'in_analysis',
+  },
+  {
+    anchorId: 'pendentes',
+    caption: 'Encaminhadas para setor responsável',
+    icon: 'clock',
+    label: 'Aguardando setor',
+    status: 'awaiting_unit',
   },
   {
     anchorId: 'respondidas',
     caption: 'Respostas administrativas registradas',
     icon: 'message-circle',
-    iconClassName: 'text-home-blue',
     label: 'Respondidas',
     status: 'answered',
   },
@@ -94,9 +105,15 @@ const dashboardMetricCards: Array<{
     anchorId: 'finalizadas',
     caption: 'Manifestações encerradas no histórico',
     icon: 'check-circle',
-    iconClassName: 'text-home-success',
     label: 'Finalizadas',
     status: 'finalized',
+  },
+  {
+    anchorId: 'canceladas',
+    caption: 'Registros cancelados no fluxo',
+    icon: 'x',
+    label: 'Canceladas',
+    status: 'canceled',
   },
 ]
 
@@ -199,9 +216,11 @@ function getDateRangeError(dateRangeFilter: DateRangeFilter) {
 function MetricCards({
   loadStatus,
   statusTotals,
+  totalItems,
 }: {
   loadStatus: LoadStatus
   statusTotals: ManifestationStatusTotals
+  totalItems: number
 }) {
   return (
     <section aria-labelledby="ombudsman-metrics-title" className="mt-10">
@@ -210,28 +229,55 @@ function MetricCards({
       </h2>
 
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4 lg:gap-6">
-        {dashboardMetricCards.map((metric) => (
-          <div className={metricCardClasses.join(' ')} id={metric.anchorId} key={metric.label}>
-            <div className="absolute inset-x-0 top-0 h-1 bg-home-blue/80 opacity-0 transition duration-150 group-hover:opacity-100" />
-            <dt className="flex items-start justify-between gap-3">
-              <span>
-                <span className="block text-sm leading-5 font-black text-home-text md:text-base">{metric.label}</span>
-                <span className="mt-1 block text-xs leading-5 text-home-brown">{metric.caption}</span>
-              </span>
-              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-home-blue/10 md:size-11">
-                <Icon className={cx('size-5 md:size-6', metric.iconClassName)} name={metric.icon} />
-              </span>
-            </dt>
-            <dd className="mt-5 flex items-end justify-between gap-3">
-              <span className="text-4xl leading-none font-black tabular-nums text-home-text md:text-5xl">
-                {loadStatus === 'loading' ? '—' : String(statusTotals[metric.status]).padStart(2, '0')}
-              </span>
-              <span className="rounded-full bg-home-action px-3 py-1 text-[11px] leading-4 font-bold text-home-brown">
-                demandas
-              </span>
-            </dd>
-          </div>
-        ))}
+        {dashboardMetricCards.map((metric) => {
+          const statusStyle = metric.status === null ? null : getManifestationStatusStyle(metric.status)
+          const colorClasses =
+            statusStyle === null
+              ? {
+                  badgeClassName: 'bg-home-text text-white',
+                  iconClassName: 'bg-home-text text-white',
+                  textClassName: 'text-home-text',
+                }
+              : statusStyle
+          const metricValue = metric.status === null ? totalItems : statusTotals[metric.status]
+
+          return (
+            <div className={metricCardClasses.join(' ')} id={metric.anchorId} key={metric.label}>
+              <div
+                className={cx(
+                  'absolute inset-x-0 top-0 h-1 opacity-0 transition duration-150 group-hover:opacity-100',
+                  colorClasses.iconClassName,
+                )}
+              />
+              <dt className="flex items-start justify-between gap-3">
+                <span>
+                  <span className={cx('block text-sm leading-5 font-black md:text-base', colorClasses.textClassName)}>
+                    {metric.label}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-home-brown">{metric.caption}</span>
+                </span>
+                <span
+                  className={cx(
+                    'grid size-10 shrink-0 place-items-center rounded-lg md:size-11',
+                    colorClasses.iconClassName,
+                  )}
+                >
+                  <Icon className="size-5 md:size-6" name={metric.icon} />
+                </span>
+              </dt>
+              <dd className="mt-5">
+                <span
+                  className={cx(
+                    'text-4xl leading-none font-black tabular-nums md:text-5xl',
+                    colorClasses.textClassName,
+                  )}
+                >
+                  {loadStatus === 'loading' ? '—' : String(metricValue).padStart(2, '0')}
+                </span>
+              </dd>
+            </div>
+          )
+        })}
       </dl>
     </section>
   )
@@ -297,7 +343,7 @@ function DateRangeFilterInput({ error, onChange, value }: DateRangeFilterInputPr
       <legend className={filterLabelClasses}>Período</legend>
       <div className="grid items-end gap-2 min-[520px]:grid-cols-[1fr_auto_1fr]">
         <label className="grid gap-1.5" htmlFor={fromId}>
-          <span className={filterSubLabelClasses}>data inicial</span>
+          <span className={filterSubLabelClasses}>desde</span>
           <span
             className={cx(
               filterControlBaseClasses,
@@ -322,7 +368,7 @@ function DateRangeFilterInput({ error, onChange, value }: DateRangeFilterInputPr
         </label>
         <span className="hidden pb-2 text-xs leading-5 font-black text-home-brown/70 min-[520px]:block">até</span>
         <label className="grid gap-1.5" htmlFor={toId}>
-          <span className={filterSubLabelClasses}>data final</span>
+          <span className={filterSubLabelClasses}>até</span>
           <span
             className={cx(
               filterControlBaseClasses,
@@ -477,6 +523,7 @@ export function OmbudsmanHomePage() {
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
   const [metricsLoadStatus, setMetricsLoadStatus] = useState<LoadStatus>('loading')
+  const [metricsTotalItems, setMetricsTotalItems] = useState(0)
   const [statusTotals, setStatusTotals] = useState<ManifestationStatusTotals>(buildEmptyManifestationStatusTotals)
 
   const statusOptions: FilterSelectOption[] = manifestationStatusContracts.map((status) => ({
@@ -503,6 +550,7 @@ export function OmbudsmanHomePage() {
         }
 
         setStatusTotals(result.statusTotals)
+        setMetricsTotalItems(result.totalItems)
         setMetricsLoadStatus('ready')
       } catch {
         if (!isMounted) {
@@ -510,6 +558,7 @@ export function OmbudsmanHomePage() {
         }
 
         setStatusTotals(buildEmptyManifestationStatusTotals())
+        setMetricsTotalItems(0)
         setMetricsLoadStatus('error')
       }
     }
@@ -612,7 +661,7 @@ export function OmbudsmanHomePage() {
               </p>
             </header>
 
-            <MetricCards loadStatus={metricsLoadStatus} statusTotals={statusTotals} />
+            <MetricCards loadStatus={metricsLoadStatus} statusTotals={statusTotals} totalItems={metricsTotalItems} />
 
             <section
               aria-labelledby="ombudsman-demands-title"
