@@ -114,6 +114,7 @@ describe('HttpOmbudsmanService', () => {
       administrativeUnitId: 'unit-1',
       campusId: 'campus-1',
       from: '2026-05-01T00:00:00.000Z',
+      onlyMine: true,
       page: 2,
       status: 'in_analysis',
       to: '2026-05-31T23:59:59.999Z',
@@ -130,6 +131,7 @@ describe('HttpOmbudsmanService', () => {
     expect(parsed.searchParams.get('campusId')).toBe('campus-1')
     expect(parsed.searchParams.get('administrativeUnitId')).toBe('unit-1')
     expect(parsed.searchParams.get('from')).toBe('2026-05-01T00:00:00.000Z')
+    expect(parsed.searchParams.get('onlyMine')).toBe('true')
     expect(parsed.searchParams.get('to')).toBe('2026-05-31T23:59:59.999Z')
     expect((init?.headers as Headers).get('Authorization')).toBe('Bearer token-abc')
     expect(result).toStrictEqual({
@@ -163,6 +165,7 @@ describe('HttpOmbudsmanService', () => {
     expect(parsed.searchParams.get('campusId')).toBeNull()
     expect(parsed.searchParams.get('administrativeUnitId')).toBeNull()
     expect(parsed.searchParams.get('from')).toBeNull()
+    expect(parsed.searchParams.get('onlyMine')).toBeNull()
     expect(parsed.searchParams.get('to')).toBeNull()
   })
 

@@ -9,6 +9,7 @@ export interface OmbudsmanListFilters {
   administrativeUnitId?: string
   campusId?: string
   from?: string
+  onlyMine?: boolean
   page?: number
   status?: ManifestationStatus
   to?: string

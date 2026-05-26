@@ -59,6 +59,13 @@ interface DateRangeFilterInputProps {
   value: DateRangeFilter
 }
 
+interface CheckboxFilterProps {
+  checked: boolean
+  id: string
+  label: string
+  onChange: (checked: boolean) => void
+}
+
 const dashboardMetricCards: Array<{
   anchorId: string
   caption: string
@@ -143,11 +150,13 @@ function buildFiltersForRequest({
   statusFilter,
   typeFilter,
   dateRangeFilter,
+  onlyMine,
   page,
 }: {
   statusFilter: StatusFilter
   typeFilter: TypeFilter
   dateRangeFilter: DateRangeFilter
+  onlyMine: boolean
   page: number
 }): OmbudsmanListFilters {
   const filters: OmbudsmanListFilters = { page }
@@ -158,6 +167,10 @@ function buildFiltersForRequest({
 
   if (typeFilter !== FILTER_ALL_VALUE) {
     filters.type = typeFilter
+  }
+
+  if (onlyMine) {
+    filters.onlyMine = true
   }
 
   const dateRangeBounds = buildLocalDateRangeBounds(dateRangeFilter)
@@ -342,6 +355,24 @@ function DateRangeFilterInput({ error, onChange, value }: DateRangeFilterInputPr
   )
 }
 
+function CheckboxFilter({ checked, id, label, onChange }: CheckboxFilterProps) {
+  return (
+    <label
+      className="flex min-h-10 w-full cursor-pointer items-center gap-3 rounded-lg border border-login-brown/10 bg-home-surface px-3 text-sm leading-5 font-bold text-home-text transition duration-150 hover:bg-home-action/70 sm:col-span-2 lg:col-span-4"
+      htmlFor={id}
+    >
+      <input
+        checked={checked}
+        className="size-4 accent-home-blue"
+        id={id}
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      <span>{label}</span>
+    </label>
+  )
+}
+
 function StatusBadge({ status }: { status: ManifestationStatus }) {
   const statusContract = getManifestationStatusContract(status)
   const statusStyle = getManifestationStatusStyle(status)
@@ -442,6 +473,7 @@ export function OmbudsmanHomePage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(FILTER_ALL_VALUE)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(FILTER_ALL_VALUE)
+  const [onlyMine, setOnlyMine] = useState(false)
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
   const [metricsLoadStatus, setMetricsLoadStatus] = useState<LoadStatus>('loading')
@@ -502,7 +534,7 @@ export function OmbudsmanHomePage() {
 
       try {
         const result = await ombudsmanService.list(
-          buildFiltersForRequest({ dateRangeFilter, page, statusFilter, typeFilter }),
+          buildFiltersForRequest({ dateRangeFilter, onlyMine, page, statusFilter, typeFilter }),
         )
 
         if (!isMounted) {
@@ -532,12 +564,13 @@ export function OmbudsmanHomePage() {
     return () => {
       isMounted = false
     }
-  }, [dateRangeError, dateRangeFilter, ombudsmanService, page, statusFilter, typeFilter])
+  }, [dateRangeError, dateRangeFilter, ombudsmanService, onlyMine, page, statusFilter, typeFilter])
 
   const filteredManifestations = useMemo(() => searchManifestations(manifestations, search), [manifestations, search])
 
   const handleClearFilters = () => {
     setDateRangeFilter(emptyDateRangeFilter)
+    setOnlyMine(false)
     setPage(1)
     setSearch('')
     setStatusFilter(FILTER_ALL_VALUE)
@@ -557,6 +590,10 @@ export function OmbudsmanHomePage() {
   }
   const handleSearchChange = (value: string) => {
     setSearch(value)
+    setPage(1)
+  }
+  const handleOnlyMineChange = (value: boolean) => {
+    setOnlyMine(value)
     setPage(1)
   }
 
@@ -608,6 +645,12 @@ export function OmbudsmanHomePage() {
                     error={dateRangeError}
                     onChange={handleDateRangeFilterChange}
                     value={dateRangeFilter}
+                  />
+                  <CheckboxFilter
+                    checked={onlyMine}
+                    id="ombudsman-only-mine-filter"
+                    label="Minhas demandas"
+                    onChange={handleOnlyMineChange}
                   />
                 </div>
               </div>

@@ -14,6 +14,7 @@ export interface GetAdminManifestationMetricsQuery {
   administrativeUnitId?: string
   campusId?: string
   from?: string
+  onlyMine?: string
   to?: string
   type?: string
 }
@@ -55,7 +56,7 @@ export class GetAdminManifestationMetricsController extends BaseController<GetAd
       return unauthorized(new UnauthenticatedError())
     }
 
-    const { type, campusId, administrativeUnitId, from, to } = request.query
+    const { type, campusId, administrativeUnitId, from, onlyMine, to } = request.query
     const filters: AdminManifestationFilters = {}
 
     if (type !== undefined) {
@@ -71,6 +72,16 @@ export class GetAdminManifestationMetricsController extends BaseController<GetAd
 
     if (administrativeUnitId !== undefined && administrativeUnitId !== '') {
       filters.administrativeUnitId = administrativeUnitId
+    }
+
+    if (onlyMine !== undefined) {
+      if (onlyMine !== 'true' && onlyMine !== 'false') {
+        return badRequest(new InvalidParamError('onlyMine'))
+      }
+
+      if (onlyMine === 'true') {
+        filters.attendantUserId = request.user.id
+      }
     }
 
     if (from !== undefined) {

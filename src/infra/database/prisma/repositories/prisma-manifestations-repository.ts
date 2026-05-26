@@ -179,6 +179,10 @@ function buildAdminManifestationWhere(filters: AdminManifestationFilters): Prism
     where.type = filters.type
   }
 
+  if (filters.attendantUserId !== undefined) {
+    where.attendantUserId = filters.attendantUserId
+  }
+
   if (filters.campusId !== undefined) {
     where.campusId = filters.campusId
   }
