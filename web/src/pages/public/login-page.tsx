@@ -70,8 +70,14 @@ function LoginPageBase({ allowedRoles, showSignUpLink, subtitle, unauthorizedMes
       return
     }
 
-    void signOut()
-    setAuthorizationError(unauthorizedMessage)
+    // Usuário autenticado com papel não permitido nesta tela: encerra a sessão e mostra o
+    // motivo. O setState fica após o await (assíncrono), evitando o set-state-in-effect.
+    const rejectUnauthorizedSession = async () => {
+      await signOut().catch(() => undefined)
+      setAuthorizationError(unauthorizedMessage)
+    }
+
+    void rejectUnauthorizedSession()
   }, [allowedRoles, isAuthenticated, signOut, unauthorizedMessage, user])
 
   const isAuthorizedAuthenticatedUser = isAuthenticated && user !== null && allowedRoles.includes(user.role)
