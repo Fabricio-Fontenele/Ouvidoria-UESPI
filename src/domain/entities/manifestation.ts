@@ -22,10 +22,27 @@ export enum ManifestationStatus {
   FINALIZED = 'finalized',
 }
 
+export enum ManifestationCancellationReason {
+  DUPLICATE = 'duplicate',
+  OUT_OF_SCOPE = 'out_of_scope',
+  INSUFFICIENT_INFORMATION = 'insufficient_information',
+  OFFENSIVE_CONTENT = 'offensive_content',
+  SPAM_OR_TEST = 'spam_or_test',
+  REQUESTED_BY_AUTHOR = 'requested_by_author',
+  OTHER = 'other',
+}
+
 export class ManifestationStatusTransitionNotAllowedError extends Error {
   constructor(current: ManifestationStatus, attempted: ManifestationStatus) {
     super(`Cannot transition manifestation status from ${current} to ${attempted}.`)
     this.name = 'ManifestationStatusTransitionNotAllowedError'
+  }
+}
+
+export class CancellationReasonRequiresNoteError extends Error {
+  constructor() {
+    super('A justification note is required when the cancellation reason is "other".')
+    this.name = 'CancellationReasonRequiresNoteError'
   }
 }
 
@@ -75,9 +92,11 @@ interface OpenManifestationProps {
 }
 
 export class Manifestation extends Entity<ManifestationProps> {
+  // Cancelamento não passa mais por esta tabela: tem regra própria em `cancelByOmbudsman`
+  // (exige motivo e é permitido a partir de qualquer estado aberto, inclusive `answered`).
   private static readonly allowedAdministrativeStatusTransitions: Record<ManifestationStatus, ManifestationStatus[]> = {
-    [ManifestationStatus.IN_ANALYSIS]: [ManifestationStatus.CANCELED],
-    [ManifestationStatus.AWAITING_UNIT]: [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.CANCELED],
+    [ManifestationStatus.IN_ANALYSIS]: [],
+    [ManifestationStatus.AWAITING_UNIT]: [ManifestationStatus.IN_ANALYSIS],
     [ManifestationStatus.ANSWERED]: [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.FINALIZED],
     [ManifestationStatus.CANCELED]: [],
     [ManifestationStatus.FINALIZED]: [],
@@ -170,6 +189,18 @@ export class Manifestation extends Entity<ManifestationProps> {
     }
 
     this.props.status = target
+  }
+
+  cancelByOmbudsman(reason: ManifestationCancellationReason, note: string | null): void {
+    if (this.props.status === ManifestationStatus.CANCELED || this.props.status === ManifestationStatus.FINALIZED) {
+      throw new ManifestationStatusTransitionNotAllowedError(this.props.status, ManifestationStatus.CANCELED)
+    }
+
+    if (reason === ManifestationCancellationReason.OTHER && (note === null || note.trim() === '')) {
+      throw new CancellationReasonRequiresNoteError()
+    }
+
+    this.props.status = ManifestationStatus.CANCELED
   }
 
   finalizeByAuthor(): void {

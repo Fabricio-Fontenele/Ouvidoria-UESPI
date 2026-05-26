@@ -36,6 +36,8 @@ function evaluationRecordedEntry(): ManifestationHistoryEntry {
     actorType: 'manifestant',
     actorUserId: 'user-1',
     attendantUserId: 'ombudsman-1',
+    cancellationNote: null,
+    cancellationReason: null,
     createdAt: '2026-05-05T10:00:00.000Z',
     description: 'Atendimento avaliado pelo autor (5/5).',
     fromStatus: null,

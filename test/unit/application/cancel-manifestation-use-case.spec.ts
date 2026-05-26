@@ -3,12 +3,14 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
+import { CancelManifestationUseCase } from '#src/application/use-cases/cancel-manifestation/cancel-manifestation-use-case.js'
 import { ManifestationNotFoundError } from '#src/application/use-cases/manifestation-access/errors/manifestation-not-found-error.js'
 import { NotAllowedToManageManifestationError } from '#src/application/use-cases/manifestation-administration/errors/not-allowed-to-manage-manifestation-error.js'
-import { UpdateManifestationStatusUseCase } from '#src/application/use-cases/update-manifestation-status/update-manifestation-status-use-case.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
 import {
+  CancellationReasonRequiresNoteError,
   Manifestation,
+  ManifestationCancellationReason,
   ManifestationStatus,
   ManifestationStatusTransitionNotAllowedError,
   ManifestationType,
@@ -22,11 +24,11 @@ import { Name } from '#src/domain/value-objects/name.js'
 import { Protocol } from '#src/domain/value-objects/protocol.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
-describe('UpdateManifestationStatusUseCase', () => {
+describe('CancelManifestationUseCase', () => {
   let manifestationAdministrationRepository: DeepMockProxy<ManifestationAdministrationRepository>
   let manifestationsRepository: DeepMockProxy<ManifestationsRepository>
   let usersRepository: DeepMockProxy<UsersRepository>
-  let sut: UpdateManifestationStatusUseCase
+  let sut: CancelManifestationUseCase
 
   const buildRequester = (role: UserRole, id = 'ombudsman-1'): User =>
     User.create(
@@ -67,14 +69,14 @@ describe('UpdateManifestationStatusUseCase', () => {
     mockReset(manifestationsRepository)
     mockReset(usersRepository)
 
-    sut = new UpdateManifestationStatusUseCase(
+    sut = new CancelManifestationUseCase(
       manifestationAdministrationRepository,
       manifestationsRepository,
       usersRepository,
     )
   })
 
-  it('finalizes an open manifestation administratively', async () => {
+  it('cancels an answered manifestation with a reason and persists the audit entry', async () => {
     const manifestation = buildManifestation(ManifestationStatus.ANSWERED)
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
@@ -83,40 +85,46 @@ describe('UpdateManifestationStatusUseCase', () => {
     const result = await sut.execute({
       requesterUserId: 'ombudsman-1',
       manifestationId: 'manifestation-1',
-      status: ManifestationStatus.FINALIZED,
+      reason: ManifestationCancellationReason.DUPLICATE,
+      note: null,
     })
 
-    expect(manifestation.status).toBe(ManifestationStatus.FINALIZED)
+    expect(manifestation.status).toBe(ManifestationStatus.CANCELED)
     expect(manifestationsRepository.save.mock.calls).toHaveLength(0)
-    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toStrictEqual([
+    expect(manifestationAdministrationRepository.cancel.mock.calls).toStrictEqual([
       [
         {
           manifestation,
           actorUserId: 'ombudsman-1',
           actorType: ManifestationMessageSenderType.OMBUDSMAN,
           fromStatus: ManifestationStatus.ANSWERED,
-          toStatus: ManifestationStatus.FINALIZED,
+          toStatus: ManifestationStatus.CANCELED,
+          reason: ManifestationCancellationReason.DUPLICATE,
+          note: null,
         },
       ],
     ])
-    expect(result.manifestation.status).toBe(ManifestationStatus.FINALIZED)
+    expect(result.manifestation.status).toBe(ManifestationStatus.CANCELED)
     expect(result.manifestation.id).toBe('manifestation-1')
-    expect(result.manifestation.involvedPeople).toBeNull()
   })
 
-  it('rejects unsupported in-analysis to finalized transitions', async () => {
-    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
-    manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.IN_ANALYSIS))
+  it('records the admin actor type for admin requesters', async () => {
+    const manifestation = buildManifestation(ManifestationStatus.IN_ANALYSIS)
 
-    await expect(
-      sut.execute({
-        requesterUserId: 'ombudsman-1',
-        manifestationId: 'manifestation-1',
-        status: ManifestationStatus.FINALIZED,
-      }),
-    ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.ADMIN, 'admin-1'))
+    manifestationsRepository.findById.mockResolvedValue(manifestation)
 
-    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
+    await sut.execute({
+      requesterUserId: 'admin-1',
+      manifestationId: 'manifestation-1',
+      reason: ManifestationCancellationReason.OTHER,
+      note: 'Closed via in-person request.',
+    })
+
+    expect(manifestationAdministrationRepository.cancel.mock.calls[0]?.[0].actorType).toBe(
+      ManifestationMessageSenderType.ADMIN,
+    )
+    expect(manifestationAdministrationRepository.cancel.mock.calls[0]?.[0].note).toBe('Closed via in-person request.')
   })
 
   it('rejects requesters without administrative role', async () => {
@@ -126,12 +134,13 @@ describe('UpdateManifestationStatusUseCase', () => {
       sut.execute({
         requesterUserId: 'user-1',
         manifestationId: 'manifestation-1',
-        status: ManifestationStatus.FINALIZED,
+        reason: ManifestationCancellationReason.DUPLICATE,
+        note: null,
       }),
     ).rejects.toBeInstanceOf(NotAllowedToManageManifestationError)
 
     expect(manifestationsRepository.findById.mock.calls).toHaveLength(0)
-    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.cancel.mock.calls).toHaveLength(0)
   })
 
   it('throws when the manifestation does not exist', async () => {
@@ -142,12 +151,29 @@ describe('UpdateManifestationStatusUseCase', () => {
       sut.execute({
         requesterUserId: 'ombudsman-1',
         manifestationId: 'missing-manifestation',
-        status: ManifestationStatus.FINALIZED,
+        reason: ManifestationCancellationReason.DUPLICATE,
+        note: null,
       }),
     ).rejects.toBeInstanceOf(ManifestationNotFoundError)
   })
 
-  it('throws when the target status equals the current status', async () => {
+  it('refuses to cancel a terminal manifestation', async () => {
+    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
+    manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.FINALIZED))
+
+    await expect(
+      sut.execute({
+        requesterUserId: 'ombudsman-1',
+        manifestationId: 'manifestation-1',
+        reason: ManifestationCancellationReason.DUPLICATE,
+        note: null,
+      }),
+    ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
+
+    expect(manifestationAdministrationRepository.cancel.mock.calls).toHaveLength(0)
+  })
+
+  it('requires a note for the "other" reason before reaching the repository', async () => {
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
     manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.IN_ANALYSIS))
 
@@ -155,40 +181,27 @@ describe('UpdateManifestationStatusUseCase', () => {
       sut.execute({
         requesterUserId: 'ombudsman-1',
         manifestationId: 'manifestation-1',
-        status: ManifestationStatus.IN_ANALYSIS,
+        reason: ManifestationCancellationReason.OTHER,
+        note: null,
       }),
-    ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
+    ).rejects.toBeInstanceOf(CancellationReasonRequiresNoteError)
 
-    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
-  })
-
-  it('throws when transitioning from a terminal status', async () => {
-    usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
-    manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.CANCELED))
-
-    await expect(
-      sut.execute({
-        requesterUserId: 'ombudsman-1',
-        manifestationId: 'manifestation-1',
-        status: ManifestationStatus.IN_ANALYSIS,
-      }),
-    ).rejects.toBeInstanceOf(ManifestationStatusTransitionNotAllowedError)
-
-    expect(manifestationAdministrationRepository.updateStatus.mock.calls).toHaveLength(0)
+    expect(manifestationAdministrationRepository.cancel.mock.calls).toHaveLength(0)
   })
 
   it('propagates administrative persistence failures', async () => {
     const saveError = new Error('save failed')
 
     usersRepository.findById.mockResolvedValue(buildRequester(UserRole.OMBUDSMAN))
-    manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.ANSWERED))
-    manifestationAdministrationRepository.updateStatus.mockRejectedValue(saveError)
+    manifestationsRepository.findById.mockResolvedValue(buildManifestation(ManifestationStatus.IN_ANALYSIS))
+    manifestationAdministrationRepository.cancel.mockRejectedValue(saveError)
 
     await expect(
       sut.execute({
         requesterUserId: 'ombudsman-1',
         manifestationId: 'manifestation-1',
-        status: ManifestationStatus.IN_ANALYSIS,
+        reason: ManifestationCancellationReason.DUPLICATE,
+        note: null,
       }),
     ).rejects.toThrow(saveError)
   })

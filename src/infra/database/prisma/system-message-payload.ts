@@ -1,6 +1,6 @@
 import type { ManifestationHistoryEntryDTO } from '#src/application/dto/manifestation-query-dtos.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
-import { ManifestationStatus } from '#src/domain/entities/manifestation.js'
+import { ManifestationCancellationReason, ManifestationStatus } from '#src/domain/entities/manifestation.js'
 
 type SystemHistoryType = Exclude<ManifestationHistoryEntryDTO['type'], 'administrative_answered'>
 
@@ -13,6 +13,8 @@ export interface SystemMessagePayload {
   toStatus: ManifestationStatus | null
   rating?: number
   attendantUserId?: string
+  cancellationReason?: ManifestationCancellationReason
+  cancellationNote?: string
 }
 
 const HISTORY_TYPES: readonly SystemHistoryType[] = [
@@ -21,9 +23,11 @@ const HISTORY_TYPES: readonly SystemHistoryType[] = [
   'forwarded_to_unit',
   'finalized_by_author',
   'evaluation_recorded',
+  'canceled',
 ]
 const SENDER_TYPES: readonly ManifestationMessageSenderType[] = Object.values(ManifestationMessageSenderType)
 const STATUSES: readonly ManifestationStatus[] = Object.values(ManifestationStatus)
+const CANCELLATION_REASONS: readonly ManifestationCancellationReason[] = Object.values(ManifestationCancellationReason)
 
 function isHistoryType(value: unknown): value is SystemHistoryType {
   return typeof value === 'string' && HISTORY_TYPES.includes(value as SystemHistoryType)
@@ -41,6 +45,10 @@ function isValidRating(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5
 }
 
+function isCancellationReason(value: unknown): value is ManifestationCancellationReason {
+  return typeof value === 'string' && CANCELLATION_REASONS.includes(value as ManifestationCancellationReason)
+}
+
 export function encodeSystemMessagePayload(payload: SystemMessagePayload): string {
   const serializable: Record<string, unknown> = {
     type: payload.type,
@@ -55,6 +63,12 @@ export function encodeSystemMessagePayload(payload: SystemMessagePayload): strin
   }
   if (payload.attendantUserId !== undefined) {
     serializable['attendantUserId'] = payload.attendantUserId
+  }
+  if (payload.cancellationReason !== undefined) {
+    serializable['cancellationReason'] = payload.cancellationReason
+  }
+  if (payload.cancellationNote !== undefined) {
+    serializable['cancellationNote'] = payload.cancellationNote
   }
   return JSON.stringify(serializable)
 }
@@ -98,6 +112,8 @@ export function decodeSystemMessagePayload(raw: string): SystemMessagePayload | 
   const type = candidate['type']
   const rawRating = candidate['rating']
   const rawAttendantUserId = candidate['attendantUserId']
+  const rawCancellationReason = candidate['cancellationReason']
+  const rawCancellationNote = candidate['cancellationNote']
 
   if (type === 'evaluation_recorded') {
     if (!isValidRating(rawRating)) {
@@ -106,6 +122,10 @@ export function decodeSystemMessagePayload(raw: string): SystemMessagePayload | 
     if (typeof rawAttendantUserId !== 'string') {
       return null
     }
+  }
+
+  if (type === 'canceled' && !isCancellationReason(rawCancellationReason)) {
+    return null
   }
 
   const payload: SystemMessagePayload = {
@@ -121,6 +141,12 @@ export function decodeSystemMessagePayload(raw: string): SystemMessagePayload | 
   }
   if (typeof rawAttendantUserId === 'string') {
     payload.attendantUserId = rawAttendantUserId
+  }
+  if (isCancellationReason(rawCancellationReason)) {
+    payload.cancellationReason = rawCancellationReason
+  }
+  if (typeof rawCancellationNote === 'string') {
+    payload.cancellationNote = rawCancellationNote
   }
   return payload
 }

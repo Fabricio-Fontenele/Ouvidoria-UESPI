@@ -266,6 +266,8 @@ function buildDetailsDTO(
       toStatus: ManifestationStatus.IN_ANALYSIS,
       rating: null,
       attendantUserId: null,
+      cancellationReason: null,
+      cancellationNote: null,
       createdAt: manifestation.createdAt,
     },
   ]
@@ -287,6 +289,8 @@ function buildDetailsDTO(
           toStatus: payload.toStatus,
           rating: payload.rating ?? null,
           attendantUserId: payload.attendantUserId ?? null,
+          cancellationReason: payload.cancellationReason ?? null,
+          cancellationNote: payload.cancellationNote ?? null,
           createdAt: message.createdAt,
         })
       }
@@ -306,6 +310,8 @@ function buildDetailsDTO(
         toStatus: null,
         rating: null,
         attendantUserId: null,
+        cancellationReason: null,
+        cancellationNote: null,
         createdAt: message.createdAt,
       })
     }

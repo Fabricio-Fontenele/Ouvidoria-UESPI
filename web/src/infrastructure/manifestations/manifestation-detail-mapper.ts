@@ -20,8 +20,13 @@ export interface RawManifestationDetail extends Omit<
   messages: RawMessageEntry[]
 }
 
-export interface RawHistoryEntry extends Omit<ManifestationHistoryEntry, 'actorType' | 'type'> {
+export interface RawHistoryEntry extends Omit<
+  ManifestationHistoryEntry,
+  'actorType' | 'cancellationNote' | 'cancellationReason' | 'type'
+> {
   actorType: string
+  cancellationNote?: string | null
+  cancellationReason?: string | null
   type: string
 }
 
@@ -37,6 +42,8 @@ export function mapHistoryEntry(entry: RawHistoryEntry): ManifestationHistoryEnt
   return {
     ...entry,
     actorType: narrowMessageSenderType(entry.actorType),
+    cancellationNote: entry.cancellationNote ?? null,
+    cancellationReason: entry.cancellationReason ?? null,
     type: narrowHistoryEntryType(entry.type),
   }
 }

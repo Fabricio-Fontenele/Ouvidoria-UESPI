@@ -9,9 +9,10 @@ export function canFinalize(detail: ManifestationDetail): boolean {
 }
 
 export function canCancel(detail: ManifestationDetail): boolean {
-  // Espelha o backend: só é possível cancelar a partir de in_analysis ou awaiting_unit.
-  // De 'answered' o domínio só permite ir para in_analysis ou finalized (não cancelar).
-  return detail.status === 'in_analysis' || detail.status === 'awaiting_unit'
+  // Espelha o backend (cancelByOmbudsman): é possível cancelar a qualquer momento enquanto
+  // a manifestação está aberta — in_analysis, awaiting_unit ou answered — desde que haja
+  // justificativa. Estados terminais (finalized/canceled) não podem ser cancelados.
+  return detail.status === 'in_analysis' || detail.status === 'awaiting_unit' || detail.status === 'answered'
 }
 
 export function canForward(detail: ManifestationDetail): boolean {

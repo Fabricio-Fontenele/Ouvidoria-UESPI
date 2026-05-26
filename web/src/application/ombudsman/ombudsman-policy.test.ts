@@ -57,13 +57,13 @@ describe('ombudsman-policy', () => {
   })
 
   describe('canCancel', () => {
-    it('allows canceling while still actionable', () => {
+    it('allows canceling at any open stage, including answered', () => {
       expect(canCancel(buildDetail('in_analysis'))).toBe(true)
       expect(canCancel(buildDetail('awaiting_unit'))).toBe(true)
+      expect(canCancel(buildDetail('answered'))).toBe(true)
     })
 
-    it('blocks canceling after the manifestation was answered or closed', () => {
-      expect(canCancel(buildDetail('answered'))).toBe(false)
+    it('blocks canceling after the manifestation reached a terminal state', () => {
       expect(canCancel(buildDetail('finalized'))).toBe(false)
       expect(canCancel(buildDetail('canceled'))).toBe(false)
     })

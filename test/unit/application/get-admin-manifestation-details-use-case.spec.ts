@@ -64,6 +64,8 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         toStatus: ManifestationStatus.IN_ANALYSIS,
         rating: null,
         attendantUserId: null,
+        cancellationReason: null,
+        cancellationNote: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
       {
@@ -75,6 +77,8 @@ describe('GetAdminManifestationDetailsUseCase', () => {
         toStatus: ManifestationStatus.FINALIZED,
         rating: null,
         attendantUserId: null,
+        cancellationReason: null,
+        cancellationNote: null,
         createdAt: new Date('2026-05-10T16:00:00.000Z'),
       },
     ],

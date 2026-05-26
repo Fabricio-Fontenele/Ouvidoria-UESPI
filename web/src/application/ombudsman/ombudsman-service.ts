@@ -5,6 +5,8 @@ import type { ManifestationSummary } from '../manifestations/manifestation-summa
 import type { ManifestationType } from '../manifestations/manifestation-type-contract'
 import type { PaginationMeta } from '../pagination/pagination-contract'
 
+import type { CancellationReason } from './cancellation-reasons'
+
 export interface OmbudsmanListFilters {
   administrativeUnitId?: string
   campusId?: string
@@ -26,7 +28,9 @@ export interface OmbudsmanMetricsResult {
   totalItems: number
 }
 
-export type OmbudsmanStatusChange = 'canceled' | 'finalized'
+// Cancelamento tem fluxo próprio (cancel) com motivo obrigatório; o updateStatus genérico
+// cobre apenas a finalização administrativa.
+export type OmbudsmanStatusChange = 'finalized'
 
 export interface AnswerManifestationInput {
   content: string
@@ -36,6 +40,12 @@ export interface AnswerManifestationInput {
 export interface UpdateManifestationStatusInput {
   manifestationId: string
   status: OmbudsmanStatusChange
+}
+
+export interface CancelManifestationInput {
+  manifestationId: string
+  note?: string
+  reason: CancellationReason
 }
 
 export interface GetAdminAttachmentDownloadUrlInput {
@@ -50,6 +60,7 @@ export interface ForwardManifestationToUnitInput {
 
 export interface OmbudsmanService {
   answer(input: AnswerManifestationInput): Promise<void>
+  cancel(input: CancelManifestationInput): Promise<void>
   forwardToUnit(input: ForwardManifestationToUnitInput): Promise<void>
   getAttachmentDownloadUrl(input: GetAdminAttachmentDownloadUrlInput): Promise<string>
   getById(id: string): Promise<ManifestationDetail>

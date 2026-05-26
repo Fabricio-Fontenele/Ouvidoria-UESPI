@@ -2,6 +2,7 @@ import type { ManifestationDetail } from '../../application/manifestations/manif
 import type { ManifestationSummary } from '../../application/manifestations/manifestation-summary-contract'
 import type {
   AnswerManifestationInput,
+  CancelManifestationInput,
   ForwardManifestationToUnitInput,
   GetAdminAttachmentDownloadUrlInput,
   OmbudsmanMetricsResult,
@@ -55,6 +56,13 @@ export class HttpOmbudsmanService implements OmbudsmanService {
   async answer(input: AnswerManifestationInput): Promise<void> {
     await apiFetch<unknown>(`/admin/manifestations/${input.manifestationId}/answer`, {
       body: { content: input.content },
+      method: 'POST',
+    })
+  }
+
+  async cancel(input: CancelManifestationInput): Promise<void> {
+    await apiFetch<unknown>(`/admin/manifestations/${input.manifestationId}/cancel`, {
+      body: input.note === undefined ? { reason: input.reason } : { note: input.note, reason: input.reason },
       method: 'POST',
     })
   }

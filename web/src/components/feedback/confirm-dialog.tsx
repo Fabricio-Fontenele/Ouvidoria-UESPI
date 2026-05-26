@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { type ReactNode, useEffect, useId, useRef } from 'react'
 
 import { Icon } from '../icons/icon'
 import type { IconName } from '../icons/icon'
@@ -8,6 +8,8 @@ export type ConfirmDialogTone = 'danger' | 'neutral' | 'success'
 
 interface ConfirmDialogProps {
   cancelLabel?: string
+  children?: ReactNode
+  confirmDisabled?: boolean
   confirmingLabel?: string
   confirmLabel: string
   description: string
@@ -34,6 +36,8 @@ const accentByTone: Record<ConfirmDialogTone, string> = {
 
 export function ConfirmDialog({
   cancelLabel = 'Cancelar',
+  children,
+  confirmDisabled = false,
   confirmingLabel,
   confirmLabel,
   description,
@@ -49,12 +53,21 @@ export function ConfirmDialog({
   const descriptionId = useId()
   const cancelButtonRef = useRef<HTMLButtonElement | null>(null)
 
+  // Foca o botão cancelar apenas quando o diálogo abre. Mantendo este efeito atrelado
+  // só a `open`, evitamos roubar o foco de campos internos a cada re-render (ex.: digitar
+  // a justificativa de cancelamento re-renderiza o pai e mudaria a referência de onCancel).
   useEffect(() => {
     if (!open) {
       return
     }
 
     cancelButtonRef.current?.focus()
+  }, [open])
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape' && !isConfirming) {
@@ -108,7 +121,7 @@ export function ConfirmDialog({
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="relative w-full max-w-md rounded-[28px] border border-login-brown/10 bg-home-surface p-6 shadow-login-frame sm:p-7"
+        className="relative max-h-[calc(100svh-3rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-login-brown/10 bg-home-surface p-6 shadow-login-frame sm:p-7"
         role="dialog"
       >
         <div className="flex items-start gap-4">
@@ -127,6 +140,8 @@ export function ConfirmDialog({
           </div>
         </div>
 
+        {children !== undefined ? <div className="mt-5">{children}</div> : null}
+
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             className="inline-flex min-h-11 items-center justify-center rounded-full border border-login-brown/15 bg-white px-5 text-sm font-bold text-home-text transition duration-150 hover:bg-home-action/40 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:opacity-70"
@@ -142,7 +157,7 @@ export function ConfirmDialog({
               'inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold text-white transition duration-150 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 disabled:cursor-not-allowed disabled:opacity-70',
               confirmButtonByTone[tone],
             )}
-            disabled={isConfirming}
+            disabled={isConfirming || confirmDisabled}
             onClick={onConfirm}
             type="button"
           >

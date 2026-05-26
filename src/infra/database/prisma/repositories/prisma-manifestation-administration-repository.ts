@@ -6,7 +6,11 @@ import {
   ManifestationMessageSenderType,
   type ManifestationMessage,
 } from '#src/domain/entities/manifestation-message.js'
-import type { Manifestation, ManifestationStatus } from '#src/domain/entities/manifestation.js'
+import {
+  ManifestationCancellationReason,
+  type Manifestation,
+  type ManifestationStatus,
+} from '#src/domain/entities/manifestation.js'
 import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 import { manifestationMessageMapper } from '../mappers/manifestation-message.mapper.js'
@@ -43,6 +47,26 @@ interface ForwardToUnitParams {
   forwardedToUnitName: string
   fromStatus: ManifestationStatus
   toStatus: ManifestationStatus
+}
+
+interface CancelParams {
+  manifestation: Manifestation
+  actorUserId: string
+  actorType: ManifestationMessageSenderType
+  fromStatus: ManifestationStatus
+  toStatus: ManifestationStatus
+  reason: ManifestationCancellationReason
+  note: string | null
+}
+
+const CANCELLATION_REASON_LABELS: Record<ManifestationCancellationReason, string> = {
+  [ManifestationCancellationReason.DUPLICATE]: 'Manifestação duplicada',
+  [ManifestationCancellationReason.OUT_OF_SCOPE]: 'Fora da competência da ouvidoria',
+  [ManifestationCancellationReason.INSUFFICIENT_INFORMATION]: 'Informações insuficientes para análise',
+  [ManifestationCancellationReason.OFFENSIVE_CONTENT]: 'Conteúdo ofensivo ou impróprio',
+  [ManifestationCancellationReason.SPAM_OR_TEST]: 'Registro de teste ou spam',
+  [ManifestationCancellationReason.REQUESTED_BY_AUTHOR]: 'Cancelamento solicitado pelo autor',
+  [ManifestationCancellationReason.OTHER]: 'Outro',
 }
 
 export class PrismaManifestationAdministrationRepository implements ManifestationAdministrationRepository {
@@ -191,6 +215,49 @@ export class PrismaManifestationAdministrationRepository implements Manifestatio
             actorType,
             fromStatus,
             toStatus,
+          }),
+        },
+      })
+    })
+  }
+
+  async cancel({
+    manifestation,
+    actorUserId,
+    actorType,
+    fromStatus,
+    toStatus,
+    reason,
+    note,
+  }: CancelParams): Promise<void> {
+    const manifestationData = manifestationMapper.toPersistence(manifestation)
+    const reasonLabel = CANCELLATION_REASON_LABELS[reason]
+    const description =
+      note === null
+        ? `Manifestação cancelada pela ouvidoria. Motivo: ${reasonLabel}.`
+        : `Manifestação cancelada pela ouvidoria. Motivo: ${reasonLabel}. Observação: ${note}`
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.manifestation.update({
+        where: { id: manifestationData.id },
+        data: { status: manifestationData.status, attendantUserId: manifestationData.attendantUserId },
+      })
+
+      await tx.manifestationMessage.create({
+        data: {
+          id: new UniqueEntityId().toString(),
+          manifestationId: manifestationData.id,
+          senderUserId: null,
+          senderType: ManifestationMessageSenderType.SYSTEM,
+          content: encodeSystemMessagePayload({
+            type: 'canceled',
+            description,
+            actorUserId,
+            actorType,
+            fromStatus,
+            toStatus,
+            cancellationReason: reason,
+            ...(note === null ? {} : { cancellationNote: note }),
           }),
         },
       })

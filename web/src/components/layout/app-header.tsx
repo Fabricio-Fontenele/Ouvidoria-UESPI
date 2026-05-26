@@ -285,9 +285,14 @@ function AppSideMenu({
   const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const titleId = isAuthenticated ? 'authenticated-project-menu-title' : 'public-project-menu-title'
 
+  // Monta o menu na própria renderização ao abrir (padrão "ajustar estado durante a
+  // renderização" do React), evitando chamar setState de forma síncrona dentro do efeito.
+  if (isOpen && !shouldRender) {
+    setShouldRender(true)
+  }
+
   useEffect(() => {
     if (isOpen) {
-      setShouldRender(true)
       const animationFrameId = window.requestAnimationFrame(() => {
         setIsMenuVisible(true)
       })
@@ -297,20 +302,19 @@ function AppSideMenu({
       }
     }
 
-    setIsMenuVisible(false)
-
-    if (!shouldRender) {
-      return
-    }
-
+    // Fechando: dispara a transição de saída no próximo frame e desmonta após ela.
+    const animationFrameId = window.requestAnimationFrame(() => {
+      setIsMenuVisible(false)
+    })
     const timeoutId = window.setTimeout(() => {
       setShouldRender(false)
     }, 220)
 
     return () => {
+      window.cancelAnimationFrame(animationFrameId)
       window.clearTimeout(timeoutId)
     }
-  }, [isOpen, shouldRender])
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) {
