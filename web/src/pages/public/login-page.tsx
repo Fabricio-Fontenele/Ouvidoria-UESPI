@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
 import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
+import type { AuthenticatedUserRole } from '../../application/auth/auth-types'
 import { getSignInFormDefaultValues, signInFormSchema } from '../../application/auth/sign-in-form-contract'
 import type { SignInFormData } from '../../application/auth/sign-in-form-contract'
 import { AuthForm } from '../../components/auth/auth-form'
@@ -32,13 +33,19 @@ const loginFields: AuthFormField<SignInFormData>[] = [
   },
 ]
 
+const manifestantLoginRoles: readonly AuthenticatedUserRole[] = ['manifestant']
+const restrictedLoginRoles: readonly AuthenticatedUserRole[] = ['admin', 'ombudsman']
+
 interface LoginPageBaseProps {
+  allowedRoles: readonly AuthenticatedUserRole[]
   showSignUpLink: boolean
   subtitle: string
+  unauthorizedMessage: string
 }
 
-function LoginPageBase({ showSignUpLink, subtitle }: LoginPageBaseProps) {
-  const { error, isAuthenticated, isLoading, signIn, user } = useAuth()
+function LoginPageBase({ allowedRoles, showSignUpLink, subtitle, unauthorizedMessage }: LoginPageBaseProps) {
+  const { error, isAuthenticated, isLoading, signIn, signOut, user } = useAuth()
+  const [authorizationError, setAuthorizationError] = useState<string | null>(null)
   const form = useForm<SignInFormData>({
     defaultValues: getSignInFormDefaultValues(),
     mode: 'onSubmit',
@@ -49,16 +56,28 @@ function LoginPageBase({ showSignUpLink, subtitle }: LoginPageBaseProps) {
     'transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
   const handleSubmit: SubmitHandler<SignInFormData> = async (formData) => {
+    setAuthorizationError(null)
     await signIn(formData)
   }
 
   useEffect(() => {
-    if (isAuthenticated && user !== null) {
-      replaceWith(getAuthenticatedHomeRoute(user.role))
+    if (!isAuthenticated || user === null) {
+      return
     }
-  }, [isAuthenticated, user])
 
-  if (isAuthenticated && user !== null) {
+    if (allowedRoles.includes(user.role)) {
+      replaceWith(getAuthenticatedHomeRoute(user.role))
+      return
+    }
+
+    void signOut()
+    setAuthorizationError(unauthorizedMessage)
+  }, [allowedRoles, isAuthenticated, signOut, unauthorizedMessage, user])
+
+  const isAuthorizedAuthenticatedUser = isAuthenticated && user !== null && allowedRoles.includes(user.role)
+  const statusMessage = authorizationError ?? error ?? undefined
+
+  if (isAuthorizedAuthenticatedUser) {
     return null
   }
 
@@ -82,8 +101,8 @@ function LoginPageBase({ showSignUpLink, subtitle }: LoginPageBaseProps) {
         fields={loginFields}
         form={form}
         onSubmit={handleSubmit}
-        status={error === null ? null : 'error'}
-        statusMessage={error ?? undefined}
+        status={statusMessage === undefined ? null : 'error'}
+        statusMessage={statusMessage}
         submitIcon="arrow-right"
         submitLabel={isLoading ? 'Entrando...' : 'Entrar'}
         submittingLabel="Entrando..."
@@ -109,9 +128,23 @@ function LoginPageBase({ showSignUpLink, subtitle }: LoginPageBaseProps) {
 }
 
 export function LoginPage() {
-  return <LoginPageBase showSignUpLink subtitle="Acesse o portal da transparência acadêmica" />
+  return (
+    <LoginPageBase
+      allowedRoles={manifestantLoginRoles}
+      showSignUpLink
+      subtitle="Acesse o portal da transparência acadêmica"
+      unauthorizedMessage="Esta tela é exclusiva para manifestantes. Use o acesso restrito para entrar como ouvidor ou administrador."
+    />
+  )
 }
 
 export function RestrictedLoginPage() {
-  return <LoginPageBase showSignUpLink={false} subtitle="Acesse a área administrativa" />
+  return (
+    <LoginPageBase
+      allowedRoles={restrictedLoginRoles}
+      showSignUpLink={false}
+      subtitle="Acesse a área administrativa"
+      unauthorizedMessage="Esta tela é exclusiva para ouvidores e administradores. Use o login comum para entrar como manifestante."
+    />
+  )
 }
