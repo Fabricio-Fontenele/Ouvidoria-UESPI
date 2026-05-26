@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
-import { getAuthenticatedHomeRoute, navigateTo, routes } from '../../app/routes'
+import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
 import { getSignInFormDefaultValues, signInFormSchema } from '../../application/auth/sign-in-form-contract'
 import type { SignInFormData } from '../../application/auth/sign-in-form-contract'
 import { AuthForm } from '../../components/auth/auth-form'
@@ -49,9 +49,13 @@ export function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && user !== null) {
-      navigateTo(getAuthenticatedHomeRoute(user.role))
+      replaceWith(getAuthenticatedHomeRoute(user.role))
     }
   }, [isAuthenticated, user])
+
+  if (isAuthenticated && user !== null) {
+    return null
+  }
 
   return (
     <AuthPageShell
