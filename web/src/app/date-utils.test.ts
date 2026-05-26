@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildLocalDayRange, formatBrazilianShortDate, parseBrazilianShortDateLabel } from './date-utils'
+import {
+  buildLocalDateRangeBounds,
+  buildLocalDayRange,
+  formatBrazilianShortDate,
+  isLocalDateRangeInOrder,
+  parseBrazilianShortDateLabel,
+} from './date-utils'
 
 describe('date-utils', () => {
   describe('parseBrazilianShortDateLabel', () => {
@@ -69,6 +75,59 @@ describe('date-utils', () => {
       expect(buildLocalDayRange('15/05/2024')).toBeNull()
       expect(buildLocalDayRange('')).toBeNull()
       expect(buildLocalDayRange('2024-13-40')).not.toBeNull()
+    })
+  })
+
+  describe('buildLocalDateRangeBounds', () => {
+    it('returns the start of the initial day and the end of the final day', () => {
+      const bounds = buildLocalDateRangeBounds({ from: '2024-09-02', to: '2024-09-05' })
+
+      expect(bounds).not.toBeNull()
+      if (bounds === null) return
+
+      const from = bounds.from === undefined ? null : new Date(bounds.from)
+      const to = bounds.to === undefined ? null : new Date(bounds.to)
+
+      expect(from).not.toBeNull()
+      expect(to).not.toBeNull()
+      expect(from?.getFullYear()).toBe(2024)
+      expect(from?.getMonth()).toBe(8)
+      expect(from?.getDate()).toBe(2)
+      expect(from?.getHours()).toBe(0)
+      expect(from?.getMinutes()).toBe(0)
+      expect(to?.getFullYear()).toBe(2024)
+      expect(to?.getMonth()).toBe(8)
+      expect(to?.getDate()).toBe(5)
+      expect(to?.getHours()).toBe(23)
+      expect(to?.getMinutes()).toBe(59)
+    })
+
+    it('allows open-ended ranges', () => {
+      expect(buildLocalDateRangeBounds({ from: '2024-09-02', to: '' })).toStrictEqual({
+        from: buildLocalDayRange('2024-09-02')?.from,
+      })
+      expect(buildLocalDateRangeBounds({ from: '', to: '2024-09-05' })).toStrictEqual({
+        to: buildLocalDayRange('2024-09-05')?.to,
+      })
+    })
+
+    it('returns null when one of the filled dates is malformed', () => {
+      expect(buildLocalDateRangeBounds({ from: '02/09/2024', to: '2024-09-05' })).toBeNull()
+      expect(buildLocalDateRangeBounds({ from: '2024-09-02', to: '05/09/2024' })).toBeNull()
+    })
+  })
+
+  describe('isLocalDateRangeInOrder', () => {
+    it('accepts empty and chronologically ordered ranges', () => {
+      expect(isLocalDateRangeInOrder({ from: '', to: '' })).toBe(true)
+      expect(isLocalDateRangeInOrder({ from: '2024-09-02', to: '' })).toBe(true)
+      expect(isLocalDateRangeInOrder({ from: '', to: '2024-09-05' })).toBe(true)
+      expect(isLocalDateRangeInOrder({ from: '2024-09-02', to: '2024-09-05' })).toBe(true)
+      expect(isLocalDateRangeInOrder({ from: '2024-09-05', to: '2024-09-05' })).toBe(true)
+    })
+
+    it('rejects a final date before the initial date', () => {
+      expect(isLocalDateRangeInOrder({ from: '2024-09-05', to: '2024-09-02' })).toBe(false)
     })
   })
 })

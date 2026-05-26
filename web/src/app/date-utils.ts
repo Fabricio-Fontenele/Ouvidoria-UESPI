@@ -45,6 +45,16 @@ export interface LocalDayRange {
   to: string
 }
 
+export interface LocalDateRangeInput {
+  from: string
+  to: string
+}
+
+export interface LocalDateRangeBounds {
+  from?: string
+  to?: string
+}
+
 const LOCAL_DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 
 export function buildLocalDayRange(localDate: string): LocalDayRange | null {
@@ -73,4 +83,34 @@ export function buildLocalDayRange(localDate: string): LocalDayRange | null {
     from: from.toISOString(),
     to: to.toISOString(),
   }
+}
+
+export function buildLocalDateRangeBounds({ from, to }: LocalDateRangeInput): LocalDateRangeBounds | null {
+  const bounds: LocalDateRangeBounds = {}
+
+  if (from !== '') {
+    const fromRange = buildLocalDayRange(from)
+
+    if (fromRange === null) {
+      return null
+    }
+
+    bounds.from = fromRange.from
+  }
+
+  if (to !== '') {
+    const toRange = buildLocalDayRange(to)
+
+    if (toRange === null) {
+      return null
+    }
+
+    bounds.to = toRange.to
+  }
+
+  return bounds
+}
+
+export function isLocalDateRangeInOrder({ from, to }: LocalDateRangeInput) {
+  return from === '' || to === '' || from <= to
 }
