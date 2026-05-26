@@ -17,6 +17,7 @@ export interface ListAdminManifestationsQuery {
   campusId?: string
   administrativeUnitId?: string
   from?: string
+  onlyMine?: string
   to?: string
 }
 
@@ -59,7 +60,7 @@ export class ListAdminManifestationsController extends BaseController<ListAdminM
       return unauthorized(new UnauthenticatedError())
     }
 
-    const { page: rawPage, status, type, campusId, administrativeUnitId, from, to } = request.query
+    const { page: rawPage, status, type, campusId, administrativeUnitId, from, onlyMine, to } = request.query
 
     if (rawPage !== undefined && !POSITIVE_INTEGER.test(rawPage)) {
       return badRequest(new InvalidPageNumberError())
@@ -88,6 +89,16 @@ export class ListAdminManifestationsController extends BaseController<ListAdminM
 
     if (administrativeUnitId !== undefined && administrativeUnitId !== '') {
       filters.administrativeUnitId = administrativeUnitId
+    }
+
+    if (onlyMine !== undefined) {
+      if (onlyMine !== 'true' && onlyMine !== 'false') {
+        return badRequest(new InvalidParamError('onlyMine'))
+      }
+
+      if (onlyMine === 'true') {
+        filters.attendantUserId = request.user.id
+      }
     }
 
     if (from !== undefined) {

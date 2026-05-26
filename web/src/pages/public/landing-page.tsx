@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
-import { routes } from '../app/routes'
+import { routes } from '../../app/routes'
 
-import guaraMascot from '../assets/guara-bot-poses03.png'
-import guaraShortcutMascot from '../assets/guara-mascot.png'
-import uespiImageBg from '../assets/uespi-img-bg.webp'
-import { Icon, type IconName } from '../components/icons/icon'
-import { AppHeader } from '../components/layout/app-header'
-import { SiteFooter } from '../components/layout/site-footer'
+import guaraMascot from '../../assets/guara-bot-poses03.png'
+import guaraShortcutMascot from '../../assets/guara-mascot.png'
+import uespiImageBg from '../../assets/uespi-img-bg.webp'
+import { Icon, type IconName } from '../../components/icons/icon'
+import { AppHeader } from '../../components/layout/app-header'
+import { SiteFooter } from '../../components/layout/site-footer'
 
-import { cx } from '../utils/cx'
+import { cx } from '../../utils/cx'
 
 interface ManifestationType {
   description: string
@@ -746,9 +746,9 @@ export function LandingPage() {
         <HeroSection />
         <RegisterTrackSection onRegisterClick={openRegistrationModal} />
         <GuaraCallout />
+        <OmbudsmanOverviewSection />
         <ManifestationTypesSection />
         <StepsSection />
-        <OmbudsmanOverviewSection />
       </main>
       <FloatingGuaraShortcut />
       <SiteFooter />

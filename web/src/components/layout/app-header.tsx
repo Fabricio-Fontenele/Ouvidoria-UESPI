@@ -5,6 +5,7 @@ import type { AuthenticatedUser, AuthenticatedUserRole } from '../../application
 import uespiLogo from '../../assets/brasao.png'
 import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
+import { ConfirmDialog } from '../feedback/confirm-dialog'
 import { Icon, type IconName } from '../icons/icon'
 
 interface AppHeaderProps {
@@ -27,9 +28,6 @@ const manifestantMenuItems: MenuItem[] = [
   { href: routes.home, icon: 'home', label: 'Início' },
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
   { href: buildGuaraNewManifestationHref(), icon: 'plus-circle', label: 'Novo registro' },
-  { href: '#notificacoes', icon: 'bell', label: 'Notificações' },
-  { href: '#suporte', icon: 'help', label: 'Suporte' },
-  { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
   { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
 ]
 
@@ -184,9 +182,38 @@ function AppSideMenu({
   user: AuthenticatedUser | null
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const [shouldRender, setShouldRender] = useState(isOpen)
+  const [isMenuVisible, setIsMenuVisible] = useState(false)
   const menuItems = isAuthenticated ? getAuthenticatedMenuItems(role) : publicMenuItems
   const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const titleId = isAuthenticated ? 'authenticated-project-menu-title' : 'public-project-menu-title'
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true)
+      const animationFrameId = window.requestAnimationFrame(() => {
+        setIsMenuVisible(true)
+      })
+
+      return () => {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+    }
+
+    setIsMenuVisible(false)
+
+    if (!shouldRender) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShouldRender(false)
+    }, 220)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [isOpen, shouldRender])
 
   useEffect(() => {
     if (!isOpen) {
@@ -210,7 +237,7 @@ function AppSideMenu({
     }
   }, [isOpen, onClose, openerRef])
 
-  if (!isOpen) {
+  if (!shouldRender) {
     return null
   }
 
@@ -245,10 +272,13 @@ function AppSideMenu({
   }
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className={cx('fixed inset-0 z-50', !isMenuVisible && 'pointer-events-none')}>
       <button
         aria-label="Fechar menu"
-        className="absolute inset-0 cursor-default bg-login-text/35"
+        className={cx(
+          'absolute inset-0 cursor-default bg-login-text/35 transition-opacity duration-200 ease-out',
+          isMenuVisible ? 'opacity-100' : 'opacity-0',
+        )}
         onClick={handleClose}
         type="button"
       />
@@ -256,7 +286,10 @@ function AppSideMenu({
       <aside
         aria-labelledby={titleId}
         aria-modal="true"
-        className="absolute top-0 right-0 flex h-full w-[min(86vw,360px)] flex-col bg-login-surface px-5 pt-5 pb-6 shadow-login-card"
+        className={cx(
+          'absolute top-0 right-0 flex h-full w-[min(86vw,360px)] flex-col bg-login-surface px-5 pt-5 pb-6 shadow-login-card transition-transform duration-200 ease-out',
+          isMenuVisible ? 'translate-x-0' : 'translate-x-full',
+        )}
         onKeyDown={handlePanelKeyDown}
         role="dialog"
       >
@@ -305,13 +338,29 @@ function AppSideMenu({
 export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
   const { signOut, user } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const role = user?.role ?? null
+  const usesDirectOmbudsmanHeader = isAuthenticated && (role === 'ombudsman' || role === 'admin')
   const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
-  const handleSignOut = async () => {
+  const requestSignOut = async () => {
+    setIsMenuOpen(false)
+    setIsSignOutDialogOpen(true)
+  }
+  const handleConfirmSignOut = async () => {
+    setIsSigningOut(true)
     await signOut()
     setIsMenuOpen(false)
+    setIsSignOutDialogOpen(false)
     navigateTo(routes.landing)
+  }
+  const handleCancelSignOut = () => {
+    if (isSigningOut) {
+      return
+    }
+
+    setIsSignOutDialogOpen(false)
   }
 
   return (
@@ -347,32 +396,72 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
                 ))}
               </nav>
             ) : null}
-            <button
-              aria-controls="project-menu"
-              aria-expanded={isMenuOpen}
-              aria-label="Abrir menu"
-              className={iconButtonClasses}
-              onClick={() => setIsMenuOpen(true)}
-              ref={menuButtonRef}
-              type="button"
-            >
-              <Icon className="size-[22px] md:size-6" name="menu" />
-            </button>
+            {usesDirectOmbudsmanHeader ? (
+              <nav aria-label="Navegação do ouvidor" className="flex items-center gap-2">
+                <a
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm leading-5 font-bold text-login-blue no-underline transition duration-150 hover:bg-login-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue sm:px-4"
+                  href={routes.ombudsmanHome}
+                >
+                  <Icon className="size-4" name="home" />
+                  <span className="hidden sm:inline">Início</span>
+                </a>
+                <button
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-login-blue px-3 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-login-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue sm:px-4"
+                  onClick={() => {
+                    void requestSignOut()
+                  }}
+                  type="button"
+                >
+                  <Icon className="size-4" name="log-out" />
+                  <span className="hidden sm:inline">Sair</span>
+                </button>
+              </nav>
+            ) : (
+              <button
+                aria-controls="project-menu"
+                aria-expanded={isMenuOpen}
+                aria-label="Abrir menu"
+                className={iconButtonClasses}
+                onClick={() => setIsMenuOpen(true)}
+                ref={menuButtonRef}
+                type="button"
+              >
+                <Icon className="size-[22px] md:size-6" name="menu" />
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      <div id="project-menu">
-        <AppSideMenu
-          isAuthenticated={isAuthenticated}
-          isOpen={isMenuOpen}
-          onClose={() => setIsMenuOpen(false)}
-          onSignOut={handleSignOut}
-          openerRef={menuButtonRef}
-          role={role}
-          user={user}
-        />
-      </div>
+      {usesDirectOmbudsmanHeader ? null : (
+        <div id="project-menu">
+          <AppSideMenu
+            isAuthenticated={isAuthenticated}
+            isOpen={isMenuOpen}
+            onClose={() => setIsMenuOpen(false)}
+            onSignOut={requestSignOut}
+            openerRef={menuButtonRef}
+            role={role}
+            user={user}
+          />
+        </div>
+      )}
+
+      <ConfirmDialog
+        cancelLabel="Continuar conectado"
+        confirmingLabel="Saindo..."
+        confirmLabel="Sair"
+        description="Você precisará entrar novamente para acessar as áreas autenticadas do sistema."
+        icon="log-out"
+        isConfirming={isSigningOut}
+        onCancel={handleCancelSignOut}
+        onConfirm={() => {
+          void handleConfirmSignOut()
+        }}
+        open={isSignOutDialogOpen}
+        title="Deseja sair da sua conta?"
+        tone="danger"
+      />
     </>
   )
 }

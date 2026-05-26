@@ -1,29 +1,29 @@
 import { type FormEvent, useId, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
-import { routes } from '../app/routes'
-import type { Catalog } from '../application/catalog/catalog-types'
+import { routes } from '../../app/routes'
+import type { Catalog } from '../../application/catalog/catalog-types'
 import {
   ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
   canUploadAttachments,
   getRemainingAttachmentSlots,
   validateAttachmentFiles,
-} from '../application/manifestations/attachment-policy'
-import { canSendMessageByStatus } from '../application/manifestations/manifestation-policy'
+} from '../../application/manifestations/attachment-policy'
+import { canSendMessageByStatus } from '../../application/manifestations/manifestation-policy'
 import type {
   TrackedManifestationAttachmentInfo,
   TrackedManifestationDetail,
-} from '../application/manifestations/tracked-manifestation-contract'
-import { getManifestationStatusContract } from '../application/manifestations/manifestation-status-contract'
-import { getManifestationTypeLabel } from '../application/manifestations/manifestation-type-contract'
-import { formatFileSize } from '../components/forms/form-file-utils'
-import { Icon } from '../components/icons/icon'
-import { AppHeader } from '../components/layout/app-header'
-import { SiteFooter } from '../components/layout/site-footer'
-import { ManifestationMessagesThread } from '../components/manifestations/manifestation-messages-thread'
-import { useCatalog } from '../hooks/use-catalog'
-import { useManifestationsService } from '../hooks/use-manifestations-service'
-import { formatBrDate } from '../utils/format-date'
+} from '../../application/manifestations/tracked-manifestation-contract'
+import { getManifestationStatusContract } from '../../application/manifestations/manifestation-status-contract'
+import { getManifestationTypeLabel } from '../../application/manifestations/manifestation-type-contract'
+import { formatFileSize } from '../../components/forms/form-file-utils'
+import { Icon } from '../../components/icons/icon'
+import { AppHeader } from '../../components/layout/app-header'
+import { SiteFooter } from '../../components/layout/site-footer'
+import { ManifestationMessagesThread } from '../../components/manifestations/manifestation-messages-thread'
+import { useCatalog } from '../../hooks/use-catalog'
+import { useManifestationsService } from '../../hooks/use-manifestations-service'
+import { formatBrDate } from '../../utils/format-date'
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error'
 

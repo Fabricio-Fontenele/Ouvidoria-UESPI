@@ -3,6 +3,7 @@ import type { ManifestationStatus, ManifestationType } from '#src/domain/entitie
 export interface AdminManifestationFilters {
   status?: ManifestationStatus
   type?: ManifestationType
+  attendantUserId?: string
   campusId?: string
   administrativeUnitId?: string
   from?: Date

@@ -3,14 +3,14 @@ import { useEffect } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
-import { getAuthenticatedHomeRoute, navigateTo, routes } from '../app/routes'
-import { getSignInFormDefaultValues, signInFormSchema } from '../application/auth/sign-in-form-contract'
-import type { SignInFormData } from '../application/auth/sign-in-form-contract'
-import { AuthForm } from '../components/auth/auth-form'
-import type { AuthFormField } from '../components/auth/auth-form'
-import { AuthPageShell } from '../components/layout/auth-page-shell'
-import { useAuth } from '../hooks/use-auth'
-import { cx } from '../utils/cx'
+import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
+import { getSignInFormDefaultValues, signInFormSchema } from '../../application/auth/sign-in-form-contract'
+import type { SignInFormData } from '../../application/auth/sign-in-form-contract'
+import { AuthForm } from '../../components/auth/auth-form'
+import type { AuthFormField } from '../../components/auth/auth-form'
+import { AuthPageShell } from '../../components/layout/auth-page-shell'
+import { useAuth } from '../../hooks/use-auth'
+import { cx } from '../../utils/cx'
 
 const loginFields: AuthFormField<SignInFormData>[] = [
   {
@@ -49,9 +49,13 @@ export function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && user !== null) {
-      navigateTo(getAuthenticatedHomeRoute(user.role))
+      replaceWith(getAuthenticatedHomeRoute(user.role))
     }
   }, [isAuthenticated, user])
+
+  if (isAuthenticated && user !== null) {
+    return null
+  }
 
   return (
     <AuthPageShell
@@ -85,15 +89,6 @@ export function LoginPage() {
         >
           Esqueci minha senha.
         </a>
-
-        <div className="space-y-1 text-center text-xs leading-5 text-login-brown">
-          <p>
-            Manifestante: <strong>exemplo@uespi.br</strong> / <strong>123456</strong>
-          </p>
-          <p>
-            Ouvidor: <strong>ouvidor@uespi.com.br</strong> / <strong>ouv12345</strong>
-          </p>
-        </div>
       </AuthForm>
 
       <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">

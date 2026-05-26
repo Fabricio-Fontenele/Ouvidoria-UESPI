@@ -1,35 +1,35 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { FILTER_ALL_VALUE, ombudsmanAreaRoles } from '../app/access-policy'
-import type { FilterAllValue } from '../app/access-policy'
-import { buildLocalDateRangeBounds, formatBrazilianShortDate, isLocalDateRangeInOrder } from '../app/date-utils'
-import { buildOmbudsmanManifestationDetailsHref } from '../app/routes'
-import type { Catalog } from '../application/catalog/catalog-types'
+import { FILTER_ALL_VALUE, ombudsmanAreaRoles } from '../../app/access-policy'
+import type { FilterAllValue } from '../../app/access-policy'
+import { buildLocalDateRangeBounds, formatBrazilianShortDate, isLocalDateRangeInOrder } from '../../app/date-utils'
+import { buildOmbudsmanManifestationDetailsHref } from '../../app/routes'
+import type { Catalog } from '../../application/catalog/catalog-types'
 import {
   buildEmptyManifestationStatusTotals,
   getManifestationStatusContract,
   manifestationStatusContracts,
-} from '../application/manifestations/manifestation-status-contract'
-import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
-import type { ManifestationStatusTotals } from '../application/manifestations/manifestation-status-contract'
-import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
+} from '../../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatus } from '../../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
+import type { ManifestationSummary } from '../../application/manifestations/manifestation-summary-contract'
 import {
   getManifestationTypeLabel,
   manifestationTypeContracts,
-} from '../application/manifestations/manifestation-type-contract'
-import type { ManifestationType } from '../application/manifestations/manifestation-type-contract'
-import { searchManifestations } from '../application/manifestations/search-manifestations'
-import type { OmbudsmanListFilters } from '../application/ombudsman/ombudsman-service'
-import type { PaginationMeta } from '../application/pagination/pagination-contract'
-import { Icon } from '../components/icons/icon'
-import type { IconName } from '../components/icons/icon'
-import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
-import { SiteFooter } from '../components/layout/site-footer'
-import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
-import { PaginationControls } from '../components/navigation/pagination-controls'
-import { useCatalog } from '../hooks/use-catalog'
-import { makeOmbudsmanService } from '../infrastructure/ombudsman/ombudsman-service-factory'
-import { cx } from '../utils/cx'
+} from '../../application/manifestations/manifestation-type-contract'
+import type { ManifestationType } from '../../application/manifestations/manifestation-type-contract'
+import { searchManifestations } from '../../application/manifestations/search-manifestations'
+import type { OmbudsmanListFilters } from '../../application/ombudsman/ombudsman-service'
+import type { PaginationMeta } from '../../application/pagination/pagination-contract'
+import { Icon } from '../../components/icons/icon'
+import type { IconName } from '../../components/icons/icon'
+import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
+import { SiteFooter } from '../../components/layout/site-footer'
+import { getManifestationStatusStyle } from '../../components/manifestations/manifestation-status-style'
+import { PaginationControls } from '../../components/navigation/pagination-controls'
+import { useCatalog } from '../../hooks/use-catalog'
+import { makeOmbudsmanService } from '../../infrastructure/ombudsman/ombudsman-service-factory'
+import { cx } from '../../utils/cx'
 
 type StatusFilter = FilterAllValue | ManifestationStatus
 type TypeFilter = FilterAllValue | ManifestationType
@@ -57,6 +57,13 @@ interface DateRangeFilterInputProps {
   error: string | null
   onChange: (range: DateRangeFilter) => void
   value: DateRangeFilter
+}
+
+interface CheckboxFilterProps {
+  checked: boolean
+  id: string
+  label: string
+  onChange: (checked: boolean) => void
 }
 
 const dashboardMetricCards: Array<{
@@ -101,7 +108,7 @@ const metricCardClasses = [
 ]
 
 const manifestationCardClasses = [
-  'group relative w-full min-w-0 overflow-hidden rounded-lg border bg-home-surface px-5 py-5 shadow-login-card',
+  'group relative w-full min-w-0 overflow-hidden rounded-lg bg-home-surface px-5 py-5 shadow-login-card',
   'transition duration-150 hover:-translate-y-0.5 hover:shadow-landing-card sm:px-6 sm:py-6 md:px-7',
 ]
 
@@ -143,11 +150,13 @@ function buildFiltersForRequest({
   statusFilter,
   typeFilter,
   dateRangeFilter,
+  onlyMine,
   page,
 }: {
   statusFilter: StatusFilter
   typeFilter: TypeFilter
   dateRangeFilter: DateRangeFilter
+  onlyMine: boolean
   page: number
 }): OmbudsmanListFilters {
   const filters: OmbudsmanListFilters = { page }
@@ -158,6 +167,10 @@ function buildFiltersForRequest({
 
   if (typeFilter !== FILTER_ALL_VALUE) {
     filters.type = typeFilter
+  }
+
+  if (onlyMine) {
+    filters.onlyMine = true
   }
 
   const dateRangeBounds = buildLocalDateRangeBounds(dateRangeFilter)
@@ -342,6 +355,24 @@ function DateRangeFilterInput({ error, onChange, value }: DateRangeFilterInputPr
   )
 }
 
+function CheckboxFilter({ checked, id, label, onChange }: CheckboxFilterProps) {
+  return (
+    <label
+      className="flex min-h-10 w-full cursor-pointer items-center gap-3 rounded-lg border border-login-brown/10 bg-home-surface px-3 text-sm leading-5 font-bold text-home-text transition duration-150 hover:bg-home-action/70 sm:col-span-2 lg:col-span-4"
+      htmlFor={id}
+    >
+      <input
+        checked={checked}
+        className="size-4 accent-home-blue"
+        id={id}
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      <span>{label}</span>
+    </label>
+  )
+}
+
 function StatusBadge({ status }: { status: ManifestationStatus }) {
   const statusContract = getManifestationStatusContract(status)
   const statusStyle = getManifestationStatusStyle(status)
@@ -349,8 +380,8 @@ function StatusBadge({ status }: { status: ManifestationStatus }) {
   return (
     <span
       className={cx(
-        'inline-flex min-h-8 items-center rounded-lg px-4 text-xs leading-4 font-black tracking-[0.08em] uppercase',
-        statusStyle.badgeClassName,
+        'inline-flex min-h-8 items-center rounded-lg border border-current bg-transparent px-4 text-xs leading-4 font-black tracking-[0.08em] uppercase',
+        statusStyle.textClassName,
       )}
     >
       {statusContract.viewLabel}
@@ -388,10 +419,12 @@ function ManifestationCard({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid min-w-0 grid-cols-[40px_1fr] gap-3">
           <span className={cx('grid size-10 place-items-center rounded-lg', statusStyle.iconClassName)}>
-            <Icon className="size-5" name="info" />
+            <Icon className="size-7" name="info" />
           </span>
           <div className="min-w-0">
-            <p className="text-xs leading-4 font-black tracking-[0.1em] text-home-blue uppercase">Manifestação</p>
+            <p className={cx('text-xs leading-4 font-black tracking-[0.1em] uppercase', statusStyle.textClassName)}>
+              Manifestação
+            </p>
             <h2 className="mt-1 truncate text-2xl leading-8 font-black text-home-text" id={`${protocolId}-title`}>
               {manifestation.protocol}
             </h2>
@@ -416,7 +449,10 @@ function ManifestationCard({
         </div>
         <a
           aria-label={`Abrir manifestação ${manifestation.protocol}`}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+          className={cx(
+            'inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-current bg-transparent px-5 text-sm leading-5 font-bold no-underline transition duration-150 hover:bg-home-action active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-current',
+            statusStyle.textClassName,
+          )}
           href={buildOmbudsmanManifestationDetailsHref(manifestation.id)}
         >
           Abrir demanda
@@ -437,6 +473,7 @@ export function OmbudsmanHomePage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(FILTER_ALL_VALUE)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(FILTER_ALL_VALUE)
+  const [onlyMine, setOnlyMine] = useState(false)
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationMeta>(initialPagination)
   const [metricsLoadStatus, setMetricsLoadStatus] = useState<LoadStatus>('loading')
@@ -497,7 +534,7 @@ export function OmbudsmanHomePage() {
 
       try {
         const result = await ombudsmanService.list(
-          buildFiltersForRequest({ dateRangeFilter, page, statusFilter, typeFilter }),
+          buildFiltersForRequest({ dateRangeFilter, onlyMine, page, statusFilter, typeFilter }),
         )
 
         if (!isMounted) {
@@ -527,12 +564,13 @@ export function OmbudsmanHomePage() {
     return () => {
       isMounted = false
     }
-  }, [dateRangeError, dateRangeFilter, ombudsmanService, page, statusFilter, typeFilter])
+  }, [dateRangeError, dateRangeFilter, ombudsmanService, onlyMine, page, statusFilter, typeFilter])
 
   const filteredManifestations = useMemo(() => searchManifestations(manifestations, search), [manifestations, search])
 
   const handleClearFilters = () => {
     setDateRangeFilter(emptyDateRangeFilter)
+    setOnlyMine(false)
     setPage(1)
     setSearch('')
     setStatusFilter(FILTER_ALL_VALUE)
@@ -552,6 +590,10 @@ export function OmbudsmanHomePage() {
   }
   const handleSearchChange = (value: string) => {
     setSearch(value)
+    setPage(1)
+  }
+  const handleOnlyMineChange = (value: boolean) => {
+    setOnlyMine(value)
     setPage(1)
   }
 
@@ -603,6 +645,12 @@ export function OmbudsmanHomePage() {
                     error={dateRangeError}
                     onChange={handleDateRangeFilterChange}
                     value={dateRangeFilter}
+                  />
+                  <CheckboxFilter
+                    checked={onlyMine}
+                    id="ombudsman-only-mine-filter"
+                    label="Minhas demandas"
+                    onChange={handleOnlyMineChange}
                   />
                 </div>
               </div>

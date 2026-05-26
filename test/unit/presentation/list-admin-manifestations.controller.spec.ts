@@ -77,6 +77,7 @@ describe('ListAdminManifestationsController', () => {
         campusId: 'campus-1',
         administrativeUnitId: 'unit-1',
         from: '2026-01-01T00:00:00.000Z',
+        onlyMine: 'true',
         to: '2026-12-31T23:59:59.000Z',
       },
     })
@@ -89,9 +90,25 @@ describe('ListAdminManifestationsController', () => {
         type: ManifestationType.COMPLAINT,
         campusId: 'campus-1',
         administrativeUnitId: 'unit-1',
+        attendantUserId: 'ombudsman-1',
         from: new Date('2026-01-01T00:00:00.000Z'),
         to: new Date('2026-12-31T23:59:59.000Z'),
       },
+    })
+  })
+
+  it('does not add the authenticated user filter when onlyMine is false', async () => {
+    arrangeUseCaseSuccess()
+
+    await sut.handle({
+      ...baseRequest,
+      query: { onlyMine: 'false' },
+    })
+
+    expect(useCase.execute.mock.calls[0]?.[0]).toStrictEqual({
+      requesterUserId: 'ombudsman-1',
+      page: 1,
+      filters: {},
     })
   })
 
@@ -128,6 +145,7 @@ describe('ListAdminManifestationsController', () => {
     ['status', { status: 'wrong-status' }],
     ['type', { type: 'wrong-type' }],
     ['from', { from: 'not-a-date' }],
+    ['onlyMine', { onlyMine: 'yes' }],
     ['to', { to: '2026-13-99' }],
     ['from', { from: '2026-01-01' }],
     ['to', { to: '2026-12-31T23:59:59Z' }],

@@ -11,32 +11,32 @@ import type {
 } from 'react-hook-form'
 import { useForm, useWatch } from 'react-hook-form'
 
-import { manifestantOnlyRoles } from '../app/access-policy'
-import { routes } from '../app/routes'
-import type { GuaraChatDraft } from '../application/guara-chat/guara-chat-types'
+import { manifestantOnlyRoles } from '../../app/access-policy'
+import { routes } from '../../app/routes'
+import type { GuaraChatDraft } from '../../application/guara-chat/guara-chat-types'
 import {
   ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
   validateAttachmentFiles,
-} from '../application/manifestations/attachment-policy'
+} from '../../application/manifestations/attachment-policy'
 import {
   getManifestationFormDefaultValues,
   getManifestationFormDefaultValuesFromDraft,
   manifestationFormSchema,
-} from '../application/manifestations/manifestation-form-contract'
-import type { CatalogLookup, ManifestationFormData } from '../application/manifestations/manifestation-form-contract'
-import { manifestationTypeContracts } from '../application/manifestations/manifestation-type-contract'
-import guaraMascot from '../assets/guara-mascot.png'
-import { formatFileSize } from '../components/forms/form-file-utils'
-import { Icon } from '../components/icons/icon'
-import { AppHeader } from '../components/layout/app-header'
-import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
-import { SiteFooter } from '../components/layout/site-footer'
-import { ManifestationSubmissionSuccess } from '../components/manifestations/manifestation-submission-success'
-import { useAuth } from '../hooks/use-auth'
-import { useCatalog } from '../hooks/use-catalog'
-import { useManifestationsService } from '../hooks/use-manifestations-service'
-import { consumePendingDraft } from '../infrastructure/guara-chat/guara-chat-storage'
-import { cx } from '../utils/cx'
+} from '../../application/manifestations/manifestation-form-contract'
+import type { CatalogLookup, ManifestationFormData } from '../../application/manifestations/manifestation-form-contract'
+import { manifestationTypeContracts } from '../../application/manifestations/manifestation-type-contract'
+import guaraMascot from '../../assets/guara-mascot.png'
+import { formatFileSize } from '../../components/forms/form-file-utils'
+import { Icon } from '../../components/icons/icon'
+import { AppHeader } from '../../components/layout/app-header'
+import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
+import { SiteFooter } from '../../components/layout/site-footer'
+import { ManifestationSubmissionSuccess } from '../../components/manifestations/manifestation-submission-success'
+import { useAuth } from '../../hooks/use-auth'
+import { useCatalog } from '../../hooks/use-catalog'
+import { useManifestationsService } from '../../hooks/use-manifestations-service'
+import { consumePendingDraft } from '../../infrastructure/guara-chat/guara-chat-storage'
+import { cx } from '../../utils/cx'
 
 interface FieldMessageProps {
   children: string

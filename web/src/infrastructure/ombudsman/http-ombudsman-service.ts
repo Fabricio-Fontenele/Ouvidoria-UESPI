@@ -43,6 +43,7 @@ function buildListQuery(filters: OmbudsmanListFilters) {
     administrativeUnitId: filters.administrativeUnitId,
     campusId: filters.campusId,
     from: filters.from,
+    onlyMine: filters.onlyMine === true ? 'true' : undefined,
     page: filters.page,
     status: filters.status,
     to: filters.to,
