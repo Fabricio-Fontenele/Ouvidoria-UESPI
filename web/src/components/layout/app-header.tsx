@@ -181,6 +181,86 @@ function AppProfileMenuItem({ user }: { user: AuthenticatedUser | null }) {
   )
 }
 
+function AppProfileDropdown({
+  isOpen,
+  onClose,
+  onSignOut,
+  openerRef,
+  user,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onSignOut: () => Promise<void>
+  openerRef: RefObject<HTMLButtonElement | null>
+  user: AuthenticatedUser | null
+}) {
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target
+
+      if (!(target instanceof Node)) {
+        return
+      }
+
+      if (dropdownRef.current?.contains(target) === true || openerRef.current?.contains(target) === true) {
+        return
+      }
+
+      onClose()
+    }
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        openerRef.current?.focus()
+      }
+    }
+
+    window.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose, openerRef])
+
+  if (!isOpen || user === null) {
+    return null
+  }
+
+  return (
+    <div
+      className="absolute top-[calc(100%+10px)] right-5 z-50 w-[min(calc(100vw-24px),340px)] overflow-hidden rounded-2xl border border-login-blue/10 bg-login-surface shadow-login-card sm:right-8 lg:right-12"
+      ref={dropdownRef}
+    >
+      <div className="p-3">
+        <AppProfileMenuItem user={user} />
+      </div>
+
+      <div className="border-t border-login-blue/10 p-2">
+        <button
+          className="grid min-h-12 w-full grid-cols-[22px_1fr] items-center gap-3 rounded-lg px-3 text-left text-sm leading-5 font-semibold text-login-brown transition duration-150 hover:bg-login-field/60 active:bg-login-field focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue"
+          onClick={() => {
+            void onSignOut()
+          }}
+          type="button"
+        >
+          <Icon className="size-[18px]" name="log-out" />
+          <span>Sair</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AppSideMenu({
   isAuthenticated,
   isOpen,
@@ -355,9 +435,11 @@ function AppSideMenu({
 export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
   const { signOut, user } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const profileButtonRef = useRef<HTMLButtonElement>(null)
   const role = user?.role ?? null
   const isUserAuthenticated = isAuthenticated || user !== null
   const isLandingPage = getCurrentPath() === routes.landing
@@ -365,6 +447,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
   const homeHref = isUserAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const requestSignOut = async () => {
     setIsMenuOpen(false)
+    setIsProfileMenuOpen(false)
     setIsSignOutDialogOpen(true)
   }
   const handleConfirmSignOut = async () => {
@@ -429,6 +512,19 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
                 ))}
               </nav>
             ) : null}
+            {isUserAuthenticated ? (
+              <button
+                aria-controls="profile-menu"
+                aria-expanded={isProfileMenuOpen}
+                aria-label="Abrir perfil"
+                className="grid size-10 place-items-center rounded-full bg-login-blue text-white shadow-login-card transition duration-150 hover:bg-login-blue/90 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue"
+                onClick={() => setIsProfileMenuOpen((current) => !current)}
+                ref={profileButtonRef}
+                type="button"
+              >
+                <Icon className="size-5" name="user" />
+              </button>
+            ) : null}
             <button
               aria-controls="project-menu"
               aria-expanded={isMenuOpen}
@@ -441,6 +537,15 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
               <Icon className="size-[22px] md:size-6" name="menu" />
             </button>
           </div>
+        </div>
+        <div id="profile-menu">
+          <AppProfileDropdown
+            isOpen={isProfileMenuOpen}
+            onClose={() => setIsProfileMenuOpen(false)}
+            onSignOut={requestSignOut}
+            openerRef={profileButtonRef}
+            user={user}
+          />
         </div>
       </header>
 
