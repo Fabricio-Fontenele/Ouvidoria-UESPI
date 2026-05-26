@@ -28,9 +28,6 @@ const manifestantMenuItems: MenuItem[] = [
   { href: routes.home, icon: 'home', label: 'Início' },
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
   { href: buildGuaraNewManifestationHref(), icon: 'plus-circle', label: 'Novo registro' },
-  { href: '#notificacoes', icon: 'bell', label: 'Notificações' },
-  { href: '#suporte', icon: 'help', label: 'Suporte' },
-  { href: '#configuracoes', icon: 'settings', label: 'Configurações' },
   { action: 'sign-out', href: routes.landing, icon: 'log-out', label: 'Sair' },
 ]
 

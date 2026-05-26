@@ -746,9 +746,9 @@ export function LandingPage() {
         <HeroSection />
         <RegisterTrackSection onRegisterClick={openRegistrationModal} />
         <GuaraCallout />
+        <OmbudsmanOverviewSection />
         <ManifestationTypesSection />
         <StepsSection />
-        <OmbudsmanOverviewSection />
       </main>
       <FloatingGuaraShortcut />
       <SiteFooter />
