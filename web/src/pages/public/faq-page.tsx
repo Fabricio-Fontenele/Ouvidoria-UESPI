@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 
-import { routes } from '../app/routes'
-import { Icon, type IconName } from '../components/icons/icon'
-import { AppHeader } from '../components/layout/app-header'
-import { SiteFooter } from '../components/layout/site-footer'
-import { cx } from '../utils/cx'
+import { routes } from '../../app/routes'
+import { Icon, type IconName } from '../../components/icons/icon'
+import { AppHeader } from '../../components/layout/app-header'
+import { SiteFooter } from '../../components/layout/site-footer'
+import { cx } from '../../utils/cx'
 
 type FaqCategory = 'Registro' | 'Acompanhamento' | 'Privacidade' | 'Guará'
 

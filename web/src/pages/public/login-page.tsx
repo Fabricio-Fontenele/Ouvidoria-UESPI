@@ -3,14 +3,14 @@ import { useEffect } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
-import { getAuthenticatedHomeRoute, navigateTo, routes } from '../app/routes'
-import { getSignInFormDefaultValues, signInFormSchema } from '../application/auth/sign-in-form-contract'
-import type { SignInFormData } from '../application/auth/sign-in-form-contract'
-import { AuthForm } from '../components/auth/auth-form'
-import type { AuthFormField } from '../components/auth/auth-form'
-import { AuthPageShell } from '../components/layout/auth-page-shell'
-import { useAuth } from '../hooks/use-auth'
-import { cx } from '../utils/cx'
+import { getAuthenticatedHomeRoute, navigateTo, routes } from '../../app/routes'
+import { getSignInFormDefaultValues, signInFormSchema } from '../../application/auth/sign-in-form-contract'
+import type { SignInFormData } from '../../application/auth/sign-in-form-contract'
+import { AuthForm } from '../../components/auth/auth-form'
+import type { AuthFormField } from '../../components/auth/auth-form'
+import { AuthPageShell } from '../../components/layout/auth-page-shell'
+import { useAuth } from '../../hooks/use-auth'
+import { cx } from '../../utils/cx'
 
 const loginFields: AuthFormField<SignInFormData>[] = [
   {

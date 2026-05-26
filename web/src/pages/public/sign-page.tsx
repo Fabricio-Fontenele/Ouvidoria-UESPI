@@ -3,14 +3,14 @@ import { useState } from 'react'
 import type { SubmitHandler, UseFormRegisterReturn } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
-import { routes } from '../app/routes'
-import { getSignUpFormDefaultValues, signUpFormSchema } from '../application/auth/sign-up-form-contract'
-import type { SignUpFormData } from '../application/auth/sign-up-form-contract'
-import { AuthForm, AuthFormMessage } from '../components/auth/auth-form'
-import type { AuthFormField } from '../components/auth/auth-form'
-import { AuthPageShell } from '../components/layout/auth-page-shell'
-import { useAuth } from '../hooks/use-auth'
-import { cx } from '../utils/cx'
+import { routes } from '../../app/routes'
+import { getSignUpFormDefaultValues, signUpFormSchema } from '../../application/auth/sign-up-form-contract'
+import type { SignUpFormData } from '../../application/auth/sign-up-form-contract'
+import { AuthForm, AuthFormMessage } from '../../components/auth/auth-form'
+import type { AuthFormField } from '../../components/auth/auth-form'
+import { AuthPageShell } from '../../components/layout/auth-page-shell'
+import { useAuth } from '../../hooks/use-auth'
+import { cx } from '../../utils/cx'
 
 const signUpFields: AuthFormField<SignUpFormData>[] = [
   {

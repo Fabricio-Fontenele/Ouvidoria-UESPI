@@ -1,30 +1,30 @@
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
-import { manifestantOnlyRoles } from '../app/access-policy'
-import { buildEvaluationHref, getSearchParams, routes } from '../app/routes'
+import { manifestantOnlyRoles } from '../../app/access-policy'
+import { buildEvaluationHref, getSearchParams, routes } from '../../app/routes'
 import type {
   ManifestationAttachmentInfo,
   ManifestationDetail,
-} from '../application/manifestations/manifestation-detail-contract'
+} from '../../application/manifestations/manifestation-detail-contract'
 import {
   ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
   canUploadAttachments,
   getRemainingAttachmentSlots,
   validateAttachmentFiles,
-} from '../application/manifestations/attachment-policy'
-import { canEvaluate, canFinalize, canSendMessage } from '../application/manifestations/manifestation-policy'
-import { FinalizeAction } from '../components/manifestations/finalize-action'
-import { ManifestationAttachmentsList } from '../components/manifestations/manifestation-attachments-list'
-import { CasePanelBlock, ManifestationCasePanel } from '../components/manifestations/manifestation-case-panel'
-import { ManifestationMessagesThread } from '../components/manifestations/manifestation-messages-thread'
-import { ManifestationTimelineCard } from '../components/manifestations/manifestation-timeline-card'
-import { formatFileSize } from '../components/forms/form-file-utils'
-import { Icon } from '../components/icons/icon'
-import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
-import { SiteFooter } from '../components/layout/site-footer'
-import { useCatalog } from '../hooks/use-catalog'
-import { useManifestationsService } from '../hooks/use-manifestations-service'
+} from '../../application/manifestations/attachment-policy'
+import { canEvaluate, canFinalize, canSendMessage } from '../../application/manifestations/manifestation-policy'
+import { FinalizeAction } from '../../components/manifestations/finalize-action'
+import { ManifestationAttachmentsList } from '../../components/manifestations/manifestation-attachments-list'
+import { CasePanelBlock, ManifestationCasePanel } from '../../components/manifestations/manifestation-case-panel'
+import { ManifestationMessagesThread } from '../../components/manifestations/manifestation-messages-thread'
+import { ManifestationTimelineCard } from '../../components/manifestations/manifestation-timeline-card'
+import { formatFileSize } from '../../components/forms/form-file-utils'
+import { Icon } from '../../components/icons/icon'
+import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
+import { SiteFooter } from '../../components/layout/site-footer'
+import { useCatalog } from '../../hooks/use-catalog'
+import { useManifestationsService } from '../../hooks/use-manifestations-service'
 
 type LoadStatus = 'loading' | 'ready' | 'error'
 

@@ -1,35 +1,35 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { FILTER_ALL_VALUE, ombudsmanAreaRoles } from '../app/access-policy'
-import type { FilterAllValue } from '../app/access-policy'
-import { buildLocalDateRangeBounds, formatBrazilianShortDate, isLocalDateRangeInOrder } from '../app/date-utils'
-import { buildOmbudsmanManifestationDetailsHref } from '../app/routes'
-import type { Catalog } from '../application/catalog/catalog-types'
+import { FILTER_ALL_VALUE, ombudsmanAreaRoles } from '../../app/access-policy'
+import type { FilterAllValue } from '../../app/access-policy'
+import { buildLocalDateRangeBounds, formatBrazilianShortDate, isLocalDateRangeInOrder } from '../../app/date-utils'
+import { buildOmbudsmanManifestationDetailsHref } from '../../app/routes'
+import type { Catalog } from '../../application/catalog/catalog-types'
 import {
   buildEmptyManifestationStatusTotals,
   getManifestationStatusContract,
   manifestationStatusContracts,
-} from '../application/manifestations/manifestation-status-contract'
-import type { ManifestationStatus } from '../application/manifestations/manifestation-status-contract'
-import type { ManifestationStatusTotals } from '../application/manifestations/manifestation-status-contract'
-import type { ManifestationSummary } from '../application/manifestations/manifestation-summary-contract'
+} from '../../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatus } from '../../application/manifestations/manifestation-status-contract'
+import type { ManifestationStatusTotals } from '../../application/manifestations/manifestation-status-contract'
+import type { ManifestationSummary } from '../../application/manifestations/manifestation-summary-contract'
 import {
   getManifestationTypeLabel,
   manifestationTypeContracts,
-} from '../application/manifestations/manifestation-type-contract'
-import type { ManifestationType } from '../application/manifestations/manifestation-type-contract'
-import { searchManifestations } from '../application/manifestations/search-manifestations'
-import type { OmbudsmanListFilters } from '../application/ombudsman/ombudsman-service'
-import type { PaginationMeta } from '../application/pagination/pagination-contract'
-import { Icon } from '../components/icons/icon'
-import type { IconName } from '../components/icons/icon'
-import { AuthenticatedAppShell } from '../components/layout/authenticated-app-shell'
-import { SiteFooter } from '../components/layout/site-footer'
-import { getManifestationStatusStyle } from '../components/manifestations/manifestation-status-style'
-import { PaginationControls } from '../components/navigation/pagination-controls'
-import { useCatalog } from '../hooks/use-catalog'
-import { makeOmbudsmanService } from '../infrastructure/ombudsman/ombudsman-service-factory'
-import { cx } from '../utils/cx'
+} from '../../application/manifestations/manifestation-type-contract'
+import type { ManifestationType } from '../../application/manifestations/manifestation-type-contract'
+import { searchManifestations } from '../../application/manifestations/search-manifestations'
+import type { OmbudsmanListFilters } from '../../application/ombudsman/ombudsman-service'
+import type { PaginationMeta } from '../../application/pagination/pagination-contract'
+import { Icon } from '../../components/icons/icon'
+import type { IconName } from '../../components/icons/icon'
+import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
+import { SiteFooter } from '../../components/layout/site-footer'
+import { getManifestationStatusStyle } from '../../components/manifestations/manifestation-status-style'
+import { PaginationControls } from '../../components/navigation/pagination-controls'
+import { useCatalog } from '../../hooks/use-catalog'
+import { makeOmbudsmanService } from '../../infrastructure/ombudsman/ombudsman-service-factory'
+import { cx } from '../../utils/cx'
 
 type StatusFilter = FilterAllValue | ManifestationStatus
 type TypeFilter = FilterAllValue | ManifestationType
