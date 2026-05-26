@@ -7,9 +7,14 @@ import type {
   ManifestationDetail,
 } from '../../application/manifestations/manifestation-detail-contract'
 import type { Catalog } from '../../application/catalog/catalog-types'
+import {
+  type CancellationReason,
+  cancellationReasonOptions,
+  cancellationReasonRequiresNote,
+} from '../../application/ombudsman/cancellation-reasons'
 import { canAnswer, canCancel, canFinalize, canForward } from '../../application/ombudsman/ombudsman-policy'
 import { ombudsmanReplyLimits } from '../../application/ombudsman/ombudsman-reply-limits'
-import type { OmbudsmanService, OmbudsmanStatusChange } from '../../application/ombudsman/ombudsman-service'
+import type { OmbudsmanService } from '../../application/ombudsman/ombudsman-service'
 import { ConfirmDialog } from '../../components/feedback/confirm-dialog'
 import { Icon } from '../../components/icons/icon'
 import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
@@ -339,34 +344,73 @@ function ForwardAction({
   )
 }
 
-interface ConfirmDialogContent {
-  confirmingLabel: string
-  confirmLabel: string
-  description: string
-  icon: 'check-circle' | 'x'
-  title: string
-  tone: 'danger' | 'success'
-}
+const cancellationNoteMaxLength = 500
 
-const statusChangeDialogContent: Record<OmbudsmanStatusChange, ConfirmDialogContent> = {
-  canceled: {
-    confirmingLabel: 'Cancelando...',
-    confirmLabel: 'Cancelar manifestação',
-    description:
-      'A manifestação ficará registrada como cancelada no histórico. O autor não poderá enviar novas mensagens nem avaliar o atendimento.',
-    icon: 'x',
-    title: 'Cancelar esta manifestação?',
-    tone: 'danger',
-  },
-  finalized: {
-    confirmingLabel: 'Finalizando...',
-    confirmLabel: 'Finalizar manifestação',
-    description:
-      'Ao finalizar, a manifestação é encerrada e o autor pode avaliar o atendimento. Você não poderá enviar novas respostas depois disso.',
-    icon: 'check-circle',
-    title: 'Finalizar esta manifestação?',
-    tone: 'success',
-  },
+function CancellationReasonPicker({
+  noteFieldId,
+  noteValue,
+  onNoteChange,
+  onReasonChange,
+  reasonValue,
+}: {
+  noteFieldId: string
+  noteValue: string
+  onNoteChange: (value: string) => void
+  onReasonChange: (value: CancellationReason) => void
+  reasonValue: CancellationReason | null
+}) {
+  const groupName = useId()
+  // A justificativa livre só faz sentido para "Outro motivo" — os demais já são, eles
+  // próprios, a justificativa do cancelamento.
+  const showNoteField = reasonValue !== null && cancellationReasonRequiresNote(reasonValue)
+
+  return (
+    <div className="grid gap-4 text-left">
+      <fieldset className="grid gap-2">
+        <legend className="text-sm font-bold text-home-text">Motivo do cancelamento</legend>
+        <div className="grid gap-2">
+          {cancellationReasonOptions.map((option) => (
+            <label
+              className="flex cursor-pointer items-start gap-3 rounded-2xl border border-login-brown/10 bg-home-action/25 px-3 py-2.5 transition duration-150 hover:bg-home-action/45 has-checked:border-home-brown has-checked:bg-home-brown/10"
+              key={option.value}
+            >
+              <input
+                checked={reasonValue === option.value}
+                className="mt-1 size-4 shrink-0 accent-home-brown"
+                name={groupName}
+                onChange={() => onReasonChange(option.value)}
+                type="radio"
+                value={option.value}
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-home-text">{option.label}</span>
+                <span className="block text-xs leading-5 text-home-brown">{option.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {showNoteField ? (
+        <div className="grid gap-1.5">
+          <label className="text-sm font-bold text-home-text" htmlFor={noteFieldId}>
+            Justificativa (obrigatória)
+          </label>
+          <textarea
+            className="min-h-[88px] w-full resize-y rounded-2xl border border-login-brown/10 bg-home-action/25 px-3 py-2 text-sm leading-6 text-home-text outline-none placeholder:text-home-brown/70 focus:border-home-brown focus:ring-2 focus:ring-home-brown/20"
+            id={noteFieldId}
+            maxLength={cancellationNoteMaxLength}
+            onChange={(event) => onNoteChange(event.target.value)}
+            placeholder="Descreva o motivo do cancelamento para o autor."
+            value={noteValue}
+          />
+          <p className="text-xs text-home-brown/80">
+            {noteValue.trim().length}/{cancellationNoteMaxLength} caracteres
+          </p>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 function StatusActions({
@@ -378,44 +422,77 @@ function StatusActions({
   ombudsmanService: OmbudsmanService
   onChanged: () => void
 }) {
+  const noteFieldId = useId()
   const finalizeEnabled = canFinalize(detail)
   const cancelEnabled = canCancel(detail)
-  const [confirmingAction, setConfirmingAction] = useState<OmbudsmanStatusChange | null>(null)
-  const [pendingAction, setPendingAction] = useState<OmbudsmanStatusChange | null>(null)
+  const [openDialog, setOpenDialog] = useState<'cancel' | 'finalize' | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reason, setReason] = useState<CancellationReason | null>(null)
+  const [note, setNote] = useState('')
 
   if (!finalizeEnabled && !cancelEnabled) {
     return null
   }
 
-  async function performTransition(targetStatus: OmbudsmanStatusChange) {
-    setPendingAction(targetStatus)
+  function closeDialog() {
+    setOpenDialog(null)
+    setError(null)
+    setReason(null)
+    setNote('')
+  }
+
+  async function performFinalize() {
+    setIsSubmitting(true)
     setError(null)
 
     try {
-      await ombudsmanService.updateStatus({ manifestationId: detail.id, status: targetStatus })
-      setConfirmingAction(null)
+      await ombudsmanService.updateStatus({ manifestationId: detail.id, status: 'finalized' })
+      closeDialog()
       onChanged()
-    } catch (transitionError) {
+    } catch (finalizeError) {
       const message =
-        transitionError instanceof Error
-          ? transitionError.message
-          : 'Não foi possível atualizar o status da manifestação.'
+        finalizeError instanceof Error ? finalizeError.message : 'Não foi possível finalizar a manifestação.'
       setError(message)
     } finally {
-      setPendingAction(null)
+      setIsSubmitting(false)
     }
   }
 
-  const dialogContent = confirmingAction !== null ? statusChangeDialogContent[confirmingAction] : null
+  async function performCancel() {
+    if (reason === null) {
+      return
+    }
+
+    const trimmedNote = note.trim()
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      await ombudsmanService.cancel({
+        manifestationId: detail.id,
+        reason,
+        ...(trimmedNote.length > 0 ? { note: trimmedNote } : {}),
+      })
+      closeDialog()
+      onChanged()
+    } catch (cancelError) {
+      const message = cancelError instanceof Error ? cancelError.message : 'Não foi possível cancelar a manifestação.'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const cancelConfirmDisabled = reason === null || (cancellationReasonRequiresNote(reason) && note.trim().length === 0)
 
   return (
     <div>
       <div className="flex flex-col gap-2">
         <button
           className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-home-success px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-success/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-success disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-          disabled={!finalizeEnabled || pendingAction !== null}
-          onClick={() => setConfirmingAction('finalized')}
+          disabled={!finalizeEnabled || isSubmitting}
+          onClick={() => setOpenDialog('finalize')}
           type="button"
         >
           Finalizar manifestação
@@ -424,8 +501,8 @@ function StatusActions({
         {cancelEnabled ? (
           <button
             className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-home-brown px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-brown/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-brown disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-            disabled={pendingAction !== null}
-            onClick={() => setConfirmingAction('canceled')}
+            disabled={isSubmitting}
+            onClick={() => setOpenDialog('cancel')}
             type="button"
           >
             Cancelar manifestação
@@ -434,28 +511,61 @@ function StatusActions({
         ) : null}
       </div>
 
-      {error !== null ? (
+      {error !== null && openDialog === null ? (
         <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs leading-5 font-bold text-red-800" role="alert">
           {error}
         </p>
       ) : null}
 
       <ConfirmDialog
-        confirmingLabel={dialogContent?.confirmingLabel}
-        confirmLabel={dialogContent?.confirmLabel ?? ''}
-        description={dialogContent?.description ?? ''}
-        icon={dialogContent?.icon}
-        isConfirming={pendingAction !== null}
-        onCancel={() => setConfirmingAction(null)}
-        onConfirm={() => {
-          if (confirmingAction !== null) {
-            void performTransition(confirmingAction)
-          }
-        }}
-        open={confirmingAction !== null}
-        title={dialogContent?.title ?? ''}
-        tone={dialogContent?.tone}
+        confirmingLabel="Finalizando..."
+        confirmLabel="Finalizar manifestação"
+        description="Ao finalizar, a manifestação é encerrada e o autor pode avaliar o atendimento. Você não poderá enviar novas respostas depois disso."
+        icon="check-circle"
+        isConfirming={isSubmitting}
+        onCancel={closeDialog}
+        onConfirm={() => void performFinalize()}
+        open={openDialog === 'finalize'}
+        title="Finalizar esta manifestação?"
+        tone="success"
       />
+
+      <ConfirmDialog
+        confirmDisabled={cancelConfirmDisabled}
+        confirmingLabel="Cancelando..."
+        confirmLabel="Cancelar manifestação"
+        description="Selecione o motivo do cancelamento. A manifestação ficará registrada como cancelada e o autor não poderá enviar novas mensagens nem avaliar o atendimento."
+        icon="x"
+        isConfirming={isSubmitting}
+        onCancel={closeDialog}
+        onConfirm={() => void performCancel()}
+        open={openDialog === 'cancel'}
+        title="Cancelar esta manifestação?"
+        tone="danger"
+      >
+        <CancellationReasonPicker
+          noteFieldId={noteFieldId}
+          noteValue={note}
+          onNoteChange={(value) => {
+            setNote(value)
+            setError(null)
+          }}
+          onReasonChange={(value) => {
+            setReason(value)
+            setError(null)
+            // Limpa a justificativa ao trocar para um motivo que não a exige.
+            if (!cancellationReasonRequiresNote(value)) {
+              setNote('')
+            }
+          }}
+          reasonValue={reason}
+        />
+        {error !== null ? (
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs leading-5 font-bold text-red-800" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </ConfirmDialog>
     </div>
   )
 }

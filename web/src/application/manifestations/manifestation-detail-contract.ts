@@ -5,8 +5,10 @@ export const knownHistoryEntryTypes = [
   'registered',
   'administrative_answered',
   'status_changed',
+  'forwarded_to_unit',
   'finalized_by_author',
   'evaluation_recorded',
+  'canceled',
 ] as const
 
 export type ManifestationHistoryEntryType = (typeof knownHistoryEntryTypes)[number] | 'unknown'
@@ -23,6 +25,8 @@ export interface ManifestationHistoryEntry {
   actorType: ManifestationMessageSenderType
   actorUserId: string | null
   attendantUserId: string | null
+  cancellationNote: string | null
+  cancellationReason: string | null
   createdAt: string
   description: string
   fromStatus: ManifestationStatus | null

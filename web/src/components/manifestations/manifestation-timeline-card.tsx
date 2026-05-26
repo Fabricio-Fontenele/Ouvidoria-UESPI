@@ -3,14 +3,17 @@ import type {
   ManifestationHistoryEntryType,
 } from '../../application/manifestations/manifestation-detail-contract'
 import { getManifestationStatusContract } from '../../application/manifestations/manifestation-status-contract'
+import { describeCancellationReason } from '../../application/ombudsman/cancellation-reasons'
 import { Icon } from '../icons/icon'
 import type { IconName } from '../icons/icon'
 import { formatBrDateTime } from '../../utils/format-date'
 
 const historyIconByType: Record<ManifestationHistoryEntryType, IconName> = {
   administrative_answered: 'message-circle',
+  canceled: 'x',
   evaluation_recorded: 'star',
   finalized_by_author: 'check-circle',
+  forwarded_to_unit: 'chevron-right',
   registered: 'file-text',
   status_changed: 'info',
   unknown: 'info',
@@ -24,13 +27,28 @@ function describeHistoryEntry(entry: ManifestationHistoryEntry): string {
       return 'A Ouvidoria respondeu à manifestação.'
     case 'status_changed':
       return 'Status atualizado.'
+    case 'forwarded_to_unit':
+      return 'Manifestação encaminhada ao setor responsável.'
     case 'finalized_by_author':
       return 'Manifestação encerrada pelo autor.'
     case 'evaluation_recorded':
       return 'Avaliação do atendimento registrada.'
+    case 'canceled':
+      return 'A Ouvidoria cancelou a manifestação.'
     default:
       return entry.description.length > 0 ? entry.description : 'Atualização do sistema.'
   }
+}
+
+function resolveCancellationDetail(entry: ManifestationHistoryEntry): string | null {
+  if (entry.type !== 'canceled' || entry.cancellationReason === null) {
+    return null
+  }
+
+  const reasonLabel = describeCancellationReason(entry.cancellationReason)
+  return entry.cancellationNote === null || entry.cancellationNote.length === 0
+    ? `Motivo: ${reasonLabel}`
+    : `Motivo: ${reasonLabel} — ${entry.cancellationNote}`
 }
 
 interface ManifestationTimelineCardProps {
@@ -58,7 +76,7 @@ export function ManifestationTimelineCard({ history }: ManifestationTimelineCard
                 ? `${getManifestationStatusContract(entry.fromStatus).viewLabel} → ${getManifestationStatusContract(entry.toStatus).viewLabel}`
                 : entry.type === 'evaluation_recorded' && entry.rating !== null
                   ? `Nota: ${entry.rating}/5`
-                  : null
+                  : resolveCancellationDetail(entry)
 
             return (
               <li className="flex items-start gap-4" key={`${entry.createdAt}-${index}`}>

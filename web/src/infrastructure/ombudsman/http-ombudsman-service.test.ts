@@ -255,6 +255,30 @@ describe('HttpOmbudsmanService', () => {
     expect(JSON.parse(init?.body as string)).toStrictEqual({ status: 'finalized' })
   })
 
+  it('posts the cancellation with reason and note', async () => {
+    const service = new HttpOmbudsmanService()
+
+    await service.cancel({
+      manifestationId: 'manifestation-1',
+      note: 'Já tratada por outro canal.',
+      reason: 'duplicate',
+    })
+
+    const [url, init] = getFetchCall()
+    expect(url).toBe(`${apiBaseUrl}/admin/manifestations/manifestation-1/cancel`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toStrictEqual({ note: 'Já tratada por outro canal.', reason: 'duplicate' })
+  })
+
+  it('omits the note from the cancellation payload when not provided', async () => {
+    const service = new HttpOmbudsmanService()
+
+    await service.cancel({ manifestationId: 'manifestation-1', reason: 'out_of_scope' })
+
+    const [, init] = getFetchCall()
+    expect(JSON.parse(init?.body as string)).toStrictEqual({ reason: 'out_of_scope' })
+  })
+
   it('returns the signed download URL for an admin attachment', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(buildJsonResponse({ downloadUrl: 'https://signed.example/file' })))
     const service = new HttpOmbudsmanService()
