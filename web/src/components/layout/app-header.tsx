@@ -182,9 +182,38 @@ function AppSideMenu({
   user: AuthenticatedUser | null
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const [shouldRender, setShouldRender] = useState(isOpen)
+  const [isMenuVisible, setIsMenuVisible] = useState(false)
   const menuItems = isAuthenticated ? getAuthenticatedMenuItems(role) : publicMenuItems
   const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const titleId = isAuthenticated ? 'authenticated-project-menu-title' : 'public-project-menu-title'
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true)
+      const animationFrameId = window.requestAnimationFrame(() => {
+        setIsMenuVisible(true)
+      })
+
+      return () => {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+    }
+
+    setIsMenuVisible(false)
+
+    if (!shouldRender) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShouldRender(false)
+    }, 220)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [isOpen, shouldRender])
 
   useEffect(() => {
     if (!isOpen) {
@@ -208,7 +237,7 @@ function AppSideMenu({
     }
   }, [isOpen, onClose, openerRef])
 
-  if (!isOpen) {
+  if (!shouldRender) {
     return null
   }
 
@@ -243,10 +272,13 @@ function AppSideMenu({
   }
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className={cx('fixed inset-0 z-50', !isMenuVisible && 'pointer-events-none')}>
       <button
         aria-label="Fechar menu"
-        className="absolute inset-0 cursor-default bg-login-text/35"
+        className={cx(
+          'absolute inset-0 cursor-default bg-login-text/35 transition-opacity duration-200 ease-out',
+          isMenuVisible ? 'opacity-100' : 'opacity-0',
+        )}
         onClick={handleClose}
         type="button"
       />
@@ -254,7 +286,10 @@ function AppSideMenu({
       <aside
         aria-labelledby={titleId}
         aria-modal="true"
-        className="absolute top-0 right-0 flex h-full w-[min(86vw,360px)] flex-col bg-login-surface px-5 pt-5 pb-6 shadow-login-card"
+        className={cx(
+          'absolute top-0 right-0 flex h-full w-[min(86vw,360px)] flex-col bg-login-surface px-5 pt-5 pb-6 shadow-login-card transition-transform duration-200 ease-out',
+          isMenuVisible ? 'translate-x-0' : 'translate-x-full',
+        )}
         onKeyDown={handlePanelKeyDown}
         role="dialog"
       >
