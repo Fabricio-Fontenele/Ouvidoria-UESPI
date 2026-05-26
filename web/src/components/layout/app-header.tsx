@@ -5,6 +5,7 @@ import type { AuthenticatedUser, AuthenticatedUserRole } from '../../application
 import uespiLogo from '../../assets/brasao.png'
 import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
+import { ConfirmDialog } from '../feedback/confirm-dialog'
 import { Icon, type IconName } from '../icons/icon'
 
 interface AppHeaderProps {
@@ -305,14 +306,29 @@ function AppSideMenu({
 export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
   const { signOut, user } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const role = user?.role ?? null
   const usesDirectOmbudsmanHeader = isAuthenticated && (role === 'ombudsman' || role === 'admin')
   const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
-  const handleSignOut = async () => {
+  const requestSignOut = async () => {
+    setIsMenuOpen(false)
+    setIsSignOutDialogOpen(true)
+  }
+  const handleConfirmSignOut = async () => {
+    setIsSigningOut(true)
     await signOut()
     setIsMenuOpen(false)
+    setIsSignOutDialogOpen(false)
     navigateTo(routes.landing)
+  }
+  const handleCancelSignOut = () => {
+    if (isSigningOut) {
+      return
+    }
+
+    setIsSignOutDialogOpen(false)
   }
 
   return (
@@ -360,7 +376,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
                 <button
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-login-blue px-3 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-login-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue sm:px-4"
                   onClick={() => {
-                    void handleSignOut()
+                    void requestSignOut()
                   }}
                   type="button"
                 >
@@ -391,13 +407,29 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
             isAuthenticated={isAuthenticated}
             isOpen={isMenuOpen}
             onClose={() => setIsMenuOpen(false)}
-            onSignOut={handleSignOut}
+            onSignOut={requestSignOut}
             openerRef={menuButtonRef}
             role={role}
             user={user}
           />
         </div>
       )}
+
+      <ConfirmDialog
+        cancelLabel="Continuar conectado"
+        confirmingLabel="Saindo..."
+        confirmLabel="Sair"
+        description="Você precisará entrar novamente para acessar as áreas autenticadas do sistema."
+        icon="log-out"
+        isConfirming={isSigningOut}
+        onCancel={handleCancelSignOut}
+        onConfirm={() => {
+          void handleConfirmSignOut()
+        }}
+        open={isSignOutDialogOpen}
+        title="Deseja sair da sua conta?"
+        tone="danger"
+      />
     </>
   )
 }
