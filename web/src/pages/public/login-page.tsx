@@ -32,7 +32,12 @@ const loginFields: AuthFormField<SignInFormData>[] = [
   },
 ]
 
-export function LoginPage() {
+interface LoginPageBaseProps {
+  showSignUpLink: boolean
+  subtitle: string
+}
+
+function LoginPageBase({ showSignUpLink, subtitle }: LoginPageBaseProps) {
   const { error, isAuthenticated, isLoading, signIn, user } = useAuth()
   const form = useForm<SignInFormData>({
     defaultValues: getSignInFormDefaultValues(),
@@ -69,7 +74,7 @@ export function LoginPage() {
         Bem-vindo
       </h1>
       <p className="mx-auto mt-[27px] mb-9 max-w-[250px] text-center text-base leading-6 text-login-brown sm:max-w-[310px] md:mb-10 md:max-w-[340px] md:text-[17px]">
-        Acesse o portal da transparência acadêmica
+        {subtitle}
       </p>
 
       <AuthForm
@@ -91,12 +96,22 @@ export function LoginPage() {
         </a>
       </AuthForm>
 
-      <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">
-        Não tem uma conta?{' '}
-        <a className={cx('text-login-blue no-underline', linkFocusClasses)} href={routes.sign}>
-          Cadastre-se aqui.
-        </a>
-      </p>
+      {showSignUpLink ? (
+        <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">
+          Não tem uma conta?{' '}
+          <a className={cx('text-login-blue no-underline', linkFocusClasses)} href={routes.sign}>
+            Cadastre-se aqui.
+          </a>
+        </p>
+      ) : null}
     </AuthPageShell>
   )
+}
+
+export function LoginPage() {
+  return <LoginPageBase showSignUpLink subtitle="Acesse o portal da transparência acadêmica" />
+}
+
+export function RestrictedLoginPage() {
+  return <LoginPageBase showSignUpLink={false} subtitle="Acesse a área administrativa" />
 }

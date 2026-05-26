@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
-import { buildGuaraNewManifestationHref, getAuthenticatedHomeRoute, navigateTo, routes } from '../../app/routes'
+import {
+  buildGuaraNewManifestationHref,
+  getAuthenticatedHomeRoute,
+  getCurrentPath,
+  navigateTo,
+  routes,
+} from '../../app/routes'
 import type { AuthenticatedUser, AuthenticatedUserRole } from '../../application/auth/auth-types'
 import uespiLogo from '../../assets/brasao.png'
 import { useAuth } from '../../hooks/use-auth'
@@ -24,6 +30,11 @@ interface HeaderNavItem {
   label: string
 }
 
+interface HeaderAuthItem extends HeaderNavItem {
+  icon: IconName
+  tone: 'primary' | 'secondary'
+}
+
 const manifestantMenuItems: MenuItem[] = [
   { href: routes.home, icon: 'home', label: 'Início' },
   { href: '#buscar-manifestacao', icon: 'file-text', label: 'Minhas manifestações' },
@@ -42,6 +53,8 @@ const ombudsmanMenuItems: MenuItem[] = [
 ]
 
 const publicMenuItems: MenuItem[] = [
+  { href: routes.login, icon: 'user', label: 'Login' },
+  { href: routes.restrictedLogin, icon: 'lock', label: 'Acesso restrito' },
   { href: routes.landing, icon: 'home', label: 'Início' },
   { href: `${routes.landing}#registro`, icon: 'edit', label: 'Registrar manifestação' },
   { href: `${routes.landing}#consultar-manifestacao`, icon: 'search', label: 'Consultar manifestação' },
@@ -49,7 +62,6 @@ const publicMenuItems: MenuItem[] = [
   { href: `${routes.landing}#tipos`, icon: 'file-text', label: 'Tipos de manifestação' },
   { href: `${routes.landing}#como-funciona`, icon: 'braces', label: 'Como funciona' },
   { href: `${routes.landing}#o-que-e`, icon: 'info', label: 'O que é' },
-  { href: routes.login, icon: 'user', label: 'Acessar sistema' },
   { href: routes.faq, icon: 'help', label: 'FAQ' },
 ]
 
@@ -57,6 +69,11 @@ const publicHeaderNavItems: HeaderNavItem[] = [
   { href: `${routes.landing}#registro`, label: 'Registrar' },
   { href: routes.track, label: 'Consultar' },
   { href: routes.faq, label: 'FAQ' },
+]
+
+const publicHeaderAuthItems: HeaderAuthItem[] = [
+  { href: routes.login, icon: 'user', label: 'Login', tone: 'secondary' },
+  { href: routes.restrictedLogin, icon: 'lock', label: 'Acesso restrito', tone: 'primary' },
 ]
 
 const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -342,8 +359,10 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
   const [isSigningOut, setIsSigningOut] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const role = user?.role ?? null
-  const usesDirectOmbudsmanHeader = isAuthenticated && (role === 'ombudsman' || role === 'admin')
-  const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
+  const isUserAuthenticated = isAuthenticated || user !== null
+  const isLandingPage = getCurrentPath() === routes.landing
+  const shouldShowPublicHeaderNav = !isUserAuthenticated || isLandingPage
+  const homeHref = isUserAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const requestSignOut = async () => {
     setIsMenuOpen(false)
     setIsSignOutDialogOpen(true)
@@ -374,16 +393,11 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
               src={uespiLogo}
             />
           </a>
-          <strong
-            className={cx(
-              'text-center text-lg leading-8 font-bold whitespace-nowrap text-login-blue min-[361px]:text-xl md:text-[22px]',
-              !isAuthenticated && 'md:text-left',
-            )}
-          >
+          <strong className="text-left text-lg leading-8 font-bold whitespace-nowrap text-login-blue min-[361px]:text-xl md:text-[22px]">
             Ouvidoria UESPI
           </strong>
           <div className="flex items-center justify-end gap-2 justify-self-end">
-            {!isAuthenticated ? (
+            {shouldShowPublicHeaderNav ? (
               <nav aria-label="Navegação principal" className="hidden items-center gap-1 md:flex">
                 {publicHeaderNavItems.map((item) => (
                   <a
@@ -396,56 +410,51 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
                 ))}
               </nav>
             ) : null}
-            {usesDirectOmbudsmanHeader ? (
-              <nav aria-label="Navegação do ouvidor" className="flex items-center gap-2">
-                <a
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm leading-5 font-bold text-login-blue no-underline transition duration-150 hover:bg-login-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue sm:px-4"
-                  href={routes.ombudsmanHome}
-                >
-                  <Icon className="size-4" name="home" />
-                  <span className="hidden sm:inline">Início</span>
-                </a>
-                <button
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-login-blue px-3 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-login-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue sm:px-4"
-                  onClick={() => {
-                    void requestSignOut()
-                  }}
-                  type="button"
-                >
-                  <Icon className="size-4" name="log-out" />
-                  <span className="hidden sm:inline">Sair</span>
-                </button>
+            {!isUserAuthenticated ? (
+              <nav aria-label="Acessos" className="hidden items-center gap-2 min-[1180px]:flex">
+                {publicHeaderAuthItems.map((item) => (
+                  <a
+                    className={cx(
+                      'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm leading-5 font-bold no-underline transition duration-150 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue',
+                      item.tone === 'primary'
+                        ? 'bg-login-blue text-white hover:bg-login-blue/90'
+                        : 'border border-login-blue/20 text-login-blue hover:bg-login-blue/10',
+                    )}
+                    href={item.href}
+                    key={item.label}
+                  >
+                    <Icon className="size-4" name={item.icon} />
+                    <span>{item.label}</span>
+                  </a>
+                ))}
               </nav>
-            ) : (
-              <button
-                aria-controls="project-menu"
-                aria-expanded={isMenuOpen}
-                aria-label="Abrir menu"
-                className={iconButtonClasses}
-                onClick={() => setIsMenuOpen(true)}
-                ref={menuButtonRef}
-                type="button"
-              >
-                <Icon className="size-[22px] md:size-6" name="menu" />
-              </button>
-            )}
+            ) : null}
+            <button
+              aria-controls="project-menu"
+              aria-expanded={isMenuOpen}
+              aria-label="Abrir menu"
+              className={iconButtonClasses}
+              onClick={() => setIsMenuOpen(true)}
+              ref={menuButtonRef}
+              type="button"
+            >
+              <Icon className="size-[22px] md:size-6" name="menu" />
+            </button>
           </div>
         </div>
       </header>
 
-      {usesDirectOmbudsmanHeader ? null : (
-        <div id="project-menu">
-          <AppSideMenu
-            isAuthenticated={isAuthenticated}
-            isOpen={isMenuOpen}
-            onClose={() => setIsMenuOpen(false)}
-            onSignOut={requestSignOut}
-            openerRef={menuButtonRef}
-            role={role}
-            user={user}
-          />
-        </div>
-      )}
+      <div id="project-menu">
+        <AppSideMenu
+          isAuthenticated={isUserAuthenticated}
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          onSignOut={requestSignOut}
+          openerRef={menuButtonRef}
+          role={role}
+          user={user}
+        />
+      </div>
 
       <ConfirmDialog
         cancelLabel="Continuar conectado"
