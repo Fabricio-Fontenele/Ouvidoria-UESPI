@@ -85,15 +85,6 @@ export function LoginPage() {
         >
           Esqueci minha senha.
         </a>
-
-        <div className="space-y-1 text-center text-xs leading-5 text-login-brown">
-          <p>
-            Manifestante: <strong>exemplo@uespi.br</strong> / <strong>123456</strong>
-          </p>
-          <p>
-            Ouvidor: <strong>ouvidor@uespi.com.br</strong> / <strong>ouv12345</strong>
-          </p>
-        </div>
       </AuthForm>
 
       <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">
