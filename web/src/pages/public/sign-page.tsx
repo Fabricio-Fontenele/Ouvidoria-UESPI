@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { SubmitHandler, UseFormRegisterReturn } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
-import { routes } from '../../app/routes'
+import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
 import { getSignUpFormDefaultValues, signUpFormSchema } from '../../application/auth/sign-up-form-contract'
 import type { SignUpFormData } from '../../application/auth/sign-up-form-contract'
 import { AuthForm, AuthFormMessage } from '../../components/auth/auth-form'
@@ -95,7 +95,7 @@ function TermsCheckbox({ error, inputProps }: { error?: string; inputProps: UseF
 }
 
 export function SignPage() {
-  const { error: authError, signUp } = useAuth()
+  const { error: authError, isAuthenticated, signUp, user } = useAuth()
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const form = useForm<SignUpFormData>({
     defaultValues: getSignUpFormDefaultValues(),
@@ -109,6 +109,12 @@ export function SignPage() {
   const acceptedTermsInputProps = form.register('acceptedTerms', {
     onChange: () => setSuccessMessage(null),
   })
+
+  useEffect(() => {
+    if (isAuthenticated && user !== null) {
+      replaceWith(getAuthenticatedHomeRoute(user.role))
+    }
+  }, [isAuthenticated, user])
 
   const handleSubmit: SubmitHandler<SignUpFormData> = async (values) => {
     setSuccessMessage(null)
@@ -127,6 +133,10 @@ export function SignPage() {
 
   const status = authError !== null ? 'error' : successMessage !== null ? 'success' : null
   const statusMessage = authError ?? successMessage ?? undefined
+
+  if (isAuthenticated && user !== null) {
+    return null
+  }
 
   return (
     <AuthPageShell

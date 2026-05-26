@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
 
 import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
+import type { AuthenticatedUserRole } from '../../application/auth/auth-types'
 import { getSignInFormDefaultValues, signInFormSchema } from '../../application/auth/sign-in-form-contract'
 import type { SignInFormData } from '../../application/auth/sign-in-form-contract'
 import { AuthForm } from '../../components/auth/auth-form'
@@ -32,8 +33,19 @@ const loginFields: AuthFormField<SignInFormData>[] = [
   },
 ]
 
-export function LoginPage() {
-  const { error, isAuthenticated, isLoading, signIn, user } = useAuth()
+const manifestantLoginRoles: readonly AuthenticatedUserRole[] = ['manifestant']
+const restrictedLoginRoles: readonly AuthenticatedUserRole[] = ['admin', 'ombudsman']
+
+interface LoginPageBaseProps {
+  allowedRoles: readonly AuthenticatedUserRole[]
+  showSignUpLink: boolean
+  subtitle: string
+  unauthorizedMessage: string
+}
+
+function LoginPageBase({ allowedRoles, showSignUpLink, subtitle, unauthorizedMessage }: LoginPageBaseProps) {
+  const { error, isAuthenticated, isLoading, signIn, signOut, user } = useAuth()
+  const [authorizationError, setAuthorizationError] = useState<string | null>(null)
   const form = useForm<SignInFormData>({
     defaultValues: getSignInFormDefaultValues(),
     mode: 'onSubmit',
@@ -44,16 +56,28 @@ export function LoginPage() {
     'transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
   const handleSubmit: SubmitHandler<SignInFormData> = async (formData) => {
+    setAuthorizationError(null)
     await signIn(formData)
   }
 
   useEffect(() => {
-    if (isAuthenticated && user !== null) {
-      replaceWith(getAuthenticatedHomeRoute(user.role))
+    if (!isAuthenticated || user === null) {
+      return
     }
-  }, [isAuthenticated, user])
 
-  if (isAuthenticated && user !== null) {
+    if (allowedRoles.includes(user.role)) {
+      replaceWith(getAuthenticatedHomeRoute(user.role))
+      return
+    }
+
+    void signOut()
+    setAuthorizationError(unauthorizedMessage)
+  }, [allowedRoles, isAuthenticated, signOut, unauthorizedMessage, user])
+
+  const isAuthorizedAuthenticatedUser = isAuthenticated && user !== null && allowedRoles.includes(user.role)
+  const statusMessage = authorizationError ?? error ?? undefined
+
+  if (isAuthorizedAuthenticatedUser) {
     return null
   }
 
@@ -69,7 +93,7 @@ export function LoginPage() {
         Bem-vindo
       </h1>
       <p className="mx-auto mt-[27px] mb-9 max-w-[250px] text-center text-base leading-6 text-login-brown sm:max-w-[310px] md:mb-10 md:max-w-[340px] md:text-[17px]">
-        Acesse o portal da transparência acadêmica
+        {subtitle}
       </p>
 
       <AuthForm
@@ -77,8 +101,8 @@ export function LoginPage() {
         fields={loginFields}
         form={form}
         onSubmit={handleSubmit}
-        status={error === null ? null : 'error'}
-        statusMessage={error ?? undefined}
+        status={statusMessage === undefined ? null : 'error'}
+        statusMessage={statusMessage}
         submitIcon="arrow-right"
         submitLabel={isLoading ? 'Entrando...' : 'Entrar'}
         submittingLabel="Entrando..."
@@ -91,12 +115,36 @@ export function LoginPage() {
         </a>
       </AuthForm>
 
-      <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">
-        Não tem uma conta?{' '}
-        <a className={cx('text-login-blue no-underline', linkFocusClasses)} href={routes.sign}>
-          Cadastre-se aqui.
-        </a>
-      </p>
+      {showSignUpLink ? (
+        <p className="mx-auto mt-[31px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-8 md:text-[15px]">
+          Não tem uma conta?{' '}
+          <a className={cx('text-login-blue no-underline', linkFocusClasses)} href={routes.sign}>
+            Cadastre-se aqui.
+          </a>
+        </p>
+      ) : null}
     </AuthPageShell>
+  )
+}
+
+export function LoginPage() {
+  return (
+    <LoginPageBase
+      allowedRoles={manifestantLoginRoles}
+      showSignUpLink
+      subtitle="Acesse o portal da transparência acadêmica"
+      unauthorizedMessage="Esta tela é exclusiva para manifestantes. Use o acesso restrito para entrar como ouvidor ou administrador."
+    />
+  )
+}
+
+export function RestrictedLoginPage() {
+  return (
+    <LoginPageBase
+      allowedRoles={restrictedLoginRoles}
+      showSignUpLink={false}
+      subtitle="Acesse a área administrativa"
+      unauthorizedMessage="Esta tela é exclusiva para ouvidores e administradores. Use o login comum para entrar como manifestante."
+    />
   )
 }

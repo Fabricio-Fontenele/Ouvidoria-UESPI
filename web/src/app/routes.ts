@@ -12,6 +12,7 @@ export const routes = {
   ombudsmanManifestation: '/ombudsman/manifestation',
   ombudsmanHome: '/ombudsman/home',
   privacy: '/privacy',
+  restrictedLogin: '/acesso-restrito',
   sign: '/sign',
   track: '/track',
 } as const

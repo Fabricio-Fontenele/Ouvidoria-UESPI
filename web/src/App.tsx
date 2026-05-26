@@ -8,7 +8,7 @@ import { OmbudsmanHomePage } from './pages/ombudsman/ombudsman-home-page'
 import { FaqPage } from './pages/public/faq-page'
 import { GuaraPage } from './pages/public/guara-page'
 import { LandingPage } from './pages/public/landing-page'
-import { LoginPage } from './pages/public/login-page'
+import { LoginPage, RestrictedLoginPage } from './pages/public/login-page'
 import { PrivacyPage } from './pages/public/privacy-page'
 import { SignPage } from './pages/public/sign-page'
 import { TrackPage } from './pages/public/track-page'
@@ -46,6 +46,10 @@ function App() {
 
   if (normalizedPath === routes.privacy) {
     return <PrivacyPage />
+  }
+
+  if (normalizedPath === routes.restrictedLogin) {
+    return <RestrictedLoginPage />
   }
 
   if (normalizedPath === routes.guara) {
