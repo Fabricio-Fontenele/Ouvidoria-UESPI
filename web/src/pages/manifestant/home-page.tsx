@@ -192,7 +192,7 @@ function Overview({ metrics }: { metrics: Metric[] }) {
         </p>
       </div>
 
-      <dl className="grid w-full grid-cols-2 gap-4 min-[420px]:grid-cols-3 sm:gap-8 md:mx-auto md:max-w-3xl md:text-center lg:grid-cols-5">
+      <dl className="grid w-full grid-cols-2 gap-4 text-center min-[420px]:grid-cols-3 sm:gap-8 md:mx-auto md:max-w-3xl lg:max-w-5xl lg:grid-cols-6">
         {metrics.map((metric) => (
           <div key={metric.label}>
             <dd
@@ -219,12 +219,22 @@ function FilterBar({
   onFilterChange: (filter: ManifestationFilter) => void
 }) {
   return (
-    <div className="mx-auto grid w-full grid-cols-2 gap-2 min-[420px]:grid-cols-3 md:w-[92%] lg:grid-cols-5 xl:w-[94%]">
+    <div className="mx-auto grid w-full grid-cols-2 gap-2 min-[420px]:grid-cols-3 md:w-[92%] lg:grid-cols-6 xl:w-[94%]">
       {filters.map((filter) => {
         const isActive = filter.id === activeFilter
-        const filterClasses = isActive
-          ? 'bg-home-blue text-white'
-          : 'bg-home-chip text-home-brown hover:bg-home-chip/80'
+        const statusStyle = filter.id === 'all' ? null : getManifestationStatusStyle(filter.id)
+        const filterClasses =
+          statusStyle === null
+            ? isActive
+              ? 'bg-home-text text-white'
+              : 'border border-home-text bg-transparent text-home-text hover:bg-home-text/5'
+            : isActive
+              ? statusStyle.badgeClassName
+              : cx(
+                  'border bg-transparent hover:bg-home-chip/50',
+                  statusStyle.accentClassName,
+                  statusStyle.textClassName,
+                )
 
         return (
           <button
