@@ -22,18 +22,28 @@ _Plataforma para registro, encaminhamento e acompanhamento de manifestações (d
 
 ## 📑 Sumário
 
-- [Sobre o projeto](#-sobre-o-projeto)
-- [Equipe](#-equipe)
-- [Arquitetura](#-arquitetura)
-- [Stack utilizada](#-stack-utilizada)
-- [Padrões de projeto](#-padrões-de-projeto)
-- [Estrutura de pastas](#-estrutura-de-pastas)
-- [Pré-requisitos](#-pré-requisitos)
-- [Passo a passo de instalação e execução](#-passo-a-passo-de-instalação-e-execução)
-- [Variáveis de ambiente](#-variáveis-de-ambiente)
-- [Comandos úteis](#-comandos-úteis)
-- [Testes e qualidade](#-testes-e-qualidade)
-- [Vocabulário de domínio](#-vocabulário-de-domínio)
+- [🦅 Ouvidoria UESPI](#-ouvidoria-uespi)
+  - [Sistema de Ouvidoria Institucional da Universidade Estadual do Piauí](#sistema-de-ouvidoria-institucional-da-universidade-estadual-do-piauí)
+  - [📑 Sumário](#-sumário)
+  - [🎯 Sobre o projeto](#-sobre-o-projeto)
+  - [🏛️ Arquitetura](#️-arquitetura)
+    - [Backend — Clean Architecture](#backend--clean-architecture)
+    - [Trilha de auditoria sem tabela de auditoria](#trilha-de-auditoria-sem-tabela-de-auditoria)
+    - [Microserviço de IA (`ai-api`)](#microserviço-de-ia-ai-api)
+  - [🧰 Stack utilizada](#-stack-utilizada)
+    - [Backend (`ouvidoria-backend-core`)](#backend-ouvidoria-backend-core)
+    - [Microserviço de IA (`@ouvidoria/ai-api`)](#microserviço-de-ia-ouvidoriaai-api)
+    - [Frontend (`web`)](#frontend-web)
+  - [🧩 Padrões de projeto](#-padrões-de-projeto)
+  - [📁 Estrutura de pastas](#-estrutura-de-pastas)
+  - [✅ Pré-requisitos](#-pré-requisitos)
+  - [🚀 Passo a passo de instalação e execução](#-passo-a-passo-de-instalação-e-execução)
+    - [A) Subir a stack completa via Docker](#a-subir-a-stack-completa-via-docker)
+    - [B) Desenvolvimento local (hot-reload)](#b-desenvolvimento-local-hot-reload)
+  - [🔐 Variáveis de ambiente](#-variáveis-de-ambiente)
+  - [🛠️ Comandos úteis](#️-comandos-úteis)
+  - [🧪 Testes e qualidade](#-testes-e-qualidade)
+  - [📚 Vocabulário de domínio](#-vocabulário-de-domínio)
 
 ---
 
@@ -51,18 +61,56 @@ As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn
 
 ---
 
-## 👥 Equipe
+<div align="center">
+  
+  <h3> Equipe de Desenvolvimento</h3>
+  <table>
+    <tr>
+      <td align="center">
+        <a href="https://github.com/ericSilvaP">
+          <img src="https://github.com/ericSilvaP.png" width="100px;" alt="Foto do Erick"/><br>
+          <sub><b>Erick</b></sub>
+        </a><br>
+        💻 FrontEnd
+      </td>
+      <td align="center">
+        <a href="https://github.com/Fabricio-Fontenele">
+          <img src="https://github.com/Fabricio-Fontenele.png" width="100px;" alt="Foto do Fabricio"/><br>
+          <sub><b>Fabricio Fontenele</b></sub>
+        </a><br>
+        💻 BackEnd
+      </td>
+      <td align="center">
+        <a href="https://github.com/gaboliveira-alt">
+          <img src="https://github.com/gaboliveira-alt.png" width="100px;" alt="Foto do Gabriel"/><br>
+          <sub><b>Gabriel</b></sub>
+        </a><br>
+        💻 ChatBot
+      </td>
+      <td align="center">
+        <a href="https://github.com/Kaua-cel">
+          <img src="https://github.com/Kaua-cel.png" width="100px;" alt="Foto do Kauã"/><br>
+          <sub><b>Kauã</b></sub>
+        </a><br>
+        💻 FrontEnd
+      </td>
+    </tr>
+  </table>
 
-Projeto desenvolvido para a Universidade Estadual do Piauí (UESPI).
-
-| Integrante                                                                  | Papel           |
-| --------------------------------------------------------------------------- | --------------- |
-| **Erick**                                                                   | Desenvolvimento |
-| **Fabricio** ([@Fabricio-Fontenele](https://github.com/Fabricio-Fontenele)) | Desenvolvimento |
-| **Gabriel**                                                                 | Desenvolvimento |
-| **Kauã**                                                                    | Desenvolvimento |
-
-**Orientador:** Prof. **Dário Brito Calçada**
+  <h3> Orientador</h3>
+  <table>
+    <tr>
+      <td align="center">
+        <a href="https://github.com/dariobcalcada">
+          <img src="https://github.com/dariobcalcada.png" width="100px;" alt="Foto do Prof. Dário"/><br>
+          <sub><b>Prof. Dário Brito Calçada</b></sub>
+        </a><br>
+        Orientador
+      </td>
+    </tr>
+  </table>
+  
+</div>
 
 ---
 
