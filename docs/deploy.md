@@ -54,13 +54,20 @@ sudo chmod 440 /etc/sudoers.d/ouvidoria-deploy
 
 - Repositório clonado em `~/projects/Ouvidoria-UESPI` (caminho usado pelo workflow).
 - `.env` (raiz) e `ai-api/.env` presentes, `chmod 600`, com os segredos de produção.
+  O `.env` da raiz precisa conter `VITE_API_BASE_URL` (origem pública da API; em
+  prod, o mesmo domínio do site) — o `deploy.sh` embute esse valor no bundle do
+  front em build time e **aborta** se faltar.
+- O proxy reverso (Caddy) precisa rotear **todas** as rotas de topo da API para
+  `127.0.0.1:3333`: `/health /ready /catalog /me /sessions /users /manifestations* /admin/* /ai/*`
+  (o backend serve na raiz, sem prefixo). Faltar uma faz aquela chamada cair no
+  fallback do SPA e voltar `index.html` em vez de JSON.
 - `pnpm`/`corepack`, `docker compose` e `rsync` disponíveis na VM.
 
 ## 3. O que o `scripts/deploy.sh` faz
 
 1. `pnpm install --frozen-lockfile`
 2. **backend**: `prisma migrate deploy` → `pnpm build` → `systemctl restart ouvidoria-backend`
-3. **frontend** (npm, projeto standalone): `npm ci && npm run build` em `web/` → publica `web/dist/` em `/var/www/ouvidoria`
+3. **frontend** (npm, projeto standalone): resolve `VITE_API_BASE_URL` (do ambiente ou do `.env` da raiz, abortando se faltar) → `npm ci && VITE_API_BASE_URL=… npm run build` em `web/` → publica `web/dist/` em `/var/www/ouvidoria`
 4. **ai-api**: `docker compose up -d --build ai-api`
 5. **smoke test**: `curl /health` (backend) e `/ready` (ai-api) — falha o deploy se algum não responder
 
