@@ -32,8 +32,20 @@ pnpm build
 sudo systemctl restart "$BACKEND_SERVICE"
 
 echo "==> Frontend: build + publicação em $WEB_ROOT"
+# VITE_API_BASE_URL é embutido no bundle em build time. Resolve do ambiente ou
+# do .env da raiz e falha cedo se ausente — senão o bundle chama a origem errada
+# e o login quebra com "Unexpected token '<'" (recebe index.html no lugar de JSON).
+if [ -z "${VITE_API_BASE_URL:-}" ] && [ -f .env ]; then
+  VITE_API_BASE_URL="$(grep -E '^VITE_API_BASE_URL=' .env | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
+fi
+if [ -z "${VITE_API_BASE_URL:-}" ]; then
+  echo "ERRO: VITE_API_BASE_URL não definido. Exporte-o ou adicione no .env da raiz." >&2
+  echo "      Ex.: VITE_API_BASE_URL=https://ouvidoria.fabriciofontenele.com.br" >&2
+  exit 1
+fi
+echo "    VITE_API_BASE_URL=$VITE_API_BASE_URL"
 # web é projeto standalone (fora do workspace pnpm) e usa npm.
-(cd web && npm ci && npm run build)
+(cd web && npm ci && VITE_API_BASE_URL="$VITE_API_BASE_URL" npm run build)
 # -rlpt (sem -o/-g): não tenta preservar dono/grupo, evitando chgrp negado para não-root.
 rsync -rlpt --delete web/dist/ "$WEB_ROOT/"
 
