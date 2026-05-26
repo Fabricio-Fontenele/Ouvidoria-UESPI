@@ -101,7 +101,7 @@ const metricCardClasses = [
 ]
 
 const manifestationCardClasses = [
-  'group relative w-full min-w-0 overflow-hidden rounded-lg border bg-home-surface px-5 py-5 shadow-login-card',
+  'group relative w-full min-w-0 overflow-hidden rounded-lg bg-home-surface px-5 py-5 shadow-login-card',
   'transition duration-150 hover:-translate-y-0.5 hover:shadow-landing-card sm:px-6 sm:py-6 md:px-7',
 ]
 
@@ -349,8 +349,8 @@ function StatusBadge({ status }: { status: ManifestationStatus }) {
   return (
     <span
       className={cx(
-        'inline-flex min-h-8 items-center rounded-lg px-4 text-xs leading-4 font-black tracking-[0.08em] uppercase',
-        statusStyle.badgeClassName,
+        'inline-flex min-h-8 items-center rounded-lg border border-current bg-transparent px-4 text-xs leading-4 font-black tracking-[0.08em] uppercase',
+        statusStyle.textClassName,
       )}
     >
       {statusContract.viewLabel}
@@ -388,10 +388,12 @@ function ManifestationCard({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid min-w-0 grid-cols-[40px_1fr] gap-3">
           <span className={cx('grid size-10 place-items-center rounded-lg', statusStyle.iconClassName)}>
-            <Icon className="size-5" name="info" />
+            <Icon className="size-7" name="info" />
           </span>
           <div className="min-w-0">
-            <p className="text-xs leading-4 font-black tracking-[0.1em] text-home-blue uppercase">Manifestação</p>
+            <p className={cx('text-xs leading-4 font-black tracking-[0.1em] uppercase', statusStyle.textClassName)}>
+              Manifestação
+            </p>
             <h2 className="mt-1 truncate text-2xl leading-8 font-black text-home-text" id={`${protocolId}-title`}>
               {manifestation.protocol}
             </h2>
@@ -416,7 +418,10 @@ function ManifestationCard({
         </div>
         <a
           aria-label={`Abrir manifestação ${manifestation.protocol}`}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm leading-5 font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+          className={cx(
+            'inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-current bg-transparent px-5 text-sm leading-5 font-bold no-underline transition duration-150 hover:bg-home-action active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-current',
+            statusStyle.textClassName,
+          )}
           href={buildOmbudsmanManifestationDetailsHref(manifestation.id)}
         >
           Abrir demanda
