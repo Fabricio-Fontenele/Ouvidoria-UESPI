@@ -32,15 +32,18 @@ pnpm build
 sudo systemctl restart "$BACKEND_SERVICE"
 
 echo "==> Frontend: build + publicação em $WEB_ROOT"
-# VITE_API_BASE_URL é embutido no bundle em build time. Resolve do ambiente ou
-# do .env da raiz e falha cedo se ausente — senão o bundle chama a origem errada
-# e o login quebra com "Unexpected token '<'" (recebe index.html no lugar de JSON).
+# VITE_API_BASE_URL é embutido no bundle em build time. O CI roda este script via
+# SSH sem exportar a variável, então resolvemos do ambiente ou do .env da raiz e
+# exigimos que bata EXATAMENTE com a origem pública de produção. Um valor errado
+# faz o bundle chamar o host errado e o login quebra com "Unexpected token '<'"
+# (recebe index.html no lugar de JSON). Override via EXPECTED_VITE_API_BASE_URL.
+EXPECTED_VITE_API_BASE_URL="${EXPECTED_VITE_API_BASE_URL:-https://ouvidoria.fabriciofontenele.com.br}"
 if [ -z "${VITE_API_BASE_URL:-}" ] && [ -f .env ]; then
   VITE_API_BASE_URL="$(grep -E '^VITE_API_BASE_URL=' .env | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
 fi
-if [ -z "${VITE_API_BASE_URL:-}" ]; then
-  echo "ERRO: VITE_API_BASE_URL não definido. Exporte-o ou adicione no .env da raiz." >&2
-  echo "      Ex.: VITE_API_BASE_URL=https://ouvidoria.fabriciofontenele.com.br" >&2
+if [[ "${VITE_API_BASE_URL:-}" != "$EXPECTED_VITE_API_BASE_URL" ]]; then
+  echo "ERRO: VITE_API_BASE_URL deve ser '$EXPECTED_VITE_API_BASE_URL' no deploy de produção (atual: '${VITE_API_BASE_URL:-<vazio>}')." >&2
+  echo "      Defina-o no .env da raiz, ou exporte EXPECTED_VITE_API_BASE_URL para apontar outro destino." >&2
   exit 1
 fi
 echo "    VITE_API_BASE_URL=$VITE_API_BASE_URL"
