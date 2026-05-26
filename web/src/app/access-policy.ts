@@ -8,4 +8,3 @@ export type ManifestantOnlyRole = (typeof manifestantOnlyRoles)[number]
 
 export const FILTER_ALL_VALUE = 'all' as const
 export type FilterAllValue = typeof FILTER_ALL_VALUE
-export type DateFilterValue = FilterAllValue | string
