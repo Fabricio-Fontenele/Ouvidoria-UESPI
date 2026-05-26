@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { FILTER_ALL_VALUE, ombudsmanAreaRoles } from '../app/access-policy'
-import type { DateFilterValue, FilterAllValue } from '../app/access-policy'
-import { buildLocalDayRange, formatBrazilianShortDate } from '../app/date-utils'
+import type { FilterAllValue } from '../app/access-policy'
+import { buildLocalDateRangeBounds, formatBrazilianShortDate, isLocalDateRangeInOrder } from '../app/date-utils'
 import { buildOmbudsmanManifestationDetailsHref } from '../app/routes'
 import type { Catalog } from '../application/catalog/catalog-types'
 import {
@@ -33,8 +33,12 @@ import { cx } from '../utils/cx'
 
 type StatusFilter = FilterAllValue | ManifestationStatus
 type TypeFilter = FilterAllValue | ManifestationType
-type DateFilter = DateFilterValue
 type LoadStatus = 'loading' | 'ready' | 'error'
+
+interface DateRangeFilter {
+  from: string
+  to: string
+}
 
 interface FilterSelectOption {
   label: string
@@ -49,11 +53,10 @@ interface FilterSelectProps {
   value: string
 }
 
-interface DateFilterInputProps {
-  id: string
-  label: string
-  onChange: (value: DateFilter) => void
-  value: DateFilter
+interface DateRangeFilterInputProps {
+  error: string | null
+  onChange: (range: DateRangeFilter) => void
+  value: DateRangeFilter
 }
 
 const dashboardMetricCards: Array<{
@@ -102,11 +105,27 @@ const manifestationCardClasses = [
   'transition duration-150 hover:-translate-y-0.5 hover:shadow-landing-card sm:px-6 sm:py-6 md:px-7',
 ]
 
+const filterControlBaseClasses = [
+  'flex min-h-10 w-full items-center rounded-lg border px-3 transition duration-150',
+  'focus-within:bg-home-action/70 focus-within:outline-none',
+].join(' ')
+
+const filterControlActiveClasses = 'border-login-brown/10 bg-home-surface text-home-text hover:bg-home-action/70'
+const filterControlErrorClasses = 'border-red-700 bg-home-surface text-home-text'
+const filterControlInactiveClasses = 'border-login-brown/10 bg-home-surface/80 text-home-brown hover:bg-home-action/70'
+const filterLabelClasses = 'px-1 text-xs leading-4 font-black tracking-[0.08em] text-home-brown/70 uppercase md:text-sm'
+const filterSubLabelClasses = 'px-1 text-[11px] leading-4 font-black text-home-brown/70'
+
 const initialPagination: PaginationMeta = {
   page: 1,
   pageSize: 0,
   totalItems: 0,
   totalPages: 1,
+}
+
+const emptyDateRangeFilter: DateRangeFilter = {
+  from: '',
+  to: '',
 }
 
 function buildAreaLabel(catalog: Catalog | null, manifestation: ManifestationSummary) {
@@ -123,12 +142,12 @@ function buildAreaLabel(catalog: Catalog | null, manifestation: ManifestationSum
 function buildFiltersForRequest({
   statusFilter,
   typeFilter,
-  dateFilter,
+  dateRangeFilter,
   page,
 }: {
   statusFilter: StatusFilter
   typeFilter: TypeFilter
-  dateFilter: DateFilter
+  dateRangeFilter: DateRangeFilter
   page: number
 }): OmbudsmanListFilters {
   const filters: OmbudsmanListFilters = { page }
@@ -141,16 +160,27 @@ function buildFiltersForRequest({
     filters.type = typeFilter
   }
 
-  if (dateFilter !== FILTER_ALL_VALUE) {
-    const range = buildLocalDayRange(dateFilter)
+  const dateRangeBounds = buildLocalDateRangeBounds(dateRangeFilter)
 
-    if (range !== null) {
-      filters.from = range.from
-      filters.to = range.to
+  if (dateRangeBounds !== null) {
+    if (dateRangeBounds.from !== undefined) {
+      filters.from = dateRangeBounds.from
+    }
+
+    if (dateRangeBounds.to !== undefined) {
+      filters.to = dateRangeBounds.to
     }
   }
 
   return filters
+}
+
+function getDateRangeError(dateRangeFilter: DateRangeFilter) {
+  if (!isLocalDateRangeInOrder(dateRangeFilter)) {
+    return 'A data final deve ser igual ou posterior à data inicial.'
+  }
+
+  return null
 }
 
 function MetricCards({
@@ -218,17 +248,12 @@ function FilterSelect({ id, label, onChange, options, value }: FilterSelectProps
 
   return (
     <label className="grid w-full gap-1.5" htmlFor={id}>
-      <span className="px-1 text-xs leading-4 font-black tracking-[0.08em] text-home-brown/70 uppercase md:text-sm">
-        {label}
-      </span>
+      <span className={filterLabelClasses}>{label}</span>
       <span
-        className={cx(
-          'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
-          isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
-        )}
+        className={cx(filterControlBaseClasses, isActive ? filterControlActiveClasses : filterControlInactiveClasses)}
       >
         <select
-          className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none md:text-sm"
+          className="min-h-10 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none md:text-sm"
           id={id}
           onChange={(event) => onChange(event.target.value)}
           value={value}
@@ -247,30 +272,73 @@ function FilterSelect({ id, label, onChange, options, value }: FilterSelectProps
   )
 }
 
-function DateFilterInput({ id, label, onChange, value }: DateFilterInputProps) {
-  const isActive = value !== FILTER_ALL_VALUE
+function DateRangeFilterInput({ error, onChange, value }: DateRangeFilterInputProps) {
+  const errorId = 'ombudsman-date-range-error'
+  const fromId = 'ombudsman-date-range-from'
+  const isFromActive = value.from !== ''
+  const isToActive = value.to !== ''
+  const toId = 'ombudsman-date-range-to'
 
   return (
-    <label className="grid w-full gap-1.5" htmlFor={id}>
-      <span className="px-1 text-xs leading-4 font-black tracking-[0.08em] text-home-brown/70 uppercase md:text-sm">
-        {label}
-      </span>
-      <span
-        className={cx(
-          'flex min-h-8 w-full items-center rounded-full px-3 transition duration-150 focus-within:outline-2 focus-within:outline-offset-3 focus-within:outline-home-blue',
-          isActive ? 'bg-home-blue text-white' : 'bg-home-chip text-home-brown hover:bg-home-chip/80',
-        )}
-      >
-        <input
-          className="min-h-8 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none [color-scheme:light] md:text-sm"
-          id={id}
-          onChange={(event) => onChange(event.target.value === '' ? FILTER_ALL_VALUE : event.target.value)}
-          title={label}
-          type="date"
-          value={value === FILTER_ALL_VALUE ? '' : value}
-        />
-      </span>
-    </label>
+    <fieldset aria-describedby={error === null ? undefined : errorId} className="grid w-full gap-1.5 sm:col-span-2">
+      <legend className={filterLabelClasses}>Período</legend>
+      <div className="grid items-end gap-2 min-[520px]:grid-cols-[1fr_auto_1fr]">
+        <label className="grid gap-1.5" htmlFor={fromId}>
+          <span className={filterSubLabelClasses}>data inicial</span>
+          <span
+            className={cx(
+              filterControlBaseClasses,
+              error !== null
+                ? filterControlErrorClasses
+                : isFromActive
+                  ? filterControlActiveClasses
+                  : filterControlInactiveClasses,
+            )}
+          >
+            <input
+              aria-invalid={error === null ? undefined : true}
+              className="min-h-10 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none [color-scheme:light] md:text-sm"
+              id={fromId}
+              max={value.to === '' ? undefined : value.to}
+              onChange={(event) => onChange({ ...value, from: event.target.value })}
+              title="Data inicial"
+              type="date"
+              value={value.from}
+            />
+          </span>
+        </label>
+        <span className="hidden pb-2 text-xs leading-5 font-black text-home-brown/70 min-[520px]:block">até</span>
+        <label className="grid gap-1.5" htmlFor={toId}>
+          <span className={filterSubLabelClasses}>data final</span>
+          <span
+            className={cx(
+              filterControlBaseClasses,
+              error !== null
+                ? filterControlErrorClasses
+                : isToActive
+                  ? filterControlActiveClasses
+                  : filterControlInactiveClasses,
+            )}
+          >
+            <input
+              aria-invalid={error === null ? undefined : true}
+              className="min-h-10 w-full cursor-pointer bg-transparent text-xs leading-5 font-semibold outline-none [color-scheme:light] md:text-sm"
+              id={toId}
+              min={value.from === '' ? undefined : value.from}
+              onChange={(event) => onChange({ ...value, to: event.target.value })}
+              title="Data final"
+              type="date"
+              value={value.to}
+            />
+          </span>
+        </label>
+      </div>
+      {error !== null ? (
+        <p className="text-xs leading-5 font-bold text-red-700" id={errorId} role="alert">
+          {error}
+        </p>
+      ) : null}
+    </fieldset>
   )
 }
 
@@ -365,7 +433,7 @@ export function OmbudsmanHomePage() {
   const [manifestations, setManifestations] = useState<ManifestationSummary[]>([])
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading')
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [dateFilter, setDateFilter] = useState<DateFilter>(FILTER_ALL_VALUE)
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>(emptyDateRangeFilter)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(FILTER_ALL_VALUE)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(FILTER_ALL_VALUE)
@@ -382,6 +450,7 @@ export function OmbudsmanHomePage() {
     label: type.label,
     value: type.value,
   }))
+  const dateRangeError = getDateRangeError(dateRangeFilter)
 
   useEffect(() => {
     let isMounted = true
@@ -419,12 +488,16 @@ export function OmbudsmanHomePage() {
     let isMounted = true
 
     async function load() {
+      if (dateRangeError !== null) {
+        return
+      }
+
       setLoadStatus('loading')
       setLoadError(null)
 
       try {
         const result = await ombudsmanService.list(
-          buildFiltersForRequest({ dateFilter, page, statusFilter, typeFilter }),
+          buildFiltersForRequest({ dateRangeFilter, page, statusFilter, typeFilter }),
         )
 
         if (!isMounted) {
@@ -454,12 +527,12 @@ export function OmbudsmanHomePage() {
     return () => {
       isMounted = false
     }
-  }, [dateFilter, ombudsmanService, page, statusFilter, typeFilter])
+  }, [dateRangeError, dateRangeFilter, ombudsmanService, page, statusFilter, typeFilter])
 
   const filteredManifestations = useMemo(() => searchManifestations(manifestations, search), [manifestations, search])
 
   const handleClearFilters = () => {
-    setDateFilter(FILTER_ALL_VALUE)
+    setDateRangeFilter(emptyDateRangeFilter)
     setPage(1)
     setSearch('')
     setStatusFilter(FILTER_ALL_VALUE)
@@ -473,8 +546,8 @@ export function OmbudsmanHomePage() {
     setTypeFilter(value as TypeFilter)
     setPage(1)
   }
-  const handleDateFilterChange = (value: DateFilter) => {
-    setDateFilter(value)
+  const handleDateRangeFilterChange = (value: DateRangeFilter) => {
+    setDateRangeFilter(value)
     setPage(1)
   }
   const handleSearchChange = (value: string) => {
@@ -511,7 +584,7 @@ export function OmbudsmanHomePage() {
               <div className="flex w-full flex-col items-start gap-5">
                 <SearchField onSearchChange={handleSearchChange} search={search} />
 
-                <div className="mx-auto grid w-full gap-2 md:w-[92%] xl:w-[94%] sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mx-auto grid w-full gap-2 md:w-[92%] xl:w-[94%] sm:grid-cols-2 lg:grid-cols-4">
                   <FilterSelect
                     id="ombudsman-status-filter"
                     label="Status"
@@ -526,11 +599,10 @@ export function OmbudsmanHomePage() {
                     options={typeOptions}
                     value={typeFilter}
                   />
-                  <DateFilterInput
-                    id="ombudsman-date-filter"
-                    label="Data"
-                    onChange={handleDateFilterChange}
-                    value={dateFilter}
+                  <DateRangeFilterInput
+                    error={dateRangeError}
+                    onChange={handleDateRangeFilterChange}
+                    value={dateRangeFilter}
                   />
                 </div>
               </div>
