@@ -43,6 +43,8 @@ describe('GetManifestationDetailsUseCase', () => {
         toStatus: ManifestationStatus.IN_ANALYSIS,
         rating: null,
         attendantUserId: null,
+        cancellationReason: null,
+        cancellationNote: null,
         createdAt: new Date('2026-05-10T12:00:00.000Z'),
       },
       {
@@ -54,6 +56,8 @@ describe('GetManifestationDetailsUseCase', () => {
         toStatus: ManifestationStatus.ANSWERED,
         rating: null,
         attendantUserId: null,
+        cancellationReason: null,
+        cancellationNote: null,
         createdAt: new Date('2026-05-10T14:00:00.000Z'),
       },
     ],

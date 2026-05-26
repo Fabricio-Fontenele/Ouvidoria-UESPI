@@ -1,5 +1,9 @@
 import type { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
-import type { ManifestationStatus, ManifestationType } from '#src/domain/entities/manifestation.js'
+import type {
+  ManifestationCancellationReason,
+  ManifestationStatus,
+  ManifestationType,
+} from '#src/domain/entities/manifestation.js'
 
 export type ManifestationHistoryEntryType =
   | 'registered'
@@ -8,6 +12,7 @@ export type ManifestationHistoryEntryType =
   | 'forwarded_to_unit'
   | 'finalized_by_author'
   | 'evaluation_recorded'
+  | 'canceled'
 
 export type ManifestationAttachmentUploadedByTypeDTO = 'manifestant' | 'anonymous_manifestant' | 'ombudsman' | 'admin'
 
@@ -32,6 +37,8 @@ export interface ManifestationHistoryEntryDTO {
   toStatus: ManifestationStatus | null
   rating: number | null
   attendantUserId: string | null
+  cancellationReason: ManifestationCancellationReason | null
+  cancellationNote: string | null
   createdAt: Date
 }
 

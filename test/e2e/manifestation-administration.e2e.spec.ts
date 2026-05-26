@@ -167,7 +167,7 @@ describe('Manifestation administration with traceability (e2e)', () => {
     })
   })
 
-  it('updates manifestation status and writes a system audit row', async () => {
+  it('cancels an answered manifestation with a reason and writes a system audit row', async () => {
     const app = await getApp()
     await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
     await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
@@ -176,13 +176,21 @@ describe('Manifestation administration with traceability (e2e)', () => {
     const ombudsmanToken = await signIn('ombudsman@example.com')
     const manifestation = await createIdentifiedManifestation(manifestantToken)
 
-    const patchResponse = await app.inject({
-      method: 'PATCH',
-      url: `/admin/manifestations/${manifestation.id}/status`,
+    const answerResponse = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/answer`,
       headers: { authorization: `Bearer ${ombudsmanToken}` },
-      payload: { status: 'canceled' },
+      payload: { content: 'Vamos apurar o caso.' },
     })
-    expect(patchResponse.statusCode).toBe(200)
+    expect(answerResponse.statusCode).toBe(201)
+
+    const cancelResponse = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/cancel`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { reason: 'duplicate', note: 'Já registrada por outro canal.' },
+    })
+    expect(cancelResponse.statusCode).toBe(200)
 
     const detailsResponse = await app.inject({
       method: 'GET',
@@ -192,15 +200,99 @@ describe('Manifestation administration with traceability (e2e)', () => {
     const details = detailsResponse.json<{
       manifestation: {
         status: string
-        history: { type: string; fromStatus: string | null; toStatus: string | null }[]
+        history: {
+          type: string
+          fromStatus: string | null
+          toStatus: string | null
+          cancellationReason: string | null
+          cancellationNote: string | null
+        }[]
       }
     }>()
 
     expect(details.manifestation.status).toBe('canceled')
     const lastEntry = details.manifestation.history.at(-1)
-    expect(lastEntry?.type).toBe('status_changed')
-    expect(lastEntry?.fromStatus).toBe('in_analysis')
+    expect(lastEntry?.type).toBe('canceled')
+    expect(lastEntry?.fromStatus).toBe('answered')
     expect(lastEntry?.toStatus).toBe('canceled')
+    expect(lastEntry?.cancellationReason).toBe('duplicate')
+    expect(lastEntry?.cancellationNote).toBe('Já registrada por outro canal.')
+
+    const systemMessages = await prisma.manifestationMessage.count({
+      where: { manifestationId: manifestation.id, senderType: 'system' },
+    })
+    expect(systemMessages).toBe(2)
+  })
+
+  it('rejects PATCH /status with status=canceled (only POST /cancel can cancel)', async () => {
+    const app = await getApp()
+    await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+
+    const manifestantToken = await signIn('manifestant@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+    const manifestation = await createIdentifiedManifestation(manifestantToken)
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/admin/manifestations/${manifestation.id}/status`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { status: 'canceled' },
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('rejects cancellation with the "other" reason and no note', async () => {
+    const app = await getApp()
+    await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+
+    const manifestantToken = await signIn('manifestant@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+    const manifestation = await createIdentifiedManifestation(manifestantToken)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/cancel`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { reason: 'other' },
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('rejects cancelling an already-finalized manifestation with 409', async () => {
+    const app = await getApp()
+    await createUser(UserRole.MANIFESTANT, 'manifestant@example.com')
+    await createUser(UserRole.OMBUDSMAN, 'ombudsman@example.com')
+
+    const manifestantToken = await signIn('manifestant@example.com')
+    const ombudsmanToken = await signIn('ombudsman@example.com')
+    const manifestation = await createIdentifiedManifestation(manifestantToken)
+
+    await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/answer`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { content: 'Resposta final.' },
+    })
+    const finalizeResponse = await app.inject({
+      method: 'PATCH',
+      url: `/admin/manifestations/${manifestation.id}/status`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { status: 'finalized' },
+    })
+    expect(finalizeResponse.statusCode).toBe(200)
+
+    const cancelResponse = await app.inject({
+      method: 'POST',
+      url: `/admin/manifestations/${manifestation.id}/cancel`,
+      headers: { authorization: `Bearer ${ombudsmanToken}` },
+      payload: { reason: 'out_of_scope' },
+    })
+
+    expect(cancelResponse.statusCode).toBe(409)
   })
 
   it('rejects PATCH /status with status=answered (only POST /answer can reach answered)', async () => {

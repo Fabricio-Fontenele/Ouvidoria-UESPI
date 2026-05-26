@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   AnonymousManifestationRequiresAccessCodeError,
+  CancellationReasonRequiresNoteError,
   IdentifiedManifestationCannotHaveAccessCodeError,
   Manifestation,
+  ManifestationCancellationReason,
   ManifestationStatus,
   ManifestationStatusTransitionNotAllowedError,
   ManifestationType,
@@ -116,15 +118,23 @@ describe('Manifestation', () => {
     expect(inAnalysis.status).toBe(ManifestationStatus.IN_ANALYSIS)
   })
 
-  it('finalizes and cancels manifestations administratively', () => {
+  it('finalizes manifestations administratively', () => {
     const finalizing = buildManifestation({ status: ManifestationStatus.ANSWERED })
-    const canceling = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
 
     finalizing.transitionStatusAdministratively(ManifestationStatus.FINALIZED)
-    canceling.transitionStatusAdministratively(ManifestationStatus.CANCELED)
 
     expect(finalizing.status).toBe(ManifestationStatus.FINALIZED)
-    expect(canceling.status).toBe(ManifestationStatus.CANCELED)
+  })
+
+  it('refuses to cancel through the generic administrative transition', () => {
+    for (const status of [ManifestationStatus.IN_ANALYSIS, ManifestationStatus.AWAITING_UNIT]) {
+      const manifestation = buildManifestation({ status })
+
+      expect(() => {
+        manifestation.transitionStatusAdministratively(ManifestationStatus.CANCELED)
+      }).toThrow(ManifestationStatusTransitionNotAllowedError)
+      expect(manifestation.status).toBe(status)
+    }
   })
 
   it('refuses transitions out of terminal states', () => {
@@ -240,15 +250,52 @@ describe('Manifestation', () => {
     expect(manifestation.status).toBe(ManifestationStatus.ANSWERED)
   })
 
-  it('moves an awaiting-unit manifestation back to analysis or to canceled', () => {
+  it('moves an awaiting-unit manifestation back to analysis', () => {
     const reanalyzing = buildManifestation({ status: ManifestationStatus.AWAITING_UNIT })
-    const canceling = buildManifestation({ status: ManifestationStatus.AWAITING_UNIT })
 
     reanalyzing.transitionStatusAdministratively(ManifestationStatus.IN_ANALYSIS)
-    canceling.transitionStatusAdministratively(ManifestationStatus.CANCELED)
 
     expect(reanalyzing.status).toBe(ManifestationStatus.IN_ANALYSIS)
-    expect(canceling.status).toBe(ManifestationStatus.CANCELED)
+  })
+
+  it('cancels open manifestations by the ombudsman from any open status', () => {
+    for (const status of [
+      ManifestationStatus.IN_ANALYSIS,
+      ManifestationStatus.AWAITING_UNIT,
+      ManifestationStatus.ANSWERED,
+    ]) {
+      const manifestation = buildManifestation({ status })
+
+      manifestation.cancelByOmbudsman(ManifestationCancellationReason.DUPLICATE, null)
+
+      expect(manifestation.status).toBe(ManifestationStatus.CANCELED)
+    }
+  })
+
+  it('refuses ombudsman cancellation of terminal manifestations', () => {
+    for (const status of [ManifestationStatus.CANCELED, ManifestationStatus.FINALIZED]) {
+      const manifestation = buildManifestation({ status })
+
+      expect(() => {
+        manifestation.cancelByOmbudsman(ManifestationCancellationReason.OUT_OF_SCOPE, null)
+      }).toThrow(ManifestationStatusTransitionNotAllowedError)
+      expect(manifestation.status).toBe(status)
+    }
+  })
+
+  it('requires a note when cancelling with the "other" reason', () => {
+    const manifestation = buildManifestation({ status: ManifestationStatus.IN_ANALYSIS })
+
+    expect(() => {
+      manifestation.cancelByOmbudsman(ManifestationCancellationReason.OTHER, null)
+    }).toThrow(CancellationReasonRequiresNoteError)
+    expect(() => {
+      manifestation.cancelByOmbudsman(ManifestationCancellationReason.OTHER, '   ')
+    }).toThrow(CancellationReasonRequiresNoteError)
+    expect(manifestation.status).toBe(ManifestationStatus.IN_ANALYSIS)
+
+    manifestation.cancelByOmbudsman(ManifestationCancellationReason.OTHER, 'Duplicated by external channel.')
+    expect(manifestation.status).toBe(ManifestationStatus.CANCELED)
   })
 
   it('opens an anonymous manifestation only when an access code hash is provided', () => {
