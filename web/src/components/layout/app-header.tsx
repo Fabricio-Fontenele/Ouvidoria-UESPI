@@ -307,6 +307,7 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const role = user?.role ?? null
+  const usesDirectOmbudsmanHeader = isAuthenticated && (role === 'ombudsman' || role === 'admin')
   const homeHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.landing
   const handleSignOut = async () => {
     await signOut()
@@ -347,32 +348,56 @@ export function AppHeader({ isAuthenticated = false }: AppHeaderProps) {
                 ))}
               </nav>
             ) : null}
-            <button
-              aria-controls="project-menu"
-              aria-expanded={isMenuOpen}
-              aria-label="Abrir menu"
-              className={iconButtonClasses}
-              onClick={() => setIsMenuOpen(true)}
-              ref={menuButtonRef}
-              type="button"
-            >
-              <Icon className="size-[22px] md:size-6" name="menu" />
-            </button>
+            {usesDirectOmbudsmanHeader ? (
+              <nav aria-label="Navegação do ouvidor" className="flex items-center gap-2">
+                <a
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm leading-5 font-bold text-login-blue no-underline transition duration-150 hover:bg-login-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue sm:px-4"
+                  href={routes.ombudsmanHome}
+                >
+                  <Icon className="size-4" name="home" />
+                  <span className="hidden sm:inline">Início</span>
+                </a>
+                <button
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-login-blue px-3 text-sm leading-5 font-bold text-white transition duration-150 hover:bg-login-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue sm:px-4"
+                  onClick={() => {
+                    void handleSignOut()
+                  }}
+                  type="button"
+                >
+                  <Icon className="size-4" name="log-out" />
+                  <span className="hidden sm:inline">Sair</span>
+                </button>
+              </nav>
+            ) : (
+              <button
+                aria-controls="project-menu"
+                aria-expanded={isMenuOpen}
+                aria-label="Abrir menu"
+                className={iconButtonClasses}
+                onClick={() => setIsMenuOpen(true)}
+                ref={menuButtonRef}
+                type="button"
+              >
+                <Icon className="size-[22px] md:size-6" name="menu" />
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      <div id="project-menu">
-        <AppSideMenu
-          isAuthenticated={isAuthenticated}
-          isOpen={isMenuOpen}
-          onClose={() => setIsMenuOpen(false)}
-          onSignOut={handleSignOut}
-          openerRef={menuButtonRef}
-          role={role}
-          user={user}
-        />
-      </div>
+      {usesDirectOmbudsmanHeader ? null : (
+        <div id="project-menu">
+          <AppSideMenu
+            isAuthenticated={isAuthenticated}
+            isOpen={isMenuOpen}
+            onClose={() => setIsMenuOpen(false)}
+            onSignOut={handleSignOut}
+            openerRef={menuButtonRef}
+            role={role}
+            user={user}
+          />
+        </div>
+      )}
     </>
   )
 }
