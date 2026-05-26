@@ -320,25 +320,64 @@ function HeroSection() {
   )
 }
 
-function LoginCallout({ onRegisterClick }: { onRegisterClick: (event: MouseEvent<HTMLButtonElement>) => void }) {
+function RegisterTrackSection({
+  onRegisterClick,
+}: {
+  onRegisterClick: (event: MouseEvent<HTMLButtonElement>) => void
+}) {
   return (
-    <section className="relative px-4 pt-4 pb-9 text-center md:px-8 md:py-12" id="registro">
-      <span className="mx-auto grid size-8 place-items-center text-landing-blue md:size-10">
-        <Icon className="size-7 md:size-8" name="edit" />
-      </span>
-      <h2 className="mx-auto mt-1 max-w-[150px] text-[18px] leading-[1.12] font-black text-landing-text md:max-w-xs md:text-3xl">
-        Registre aqui sua manifestação
-      </h2>
-      <p className="mx-auto mt-5 max-w-[170px] text-[12px] leading-[1.55] text-landing-text md:max-w-sm md:text-[15px] md:leading-6">
-        Envie denúncias, reclamações, solicitações, sugestões ou elogios para a Ouvidoria da UESPI de forma segura.
-      </p>
-      <button
-        className="mx-auto mt-[22px] inline-flex min-h-[28px] min-w-[132px] items-center justify-center rounded-[3px] bg-landing-blue px-4 text-[10px] leading-none font-bold text-white no-underline transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-blue md:min-h-10 md:min-w-48 md:rounded-lg md:text-[15px]"
-        onClick={onRegisterClick}
-        type="button"
-      >
-        Registrar manifestação
-      </button>
+    <section className="px-4 pt-4 pb-9 md:px-0 md:py-12">
+      <div className="grid items-stretch gap-4 md:grid-cols-2 md:gap-5">
+        <article
+          className="flex flex-col rounded-lg bg-landing-blue p-6 text-white shadow-landing-card md:p-8"
+          id="registro"
+        >
+          <span className="grid size-12 place-items-center rounded-lg bg-white/15">
+            <Icon className="size-6" name="edit" />
+          </span>
+          <p className="mt-4 text-[11px] leading-4 font-black tracking-[0.12em] text-white/75 uppercase">
+            Novo registro
+          </p>
+          <h2 className="mt-1.5 text-[22px] leading-tight font-black md:text-3xl">Registre aqui sua manifestação</h2>
+          <p className="mt-3 text-[13px] leading-[1.7] text-white/85 md:text-[15px] md:leading-7">
+            Envie denúncias, reclamações, solicitações, sugestões ou elogios para a Ouvidoria da UESPI de forma segura.
+          </p>
+          <button
+            className="group mt-6 inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-lg bg-white px-5 text-sm leading-5 font-bold text-landing-blue no-underline shadow-landing-step transition duration-150 hover:bg-white/92 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white md:mt-auto"
+            onClick={onRegisterClick}
+            type="button"
+          >
+            Registrar manifestação
+            <Icon className="size-4 transition-transform duration-150 group-hover:translate-x-1" name="arrow-right" />
+          </button>
+        </article>
+
+        <article
+          className="flex flex-col rounded-lg border border-landing-chip bg-landing-surface p-6 shadow-landing-card md:p-8"
+          id="consultar-manifestacao"
+        >
+          <span className="grid size-12 place-items-center rounded-lg bg-landing-blue/10 text-landing-blue">
+            <Icon className="size-6" name="search" />
+          </span>
+          <p className="mt-4 text-[11px] leading-4 font-black tracking-[0.12em] text-landing-blue uppercase">
+            Acompanhamento
+          </p>
+          <h2 className="mt-1.5 text-[22px] leading-tight font-black text-landing-text md:text-3xl">
+            Consulte sua manifestação
+          </h2>
+          <p className="mt-3 text-[13px] leading-[1.7] text-landing-brown md:text-[15px] md:leading-7">
+            Acompanhe o andamento da manifestação anônima com o protocolo e o código de acesso recebidos no registro.
+            Por lá, você confere o status, visualiza os anexos e acompanha as atualizações da Ouvidoria.
+          </p>
+          <a
+            className="group mt-6 inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-lg border border-landing-blue/30 bg-landing-surface px-5 text-sm leading-5 font-bold text-landing-blue no-underline transition duration-150 hover:border-landing-blue hover:bg-landing-blue/5 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue md:mt-auto"
+            href={routes.track}
+          >
+            Consultar manifestação
+            <Icon className="size-4 transition-transform duration-150 group-hover:translate-x-1" name="arrow-right" />
+          </a>
+        </article>
+      </div>
     </section>
   )
 }
@@ -594,30 +633,6 @@ function StepsSection() {
   )
 }
 
-function TrackManifestationSection() {
-  return (
-    <section className="px-4 pb-10 md:px-0 md:pb-16" id="consultar-manifestacao">
-      <div className="px-1 md:px-0">
-        <SectionPill label="Acompanhamento" variant="highlight" />
-        <h2 className="mt-3 max-w-md text-[24px] leading-tight font-black text-landing-text md:text-4xl">
-          Consulte sua manifestação
-        </h2>
-        <p className="mt-4 max-w-3xl text-[13px] leading-[1.75] text-landing-brown md:text-[15px] md:leading-7">
-          Acompanhe o andamento da manifestação anônima com o protocolo e o código de acesso recebidos no registro. Por
-          lá, você confere o status, visualiza os anexos e acompanha as atualizações da Ouvidoria.
-        </p>
-        <a
-          className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-landing-blue px-5 text-sm leading-5 font-bold text-white no-underline shadow-landing-step transition duration-150 hover:bg-landing-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-landing-blue"
-          href={routes.track}
-        >
-          Consultar manifestação
-          <Icon className="size-4" name="search" />
-        </a>
-      </div>
-    </section>
-  )
-}
-
 function FloatingGuaraShortcut() {
   const [speechBubbleState, setSpeechBubbleState] = useState<GuaraSpeechBubbleState>('hidden')
 
@@ -729,8 +744,7 @@ export function LandingPage() {
       <AppHeader />
       <main className="mx-auto w-full max-w-5xl bg-landing-surface md:px-8">
         <HeroSection />
-        <LoginCallout onRegisterClick={openRegistrationModal} />
-        <TrackManifestationSection />
+        <RegisterTrackSection onRegisterClick={openRegistrationModal} />
         <GuaraCallout />
         <ManifestationTypesSection />
         <StepsSection />
