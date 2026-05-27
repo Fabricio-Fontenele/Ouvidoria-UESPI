@@ -385,14 +385,14 @@ function IdentifiedTrackHint() {
   const ctaLabel = isAuthenticated ? 'Ver minhas manifestações' : 'Fazer login'
 
   return (
-    <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-home-action/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-6 flex flex-col gap-3 border-t border-login-brown/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm leading-6 text-home-brown">
         {isAuthenticated
           ? 'Você já está logado — acompanhe pela sua conta as manifestações que registrou identificado.'
           : 'Você se identificou ao registrar a manifestação? Faça login para acompanhá-la pela sua conta.'}
       </p>
       <a
-        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-home-blue px-4 text-sm font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-home-blue/30 bg-white px-4 text-sm font-bold text-home-blue no-underline transition duration-150 hover:bg-home-blue/10 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
         href={targetHref}
       >
         {ctaLabel}
