@@ -7,6 +7,7 @@ import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
 import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
 import { CachedCatalogRepository } from '#src/infra/database/cached-catalog-repository.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
+import { PrismaAdministrativeUnitResponsiblesRepository } from '#src/infra/database/prisma/repositories/prisma-administrative-unit-responsibles-repository.js'
 import { PrismaCatalogRepository } from '#src/infra/database/prisma/repositories/prisma-catalog-repository.js'
 import { PrismaManifestationAdministrationRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-administration-repository.js'
 import { PrismaManifestationAttachmentsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-attachments-repository.js'
@@ -54,6 +55,7 @@ const emailSender = makeEmailSender()
 
 const catalogRepository = new CachedCatalogRepository(new PrismaCatalogRepository(prisma), env.CATALOG_CACHE_TTL_MS)
 const usersRepository = new PrismaUsersRepository(prisma)
+const administrativeUnitResponsiblesRepository = new PrismaAdministrativeUnitResponsiblesRepository(prisma)
 const manifestationsRepository = new PrismaManifestationsRepository(prisma)
 const manifestationAttachmentsRepository = new PrismaManifestationAttachmentsRepository(prisma)
 const manifestationAdministrationRepository = new PrismaManifestationAdministrationRepository(prisma)
@@ -87,6 +89,7 @@ export const infrastructure = {
   emailSender,
   catalogRepository,
   usersRepository,
+  administrativeUnitResponsiblesRepository,
   manifestationsRepository,
   manifestationAttachmentsRepository,
   manifestationAdministrationRepository,
