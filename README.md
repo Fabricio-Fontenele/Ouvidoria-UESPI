@@ -26,6 +26,7 @@ _Plataforma para registro, encaminhamento e acompanhamento de manifestações (d
   - [Sistema de Ouvidoria Institucional da Universidade Estadual do Piauí](#sistema-de-ouvidoria-institucional-da-universidade-estadual-do-piauí)
   - [📑 Sumário](#-sumário)
   - [🎯 Sobre o projeto](#-sobre-o-projeto)
+  - [✨ Funcionalidades](#-funcionalidades)
   - [🏛️ Arquitetura](#️-arquitetura)
     - [Backend — Clean Architecture](#backend--clean-architecture)
     - [Trilha de auditoria sem tabela de auditoria](#trilha-de-auditoria-sem-tabela-de-auditoria)
@@ -58,6 +59,42 @@ A **Ouvidoria UESPI** é o canal oficial pelo qual a comunidade acadêmica e a s
 As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn)** e às especificações em [`doc/`](./doc).
 
 > O **Guará** é inspirado no pássaro guará, ave típica do Delta do Parnaíba, no Piauí. Seu tom é acolhedor, simples e direto.
+
+---
+
+## ✨ Funcionalidades
+
+### 👤 Manifestante
+
+- **Cadastro e autenticação** — registro de conta, login com emissão de JWT (HS256) e consulta do próprio perfil (`/me`).
+- **Registro de manifestação** — abertura de denúncia, reclamação, sugestão ou elogio, com geração automática de **protocolo** e **código de acesso**.
+- **Manifestação identificada ou anônima** — usuários autenticados ou não podem registrar; manifestações anônimas são acompanhadas apenas por protocolo + código de acesso.
+- **Anexos** — upload de arquivos (multipart) na manifestação e download por URL assinada.
+- **Acompanhamento** — listagem das próprias manifestações, detalhes com **histórico de eventos** (registro, resposta, mudança de status, finalização) e métricas pessoais.
+- **Mensagens** — troca de mensagens com a ouvidoria dentro de uma manifestação aberta.
+- **Encerramento e avaliação** — finalização da manifestação pelo autor e **avaliação** (nota + comentário) do atendimento.
+
+### 🔎 Acompanhamento anônimo (por protocolo)
+
+- Consulta de manifestação por **protocolo + código de acesso**, sem login.
+- Visualização de detalhes, envio de mensagens e download de anexos — tudo autenticado pelo par protocolo/código.
+
+### 🛠️ Ouvidor / Administrador
+
+- **Painel de manifestações** — listagem com filtros e **métricas agregadas** (por status, tipo, período).
+- **Detalhes administrativos** — visão completa da manifestação, histórico e download de anexos.
+- **Atendimento** — responder a manifestação, **alterar status** (`in_analysis` · `answered` · `canceled` · `finalized`) e **cancelar** com justificativa.
+- **Encaminhamento** — direcionar a manifestação à **unidade administrativa** responsável.
+- **Controle de acesso por papel** — rotas protegidas por `requireRoles` (`ombudsman`, `admin`).
+
+### 🦅 Assistente virtual (Guará)
+
+- **Chat orientado por RAG** — responde dúvidas institucionais com base em documentos oficiais (Gemini + pgVector no `ai-api`).
+- **Rascunho assistido** — detecta a intenção de manifestar e monta um **rascunho estruturado** (tipo, campus, unidade) para o usuário revisar antes de registrar.
+
+### 🗂️ Catálogo
+
+- Listagem pública de **campi** e **unidades administrativas** (com cache + TTL via `CachedCatalogRepository`) para alimentar formulários de registro e encaminhamento.
 
 ---
 
