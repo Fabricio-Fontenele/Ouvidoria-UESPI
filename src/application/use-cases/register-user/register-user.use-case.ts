@@ -46,7 +46,11 @@ export class RegisterUserUseCase implements UseCase<RegisterUserInput, RegisterU
     const userWithSameEmail = await this.usersRepository.findByEmail(normalizedEmail.getValue())
 
     if (userWithSameEmail) {
-      throw new UserAlreadyExistsError()
+      if (userWithSameEmail.isEmailVerified) {
+        throw new UserAlreadyExistsError()
+      }
+
+      return this.refreshPendingEmailVerification(userWithSameEmail)
     }
 
     const hashedPassword = await this.passwordHasher.hash(plainPassword.getValue())
@@ -63,6 +67,32 @@ export class RegisterUserUseCase implements UseCase<RegisterUserInput, RegisterU
       emailVerificationCodeExpiresAt: verificationCodeExpiresAt,
     })
 
+    await this.usersRepository.save(user)
+    await this.emailSender.send({
+      to: user.email.getValue(),
+      subject: 'Codigo de verificacao da Ouvidoria UESPI',
+      text: `Seu codigo de verificacao e ${verificationCode}. Ele expira em 15 minutos.`,
+    })
+
+    return {
+      user: {
+        id: user.id.toString(),
+        name: user.name.getValue(),
+        email: user.email.getValue(),
+        role: user.role,
+        emailVerifiedAt: user.emailVerifiedAt,
+        createdAt: user.createdAt,
+      },
+      emailVerificationRequired: true,
+    }
+  }
+
+  private async refreshPendingEmailVerification(user: User): Promise<RegisterUserOutput> {
+    const verificationCode = await this.verificationCodeGenerator.generate()
+    const verificationCodeHash = await this.passwordHasher.hash(verificationCode)
+    const verificationCodeExpiresAt = new Date(Date.now() + EMAIL_VERIFICATION_CODE_TTL_MS)
+
+    user.startEmailVerification(verificationCodeHash, verificationCodeExpiresAt)
     await this.usersRepository.save(user)
     await this.emailSender.send({
       to: user.email.getValue(),

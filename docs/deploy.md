@@ -58,7 +58,8 @@ sudo chmod 440 /etc/sudoers.d/ouvidoria-deploy
   prod, o mesmo domínio do site) — o `deploy.sh` embute esse valor no bundle do
   front em build time e **aborta** se faltar.
 - O proxy reverso (Caddy) precisa rotear **todas** as rotas de topo da API para
-  `127.0.0.1:3333`: `/health /ready /catalog /me /sessions /users /manifestations* /admin/* /ai/*`
+  `127.0.0.1:3333`: `/health /ready /catalog /me /sessions /users
+/email-verification/* /password-reset* /manifestations* /admin/* /ai/*`
   (o backend serve na raiz, sem prefixo). Faltar uma faz aquela chamada cair no
   fallback do SPA e voltar `index.html` em vez de JSON.
 - `pnpm`/`corepack`, `docker compose` e `rsync` disponíveis na VM.
