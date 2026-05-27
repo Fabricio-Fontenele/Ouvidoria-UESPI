@@ -93,7 +93,25 @@ describe('SignInUseCase', () => {
     expect(tokenGenerator.generate.mock.calls).toHaveLength(0)
   })
 
-  it('throws when the email is not verified', async () => {
+  it('throws when the email has a pending verification code', async () => {
+    const user = User.create({
+      name: Name.create('User Name'),
+      email: Email.create('user@example.com'),
+      passwordHash: 'hashed-password',
+      role: UserRole.MANIFESTANT,
+      emailVerificationCodeHash: 'hashed-code',
+      emailVerificationCodeExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    })
+
+    UsersRepository.findByEmail.mockResolvedValue(user)
+    hashComparer.compare.mockResolvedValue(true)
+
+    await expect(sut.execute(input)).rejects.toBeInstanceOf(EmailNotVerifiedError)
+
+    expect(tokenGenerator.generate.mock.calls).toHaveLength(0)
+  })
+
+  it('allows legacy users without a pending verification code to sign in', async () => {
     const user = User.create({
       name: Name.create('User Name'),
       email: Email.create('user@example.com'),
@@ -103,10 +121,19 @@ describe('SignInUseCase', () => {
 
     UsersRepository.findByEmail.mockResolvedValue(user)
     hashComparer.compare.mockResolvedValue(true)
+    tokenGenerator.generate.mockResolvedValue('access-token')
 
-    await expect(sut.execute(input)).rejects.toBeInstanceOf(EmailNotVerifiedError)
+    const result = await sut.execute(input)
 
-    expect(tokenGenerator.generate.mock.calls).toHaveLength(0)
+    expect(tokenGenerator.generate.mock.calls).toStrictEqual([
+      [
+        {
+          sub: user.id.toString(),
+          role: UserRole.MANIFESTANT,
+        },
+      ],
+    ])
+    expect(result).toStrictEqual({ token: 'access-token' })
   })
 
   it('rejects invalid emails before touching dependencies', async () => {

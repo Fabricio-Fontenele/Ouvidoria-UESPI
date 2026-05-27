@@ -38,7 +38,10 @@ export class SignInUseCase implements UseCase<SignInInput, SignInOutput> {
       throw new InvalidCredentialsError()
     }
 
-    if (!user.isEmailVerified) {
+    const hasPendingEmailVerification =
+      user.emailVerificationCodeHash !== null && user.emailVerificationCodeExpiresAt !== null
+
+    if (!user.isEmailVerified && hasPendingEmailVerification) {
       throw new EmailNotVerifiedError()
     }
 
