@@ -24,12 +24,13 @@ describe('RegisterUserUseCase', () => {
     password: string
   }
 
-  const buildExistingUser = (): User =>
+  const buildExistingUser = (emailVerifiedAt: Date | null = new Date('2026-01-01T00:00:00.000Z')): User =>
     User.create({
       name: Name.create('Maria Silva'),
       email: Email.create('maria@email.com'),
       passwordHash: 'hashed-password',
       role: UserRole.MANIFESTANT,
+      emailVerifiedAt,
     })
 
   beforeEach(() => {
@@ -105,7 +106,7 @@ describe('RegisterUserUseCase', () => {
     expect(result.emailVerificationRequired).toBe(true)
   })
 
-  it('throws when a user with the same email already exists', async () => {
+  it('throws when a verified user with the same email already exists', async () => {
     usersRepository.findByEmail.mockResolvedValue(buildExistingUser())
 
     await expect(sut.execute(validInput)).rejects.toBeInstanceOf(UserAlreadyExistsError)
@@ -113,6 +114,31 @@ describe('RegisterUserUseCase', () => {
     expect(passwordHasher.hash.mock.calls).toHaveLength(0)
     expect(verificationCodeGenerator.generate.mock.calls).toHaveLength(0)
     expect(usersRepository.save.mock.calls).toHaveLength(0)
+  })
+
+  it('refreshes and emails the verification code when the existing account is still pending verification', async () => {
+    const existingUser = buildExistingUser(null)
+
+    usersRepository.findByEmail.mockResolvedValue(existingUser)
+    passwordHasher.hash.mockResolvedValue('hashed-code')
+
+    const result = await sut.execute(validInput)
+
+    expect(passwordHasher.hash.mock.calls).toStrictEqual([['123456']])
+    expect(existingUser.emailVerificationCodeHash).toBe('hashed-code')
+    expect(existingUser.emailVerificationCodeExpiresAt).toBeInstanceOf(Date)
+    expect(usersRepository.save.mock.calls).toStrictEqual([[existingUser]])
+    expect(emailSender.send.mock.calls).toStrictEqual([
+      [
+        {
+          subject: 'Codigo de verificacao da Ouvidoria UESPI',
+          text: 'Seu codigo de verificacao e 123456. Ele expira em 15 minutos.',
+          to: 'maria@email.com',
+        },
+      ],
+    ])
+    expect(result.user.id).toBe(existingUser.id.toString())
+    expect(result.emailVerificationRequired).toBe(true)
   })
 
   it('rejects invalid names before touching dependencies', async () => {

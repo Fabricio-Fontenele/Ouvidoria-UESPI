@@ -13,6 +13,7 @@ export abstract class BaseController<
       if (mapped !== null) {
         return mapped
       }
+      console.error(error)
       return serverError(error)
     }
   }
