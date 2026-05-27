@@ -4,6 +4,8 @@ import type {
   AuthenticatedUserRole,
   AuthSession,
   EmailVerificationCredentials,
+  PasswordResetCodeCredentials,
+  ResetPasswordCredentials,
   SignInCredentials,
   SignUpCredentials,
 } from '../../application/auth/auth-types'
@@ -164,6 +166,39 @@ export class HttpAuthService implements AuthService {
       body: { email },
       method: 'POST',
     })
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    await apiFetch('/password-reset/codes', {
+      auth: 'none',
+      body: { email },
+      method: 'POST',
+    })
+  }
+
+  async confirmPasswordResetCode(credentials: PasswordResetCodeCredentials): Promise<void> {
+    await apiFetch('/password-reset/confirm', {
+      auth: 'none',
+      body: { code: credentials.code, email: credentials.email },
+      method: 'POST',
+    })
+  }
+
+  async resetPassword(credentials: ResetPasswordCredentials): Promise<AuthSession> {
+    const sessionResponse = await apiFetch<SessionResponse>('/password-reset', {
+      auth: 'none',
+      body: { code: credentials.code, email: credentials.email, password: credentials.password },
+      method: 'POST',
+    })
+
+    setAuthToken(sessionResponse.token)
+    const session = await this.getSession()
+
+    if (session === null) {
+      throw new Error('Não foi possível carregar os dados do usuário autenticado.')
+    }
+
+    return session
   }
 
   async signOut(): Promise<void> {

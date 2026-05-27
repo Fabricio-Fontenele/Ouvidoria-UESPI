@@ -61,6 +61,8 @@ model User {
   emailVerifiedAt                DateTime?                 @map("email_verified_at") @db.Timestamptz(6)
   emailVerificationCodeHash      String?                   @map("email_verification_code_hash")
   emailVerificationCodeExpiresAt DateTime?                 @map("email_verification_code_expires_at") @db.Timestamptz(6)
+  passwordResetCodeHash          String?                   @map("password_reset_code_hash")
+  passwordResetCodeExpiresAt     DateTime?                 @map("password_reset_code_expires_at") @db.Timestamptz(6)
   createdAt                      DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                      DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
   authoredManifestations         Manifestation[]           @relation("ManifestationAuthor")

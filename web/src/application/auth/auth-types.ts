@@ -24,6 +24,17 @@ export interface EmailVerificationCredentials {
   email: string
 }
 
+export interface PasswordResetCodeCredentials {
+  code: string
+  email: string
+}
+
+export interface ResetPasswordCredentials {
+  code: string
+  email: string
+  password: string
+}
+
 export interface SignInCredentials {
   email: string
   password: string

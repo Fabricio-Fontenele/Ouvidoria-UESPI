@@ -16,6 +16,8 @@ export const userMapper = {
         emailVerifiedAt: raw.emailVerifiedAt,
         emailVerificationCodeHash: raw.emailVerificationCodeHash,
         emailVerificationCodeExpiresAt: raw.emailVerificationCodeExpiresAt,
+        passwordResetCodeHash: raw.passwordResetCodeHash,
+        passwordResetCodeExpiresAt: raw.passwordResetCodeExpiresAt,
         createdAt: raw.createdAt,
       },
       new UniqueEntityId(raw.id),
@@ -31,6 +33,8 @@ export const userMapper = {
     emailVerifiedAt: Date | null
     emailVerificationCodeHash: string | null
     emailVerificationCodeExpiresAt: Date | null
+    passwordResetCodeHash: string | null
+    passwordResetCodeExpiresAt: Date | null
     createdAt: Date
   } {
     return {
@@ -42,6 +46,8 @@ export const userMapper = {
       emailVerifiedAt: user.emailVerifiedAt,
       emailVerificationCodeHash: user.emailVerificationCodeHash,
       emailVerificationCodeExpiresAt: user.emailVerificationCodeExpiresAt,
+      passwordResetCodeHash: user.passwordResetCodeHash,
+      passwordResetCodeExpiresAt: user.passwordResetCodeExpiresAt,
       createdAt: user.createdAt,
     }
   },

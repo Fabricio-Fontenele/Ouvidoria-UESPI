@@ -17,6 +17,8 @@ interface UserProps {
   emailVerifiedAt: Date | null
   emailVerificationCodeHash: string | null
   emailVerificationCodeExpiresAt: Date | null
+  passwordResetCodeHash: string | null
+  passwordResetCodeExpiresAt: Date | null
   createdAt: Date
 }
 
@@ -28,6 +30,8 @@ interface CreateUserProps {
   emailVerifiedAt?: Date | null
   emailVerificationCodeHash?: string | null
   emailVerificationCodeExpiresAt?: Date | null
+  passwordResetCodeHash?: string | null
+  passwordResetCodeExpiresAt?: Date | null
   createdAt?: Date
 }
 
@@ -40,6 +44,8 @@ export class User extends Entity<UserProps> {
         emailVerifiedAt: props.emailVerifiedAt ?? null,
         emailVerificationCodeHash: props.emailVerificationCodeHash ?? null,
         emailVerificationCodeExpiresAt: props.emailVerificationCodeExpiresAt ?? null,
+        passwordResetCodeHash: props.passwordResetCodeHash ?? null,
+        passwordResetCodeExpiresAt: props.passwordResetCodeExpiresAt ?? null,
         createdAt,
       },
       id,
@@ -74,6 +80,14 @@ export class User extends Entity<UserProps> {
     return this.props.emailVerificationCodeExpiresAt
   }
 
+  get passwordResetCodeHash(): string | null {
+    return this.props.passwordResetCodeHash
+  }
+
+  get passwordResetCodeExpiresAt(): Date | null {
+    return this.props.passwordResetCodeExpiresAt
+  }
+
   get createdAt(): Date {
     return this.props.createdAt
   }
@@ -87,9 +101,23 @@ export class User extends Entity<UserProps> {
     this.props.emailVerificationCodeExpiresAt = expiresAt
   }
 
+  startPasswordReset(codeHash: string, expiresAt: Date): void {
+    this.props.passwordResetCodeHash = codeHash
+    this.props.passwordResetCodeExpiresAt = expiresAt
+  }
+
   verifyEmail(verifiedAt = new Date()): void {
     this.props.emailVerifiedAt = verifiedAt
     this.props.emailVerificationCodeHash = null
     this.props.emailVerificationCodeExpiresAt = null
+  }
+
+  changePassword(passwordHash: string): void {
+    this.props.passwordHash = passwordHash
+  }
+
+  clearPasswordReset(): void {
+    this.props.passwordResetCodeHash = null
+    this.props.passwordResetCodeExpiresAt = null
   }
 }

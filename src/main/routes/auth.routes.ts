@@ -5,9 +5,12 @@ import { ensureAuthenticated } from '#src/infra/http/fastify/middlewares/auth-mi
 
 import {
   makeConfirmEmailVerificationController,
+  makeConfirmPasswordResetCodeController,
   makeGetMeController,
   makeRegisterUserController,
+  makeRequestPasswordResetController,
   makeResendEmailVerificationCodeController,
+  makeResetPasswordController,
   makeSignInController,
 } from '../factories/controllers/auth.js'
 
@@ -17,4 +20,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
   app.post('/users', adaptRoute(makeRegisterUserController()))
   app.post('/email-verification/confirm', adaptRoute(makeConfirmEmailVerificationController()))
   app.post('/email-verification/codes', adaptRoute(makeResendEmailVerificationCodeController()))
+  app.post('/password-reset/codes', adaptRoute(makeRequestPasswordResetController()))
+  app.post('/password-reset/confirm', adaptRoute(makeConfirmPasswordResetCodeController()))
+  app.post('/password-reset', adaptRoute(makeResetPasswordController()))
 }

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
+import { savePostAuthNotification } from '../../application/auth/post-auth-notification'
 import { getSignUpFormDefaultValues, signUpFormSchema } from '../../application/auth/sign-up-form-contract'
 import type { SignUpFormData } from '../../application/auth/sign-up-form-contract'
 import { AuthField } from '../../components/auth/auth-field'
@@ -169,6 +170,7 @@ export function SignPage() {
     })
 
     if (ok) {
+      savePostAuthNotification('email-verified')
       setSuccessMessage('Email confirmado. Redirecionando...')
       window.location.assign(routes.home)
     }
