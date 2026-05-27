@@ -17,6 +17,7 @@ export interface TrackedManifestationDetail {
   attachments: TrackedManifestationAttachmentInfo[]
   campusId: string
   createdAt: string
+  description: string
   messages: ManifestationMessageEntry[]
   protocol: string
   status: ManifestationStatus

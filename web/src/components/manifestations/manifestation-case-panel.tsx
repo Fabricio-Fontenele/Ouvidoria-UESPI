@@ -9,15 +9,14 @@ import { formatBrDate } from '../../utils/format-date'
 
 import { getManifestationStatusStyle } from './manifestation-status-style'
 
-function buildAreaLabel(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
+function resolveArea(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
   const campus = catalog?.campuses.find((entry) => entry.id === campusId)
   const unit = campus?.administrativeUnits.find((entry) => entry.id === administrativeUnitId)
 
-  if (campus === undefined || unit === undefined) {
-    return 'Unidade não identificada'
+  return {
+    campus: campus?.label ?? 'Campus não identificado',
+    unit: unit?.label ?? 'Unidade não identificada',
   }
-
-  return `${campus.label} — ${unit.label}`
 }
 
 interface CasePanelBlockProps {
@@ -59,9 +58,11 @@ export function ManifestationCasePanel({
 }: ManifestationCasePanelProps) {
   const statusContract = getManifestationStatusContract(detail.status)
   const statusStyle = getManifestationStatusStyle(detail.status)
+  const area = resolveArea(catalog, detail.campusId, detail.administrativeUnitId)
   const meta: Array<{ label: string; value: string }> = [
     { label: 'Tipo', value: getManifestationTypeLabel(detail.type) },
-    { label: 'Área', value: buildAreaLabel(catalog, detail.campusId, detail.administrativeUnitId) },
+    { label: 'Campus', value: area.campus },
+    { label: 'Unidade administrativa', value: area.unit },
     { label: 'Registrada em', value: formatBrDate(detail.createdAt) },
   ]
 

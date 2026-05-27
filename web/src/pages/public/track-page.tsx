@@ -32,15 +32,14 @@ interface TrackCredentials {
   protocol: string
 }
 
-function buildAreaLabel(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
+function resolveArea(catalog: Catalog | null, campusId: string, administrativeUnitId: string) {
   const campus = catalog?.campuses.find((entry) => entry.id === campusId)
   const unit = campus?.administrativeUnits.find((entry) => entry.id === administrativeUnitId)
 
-  if (campus === undefined || unit === undefined) {
-    return 'Unidade não identificada'
+  return {
+    campus: campus?.label ?? 'Campus não identificado',
+    unit: unit?.label ?? 'Unidade não identificada',
   }
-
-  return `${campus.label} — ${unit.label}`
 }
 
 function PublicAttachmentItem({
@@ -204,6 +203,7 @@ function PublicTrackedDetail({
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const statusContract = getManifestationStatusContract(detail.status)
+  const area = resolveArea(catalog, detail.campusId, detail.administrativeUnitId)
   const remainingSlots = getRemainingAttachmentSlots(detail.attachments.length)
   const uploadAllowed = canUploadAttachments(detail.status) && remainingSlots > 0
 
@@ -260,10 +260,7 @@ function PublicTrackedDetail({
           <div className="min-w-0">
             <p className="text-xs font-black tracking-[0.24em] text-home-blue uppercase">Manifestação anônima</p>
             <h2 className="mt-3 text-2xl leading-9 font-black text-home-text">{detail.protocol}</h2>
-            <p className="mt-2 text-sm leading-6 text-home-brown">
-              {getManifestationTypeLabel(detail.type)} •{' '}
-              {buildAreaLabel(catalog, detail.campusId, detail.administrativeUnitId)}
-            </p>
+            <p className="mt-2 text-sm leading-6 text-home-brown">{getManifestationTypeLabel(detail.type)}</p>
           </div>
           <span className="inline-flex min-h-10 items-center justify-center rounded-lg bg-home-blue/10 px-4 text-base leading-6 font-black tracking-[0.04em] text-home-blue uppercase sm:min-h-12 sm:px-5 sm:text-lg">
             {statusContract.viewLabel}
@@ -271,6 +268,14 @@ function PublicTrackedDetail({
         </div>
 
         <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-3xl bg-home-action/50 p-4">
+            <dt className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">Campus</dt>
+            <dd className="mt-2 text-lg leading-7 font-semibold break-words text-home-text">{area.campus}</dd>
+          </div>
+          <div className="rounded-3xl bg-home-action/50 p-4">
+            <dt className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">Unidade administrativa</dt>
+            <dd className="mt-2 text-lg leading-7 font-semibold break-words text-home-text">{area.unit}</dd>
+          </div>
           <div className="rounded-3xl bg-home-action/50 p-4">
             <dt className="text-xs font-bold tracking-[0.14em] text-home-brown/70 uppercase">Registrada em</dt>
             <dd className="mt-2 text-lg leading-7 font-semibold text-home-text">{formatBrDate(detail.createdAt)}</dd>
@@ -280,6 +285,16 @@ function PublicTrackedDetail({
             <dd className="mt-2 text-lg leading-7 font-semibold text-home-text">{detail.attachments.length} de 5</dd>
           </div>
         </dl>
+      </article>
+
+      <article
+        aria-labelledby="tracked-description-title"
+        className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6"
+      >
+        <h2 className="text-lg font-black text-home-text" id="tracked-description-title">
+          Descrição da manifestação
+        </h2>
+        <p className="mt-3 text-base leading-7 break-words whitespace-pre-line text-home-text">{detail.description}</p>
       </article>
 
       <ManifestationMessagesThread messages={detail.messages} perspective="manifestant" />

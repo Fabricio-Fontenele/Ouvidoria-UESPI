@@ -31,6 +31,7 @@ interface GetTrackedManifestationDetailsOutput {
     status: ManifestationStatus
     campusId: string
     administrativeUnitId: string
+    description: string
     forwardedToUnit: { id: string; name: string } | null
     createdAt: Date
     messages: TrackedManifestationMessage[]
@@ -82,6 +83,7 @@ function buildTrackedManifestationOutput(manifestation: ManifestationDetailsDTO)
     status: manifestation.status,
     campusId: manifestation.campusId,
     administrativeUnitId: manifestation.administrativeUnitId,
+    description: manifestation.description,
     forwardedToUnit: manifestation.forwardedToUnit,
     createdAt: manifestation.createdAt,
     // Internal sender user ids are intentionally dropped — the anonymous tracker only needs to know
