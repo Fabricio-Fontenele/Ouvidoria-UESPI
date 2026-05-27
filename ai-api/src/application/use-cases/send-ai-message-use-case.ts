@@ -161,19 +161,22 @@ export class SendAiMessageUseCase {
   ): AiChatSuggestion[] {
     if (suggestions.length > 0) {
       const seenLabels = new Set<string>()
+      const seenIds = new Set<string>()
       const sanitized: AiChatSuggestion[] = []
       for (const s of suggestions) {
+        const id = s.id.trim()
         const label = s.label.trim()
         const message = s.message.trim()
-        if (label.length === 0 || message.length === 0) {
+        if (id.length === 0 || label.length === 0 || message.length === 0) {
           continue
         }
         const normalizedLabel = label.toLowerCase()
-        if (seenLabels.has(normalizedLabel)) {
+        if (seenLabels.has(normalizedLabel) || seenIds.has(id)) {
           continue
         }
         seenLabels.add(normalizedLabel)
-        sanitized.push({ id: s.id.trim(), label, message })
+        seenIds.add(id)
+        sanitized.push({ id, label, message })
       }
       if (sanitized.length > 0) {
         return sanitized.slice(0, 4)

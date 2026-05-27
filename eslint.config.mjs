@@ -62,6 +62,7 @@ export default defineConfig([
       '.extra/**',
       '**/*.tsbuildinfo',
       'ai-api/**',
+      'web/**',
     ],
   },
 

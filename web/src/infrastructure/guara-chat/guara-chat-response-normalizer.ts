@@ -111,6 +111,7 @@ function normalizeSuggestions(value: unknown): GuaraChatSuggestion[] {
   }
 
   const seenLabels = new Set<string>()
+  const seenIds = new Set<string>()
   const suggestions: GuaraChatSuggestion[] = []
 
   for (const entry of value) {
@@ -128,10 +129,11 @@ function normalizeSuggestions(value: unknown): GuaraChatSuggestion[] {
     }
 
     const normalizedLabel = label.toLowerCase()
-    if (seenLabels.has(normalizedLabel)) {
+    if (seenLabels.has(normalizedLabel) || seenIds.has(id)) {
       continue
     }
     seenLabels.add(normalizedLabel)
+    seenIds.add(id)
 
     suggestions.push({ id, label, message })
 
