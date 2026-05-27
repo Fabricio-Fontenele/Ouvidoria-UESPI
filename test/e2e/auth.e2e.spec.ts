@@ -16,6 +16,7 @@ async function createUser(role: UserRole, email: string): Promise<{ id: string }
       email,
       passwordHash,
       role,
+      emailVerifiedAt: new Date(),
     },
     select: { id: true },
   })
@@ -91,7 +92,7 @@ describe('Auth (e2e)', () => {
     await resetDatabase()
   })
 
-  it('registers a user and signs in', async () => {
+  it('registers a user, verifies email and signs in', async () => {
     const app = await getApp()
 
     const registerResponse = await app.inject({
@@ -105,6 +106,15 @@ describe('Auth (e2e)', () => {
     expect(registered.user.email).toBe('ana@example.com')
     expect(registered.user.role).toBe('manifestant')
 
+    const confirmationResponse = await app.inject({
+      method: 'POST',
+      url: '/email-verification/confirm',
+      payload: { email: 'ana@example.com', code: '123456' },
+    })
+
+    expect(confirmationResponse.statusCode).toBe(200)
+    expect(confirmationResponse.json<{ token: string }>().token).toStrictEqual(expect.any(String))
+
     const signInResponse = await app.inject({
       method: 'POST',
       url: '/sessions',
@@ -115,6 +125,24 @@ describe('Auth (e2e)', () => {
     expect(signInResponse.json<{ token: string }>().token).toStrictEqual(expect.any(String))
   })
 
+  it('rejects sign-in before email verification', async () => {
+    const app = await getApp()
+
+    await app.inject({
+      method: 'POST',
+      url: '/users',
+      payload: { name: 'Bianca Rocha', email: 'bianca@example.com', password: 'Senha1234' },
+    })
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/sessions',
+      payload: { email: 'bianca@example.com', password: 'Senha1234' },
+    })
+
+    expect(response.statusCode).toBe(403)
+  })
+
   it('returns the current authenticated user profile', async () => {
     const app = await getApp()
 
@@ -122,6 +150,11 @@ describe('Auth (e2e)', () => {
       method: 'POST',
       url: '/users',
       payload: { name: 'Ana Souza', email: 'ana@example.com', password: 'Senha1234' },
+    })
+    await app.inject({
+      method: 'POST',
+      url: '/email-verification/confirm',
+      payload: { email: 'ana@example.com', code: '123456' },
     })
     const token = await signIn('ana@example.com')
 

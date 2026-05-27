@@ -1,5 +1,5 @@
 import type { AuthService } from './auth-service'
-import type { AuthSession, SignUpCredentials } from './auth-types'
+import type { SignUpCredentials } from './auth-types'
 
 export class EmptySignUpFieldsError extends Error {
   constructor() {
@@ -15,7 +15,7 @@ export class SignUp {
     this.authService = authService
   }
 
-  async execute(credentials: SignUpCredentials): Promise<AuthSession> {
+  async execute(credentials: SignUpCredentials): Promise<void> {
     const name = credentials.name.trim()
     const email = credentials.email.trim()
     const password = credentials.password.trim()
@@ -24,6 +24,6 @@ export class SignUp {
       throw new EmptySignUpFieldsError()
     }
 
-    return this.authService.signUp({ name, email, password })
+    await this.authService.signUp({ name, email, password })
   }
 }

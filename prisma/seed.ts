@@ -389,11 +389,13 @@ async function main(): Promise<void> {
         name: user.name,
         passwordHash,
         role: user.role,
+        emailVerifiedAt: new Date(),
       },
       update: {
         name: user.name,
         passwordHash,
         role: user.role,
+        emailVerifiedAt: new Date(),
       },
     })
   }

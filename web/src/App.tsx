@@ -6,6 +6,7 @@ import { ManifestationFormPage } from './pages/manifestant/manifestation-form-pa
 import { OmbudsmanManifestationDetailsPage } from './pages/ombudsman/ombudsman-manifestation-details-page'
 import { OmbudsmanHomePage } from './pages/ombudsman/ombudsman-home-page'
 import { FaqPage } from './pages/public/faq-page'
+import { ForgotPasswordPage } from './pages/public/forgot-password-page'
 import { GuaraPage } from './pages/public/guara-page'
 import { LandingPage } from './pages/public/landing-page'
 import { LoginPage, RestrictedLoginPage } from './pages/public/login-page'
@@ -30,6 +31,10 @@ function App() {
 
   if (normalizedPath === routes.faq) {
     return <FaqPage />
+  }
+
+  if (normalizedPath === routes.forgotPassword) {
+    return <ForgotPasswordPage />
   }
 
   if (normalizedPath === routes.home) {

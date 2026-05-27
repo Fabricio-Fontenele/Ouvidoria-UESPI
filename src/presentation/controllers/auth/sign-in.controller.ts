@@ -1,8 +1,9 @@
+import { EmailNotVerifiedError } from '#src/application/use-cases/signin/errors/email-not-verified-error.js'
 import { InvalidCredentialsError } from '#src/application/use-cases/signin/errors/invalid-credentials-error.js'
 import type { SignInUseCase } from '#src/application/use-cases/signin/sign-in-use-case.js'
 import { InvalidEmailError } from '#src/domain/value-objects/email.js'
 
-import { badRequest, ok, unauthorized } from '../../helpers/http-helpers.js'
+import { badRequest, forbidden, ok, unauthorized } from '../../helpers/http-helpers.js'
 import type { HttpRequest, HttpResponse } from '../../protocols/http.js'
 import type { Validator } from '../../protocols/validator.js'
 import { BaseController } from '../base-controller.js'
@@ -35,6 +36,10 @@ export class SignInController extends BaseController {
   protected override mapError(error: unknown): HttpResponse | null {
     if (error instanceof InvalidCredentialsError) {
       return unauthorized(error)
+    }
+
+    if (error instanceof EmailNotVerifiedError) {
+      return forbidden(error)
     }
 
     if (error instanceof InvalidEmailError) {

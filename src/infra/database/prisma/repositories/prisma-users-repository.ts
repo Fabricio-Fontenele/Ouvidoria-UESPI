@@ -28,6 +28,11 @@ export class PrismaUsersRepository implements UsersRepository {
         email: data.email,
         passwordHash: data.passwordHash,
         role: data.role,
+        emailVerifiedAt: data.emailVerifiedAt,
+        emailVerificationCodeHash: data.emailVerificationCodeHash,
+        emailVerificationCodeExpiresAt: data.emailVerificationCodeExpiresAt,
+        passwordResetCodeHash: data.passwordResetCodeHash,
+        passwordResetCodeExpiresAt: data.passwordResetCodeExpiresAt,
       },
     })
   }

@@ -3,6 +3,7 @@ import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 import type { TokenGenerator } from '#src/application/auth/token-generator.js'
 import type { HashComparer } from '#src/application/cryptography/hash-comparer.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
+import { EmailNotVerifiedError } from '#src/application/use-cases/signin/errors/email-not-verified-error.js'
 import { InvalidCredentialsError } from '#src/application/use-cases/signin/errors/invalid-credentials-error.js'
 import { SignInUseCase, type SignInInput } from '#src/application/use-cases/signin/sign-in-use-case.js'
 import { User, UserRole } from '#src/domain/entities/user.js'
@@ -24,6 +25,7 @@ describe('SignInUseCase', () => {
         email: Email.create('user@example.com'),
         passwordHash: 'hashed-password',
         role: UserRole.MANIFESTANT,
+        emailVerifiedAt: new Date('2026-01-01T00:00:00.000Z'),
         createdAt: new Date(),
       },
       new UniqueEntityId('any_user_id'),
@@ -89,6 +91,49 @@ describe('SignInUseCase', () => {
 
     expect(hashComparer.compare.mock.calls).toHaveLength(1)
     expect(tokenGenerator.generate.mock.calls).toHaveLength(0)
+  })
+
+  it('throws when the email has a pending verification code', async () => {
+    const user = User.create({
+      name: Name.create('User Name'),
+      email: Email.create('user@example.com'),
+      passwordHash: 'hashed-password',
+      role: UserRole.MANIFESTANT,
+      emailVerificationCodeHash: 'hashed-code',
+      emailVerificationCodeExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    })
+
+    UsersRepository.findByEmail.mockResolvedValue(user)
+    hashComparer.compare.mockResolvedValue(true)
+
+    await expect(sut.execute(input)).rejects.toBeInstanceOf(EmailNotVerifiedError)
+
+    expect(tokenGenerator.generate.mock.calls).toHaveLength(0)
+  })
+
+  it('allows legacy users without a pending verification code to sign in', async () => {
+    const user = User.create({
+      name: Name.create('User Name'),
+      email: Email.create('user@example.com'),
+      passwordHash: 'hashed-password',
+      role: UserRole.MANIFESTANT,
+    })
+
+    UsersRepository.findByEmail.mockResolvedValue(user)
+    hashComparer.compare.mockResolvedValue(true)
+    tokenGenerator.generate.mockResolvedValue('access-token')
+
+    const result = await sut.execute(input)
+
+    expect(tokenGenerator.generate.mock.calls).toStrictEqual([
+      [
+        {
+          sub: user.id.toString(),
+          role: UserRole.MANIFESTANT,
+        },
+      ],
+    ])
+    expect(result).toStrictEqual({ token: 'access-token' })
   })
 
   it('rejects invalid emails before touching dependencies', async () => {

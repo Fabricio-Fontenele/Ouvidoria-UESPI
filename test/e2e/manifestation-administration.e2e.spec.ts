@@ -18,6 +18,7 @@ async function createUser(role: UserRole, email: string): Promise<{ id: string }
       email,
       passwordHash,
       role,
+      emailVerifiedAt: new Date(),
     },
     select: { id: true },
   })

@@ -3,6 +3,7 @@ import type { AuthenticatedUserRole } from '../application/auth/auth-types'
 export const routes = {
   evaluation: '/evaluation',
   faq: '/faq',
+  forgotPassword: '/forgot-password',
   guara: '/guara',
   home: '/home',
   landing: '/',
@@ -83,4 +84,12 @@ export function buildEvaluationHref(id?: string | null) {
   }
 
   return `${routes.evaluation}?id=${id}`
+}
+
+export function buildForgotPasswordHref(email?: string | null) {
+  if (email === undefined || email === null || email.trim().length === 0) {
+    return routes.forgotPassword
+  }
+
+  return `${routes.forgotPassword}?email=${encodeURIComponent(email.trim())}`
 }

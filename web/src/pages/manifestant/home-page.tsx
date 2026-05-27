@@ -17,6 +17,7 @@ import type { PaginationMeta } from '../../application/pagination/pagination-con
 import guaraMascot from '../../assets/guara-mascot.png'
 import guaraPoses from '../../assets/poses-guara.webp'
 import { Icon } from '../../components/icons/icon'
+import { DashboardStatusMessage } from '../../components/feedback/dashboard-status-message'
 import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../../components/manifestations/manifestation-status-style'
@@ -192,7 +193,7 @@ function Overview({ metrics }: { metrics: Metric[] }) {
         </p>
       </div>
 
-      <dl className="grid w-full grid-cols-2 gap-4 min-[420px]:grid-cols-3 sm:gap-8 md:mx-auto md:max-w-3xl md:text-center lg:grid-cols-5">
+      <dl className="grid w-full grid-cols-2 gap-4 text-center min-[420px]:grid-cols-3 sm:gap-8 md:mx-auto md:max-w-3xl lg:max-w-5xl lg:grid-cols-6">
         {metrics.map((metric) => (
           <div key={metric.label}>
             <dd
@@ -219,12 +220,22 @@ function FilterBar({
   onFilterChange: (filter: ManifestationFilter) => void
 }) {
   return (
-    <div className="mx-auto grid w-full grid-cols-2 gap-2 min-[420px]:grid-cols-3 md:w-[92%] lg:grid-cols-5 xl:w-[94%]">
+    <div className="mx-auto grid w-full grid-cols-2 gap-2 min-[420px]:grid-cols-3 md:w-[92%] lg:grid-cols-6 xl:w-[94%]">
       {filters.map((filter) => {
         const isActive = filter.id === activeFilter
-        const filterClasses = isActive
-          ? 'bg-home-blue text-white'
-          : 'bg-home-chip text-home-brown hover:bg-home-chip/80'
+        const statusStyle = filter.id === 'all' ? null : getManifestationStatusStyle(filter.id)
+        const filterClasses =
+          statusStyle === null
+            ? isActive
+              ? 'bg-home-text text-white'
+              : 'border border-home-text bg-transparent text-home-text hover:bg-home-text/5'
+            : isActive
+              ? statusStyle.badgeClassName
+              : cx(
+                  'border bg-transparent hover:bg-home-chip/50',
+                  statusStyle.accentClassName,
+                  statusStyle.textClassName,
+                )
 
         return (
           <button
@@ -446,6 +457,7 @@ export function HomePage() {
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
       <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles}>
         <main className="mx-auto w-full max-w-6xl px-3 pt-8 min-[375px]:px-6 sm:px-8 md:pt-14 lg:px-12">
+          <DashboardStatusMessage />
           <section className="grid max-w-3xl gap-8 md:gap-10 lg:max-w-none">
             <div>
               <h1 className="max-w-[320px] text-[38px] leading-[0.98] font-black text-home-text min-[375px]:text-5xl sm:max-w-xl sm:text-6xl lg:text-7xl">

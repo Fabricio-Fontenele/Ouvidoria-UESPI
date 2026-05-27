@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type RefObject } from 'react'
 
-import { routes } from '../../app/routes'
+import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
 
 import guaraMascot from '../../assets/guara-bot-poses03.png'
 import guaraShortcutMascot from '../../assets/guara-mascot.png'
@@ -9,6 +9,7 @@ import { Icon, type IconName } from '../../components/icons/icon'
 import { AppHeader } from '../../components/layout/app-header'
 import { SiteFooter } from '../../components/layout/site-footer'
 
+import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
 
 interface ManifestationType {
@@ -727,8 +728,17 @@ function FloatingGuaraShortcut() {
 }
 
 export function LandingPage() {
+  const { isAuthenticated, user } = useAuth()
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
   const registrationModalOpenerRef = useRef<HTMLButtonElement | null>(null)
+
+  // A landing page é pública: usuários autenticados são levados para a home do seu perfil
+  // em vez de verem a tela inicial de marketing.
+  useEffect(() => {
+    if (isAuthenticated && user !== null) {
+      replaceWith(getAuthenticatedHomeRoute(user.role))
+    }
+  }, [isAuthenticated, user])
 
   const openRegistrationModal = (event: MouseEvent<HTMLButtonElement>) => {
     registrationModalOpenerRef.current = event.currentTarget
@@ -737,6 +747,10 @@ export function LandingPage() {
 
   const closeRegistrationModal = () => {
     setIsRegistrationModalOpen(false)
+  }
+
+  if (isAuthenticated && user !== null) {
+    return null
   }
 
   return (
