@@ -11,6 +11,7 @@ import type { SignUpFormData } from '../../application/auth/sign-up-form-contrac
 import { AuthField } from '../../components/auth/auth-field'
 import { AuthForm, AuthFormMessage } from '../../components/auth/auth-form'
 import type { AuthFormField } from '../../components/auth/auth-form'
+import { TermsDialog } from '../../components/auth/terms-dialog'
 import { AuthPageShell } from '../../components/layout/auth-page-shell'
 import { useAuth } from '../../hooks/use-auth'
 import { cx } from '../../utils/cx'
@@ -50,6 +51,29 @@ const signUpFields: AuthFormField<SignUpFormData>[] = [
   },
 ]
 
+const termsTopics: { description: string; title: string }[] = [
+  {
+    description:
+      'Para registrar e acompanhar manifestações, coletamos dados como nome, e-mail, vínculo com a UESPI, o relato e eventuais anexos. Em registros anônimos, usamos apenas o necessário para gerar o protocolo e o código de acompanhamento.',
+    title: 'Dados que você fornece',
+  },
+  {
+    description:
+      'Usamos os dados para registrar a manifestação, encaminhá-la ao setor responsável e cumprir obrigações legais de transparência. O compartilhamento se limita aos setores internos da UESPI e órgãos competentes, conforme a finalidade do atendimento e as regras de sigilo.',
+    title: 'Como usamos e com quem compartilhamos',
+  },
+  {
+    description:
+      'Ao conversar com o assistente Guará, o texto que você escreve é enviado a um provedor de inteligência artificial (Google) para gerar respostas e montar rascunhos de manifestação. O provedor não usa esse conteúdo para treinar seus modelos, e não enviamos seu nome ou e-mail junto da conversa. Ainda assim, evite incluir dados sensíveis que não sejam necessários ao relato.',
+    title: 'Assistente virtual com inteligência artificial',
+  },
+  {
+    description:
+      'Adotamos medidas técnicas e administrativas de proteção e mantemos os dados pelo tempo necessário ao atendimento e às obrigações legais. Você pode solicitar acesso, correção, anonimização ou exclusão pelos canais oficiais da Ouvidoria.',
+    title: 'Segurança, guarda e seus direitos',
+  },
+]
+
 const emailVerificationFormSchema = z.object({
   code: z
     .string()
@@ -59,7 +83,15 @@ const emailVerificationFormSchema = z.object({
 
 type EmailVerificationFormData = z.infer<typeof emailVerificationFormSchema>
 
-function TermsCheckbox({ error, inputProps }: { error?: string; inputProps: UseFormRegisterReturn<'acceptedTerms'> }) {
+function TermsCheckbox({
+  error,
+  inputProps,
+  onOpenTerms,
+}: {
+  error?: string
+  inputProps: UseFormRegisterReturn<'acceptedTerms'>
+  onOpenTerms: () => void
+}) {
   const linkFocusClasses =
     'rounded-sm transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
@@ -93,10 +125,14 @@ function TermsCheckbox({ error, inputProps }: { error?: string; inputProps: UseF
         </span>
         <span>
           Aceito os{' '}
-          <a className={cx('text-login-blue no-underline', linkFocusClasses)} href="#termos">
-            termos de uso
-          </a>{' '}
-          e política de privacidade.
+          <button
+            className={cx('font-semibold text-login-blue underline-offset-2 hover:underline', linkFocusClasses)}
+            onClick={onOpenTerms}
+            type="button"
+          >
+            termos de uso e política de privacidade
+          </button>
+          .
         </span>
       </label>
       <AuthFormMessage id="accepted-terms-error" variant="error">
@@ -117,6 +153,7 @@ export function SignPage() {
   } = useAuth()
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [isTermsOpen, setIsTermsOpen] = useState(false)
   const form = useForm<SignUpFormData>({
     defaultValues: getSignUpFormDefaultValues(),
     mode: 'onSubmit',
@@ -135,6 +172,12 @@ export function SignPage() {
   const acceptedTermsInputProps = form.register('acceptedTerms', {
     onChange: () => setSuccessMessage(null),
   })
+
+  const acceptTerms = () => {
+    form.setValue('acceptedTerms', true, { shouldValidate: true })
+    setSuccessMessage(null)
+    setIsTermsOpen(false)
+  }
 
   useEffect(() => {
     if (isAuthenticated && user !== null) {
@@ -224,7 +267,11 @@ export function SignPage() {
           submitLabel="Cadastrar"
         >
           <div className="mt-[2px] md:col-span-2 md:mt-1">
-            <TermsCheckbox error={acceptedTermsError} inputProps={acceptedTermsInputProps} />
+            <TermsCheckbox
+              error={acceptedTermsError}
+              inputProps={acceptedTermsInputProps}
+              onOpenTerms={() => setIsTermsOpen(true)}
+            />
           </div>
         </AuthForm>
       ) : (
@@ -281,6 +328,14 @@ export function SignPage() {
           Faça login.
         </a>
       </p>
+
+      <TermsDialog
+        onAccept={acceptTerms}
+        onClose={() => setIsTermsOpen(false)}
+        open={isTermsOpen}
+        privacyHref={routes.privacy}
+        topics={termsTopics}
+      />
     </AuthPageShell>
   )
 }
