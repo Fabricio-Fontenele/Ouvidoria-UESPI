@@ -13,6 +13,7 @@ import type {
 } from '#src/application/dto/catalog-dtos.js'
 import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import { ManifestationType } from '#src/domain/entities/manifestation.js'
+import { UserRole } from '#src/domain/entities/user.js'
 import { AdministrativeUnitId } from '#src/domain/value-objects/administrative-unit-id.js'
 import { CampusId } from '#src/domain/value-objects/campus-id.js'
 import { ManifestationDescription } from '#src/domain/value-objects/manifestation-description.js'
@@ -21,6 +22,16 @@ import { ManifestationInvolvedPeople } from '#src/domain/value-objects/manifesta
 import type { UseCase } from '../use-case.js'
 
 const REQUIRED_DRAFT_FIELDS = ['type', 'campusId', 'administrativeUnitId', 'description'] as const
+
+const INTERNAL_FIELD_NAMES = [
+  'campusid',
+  'administrativeunitid',
+  'missingfields',
+  'requireddraftfield',
+  'shouldopenmanifestationdraft',
+] as const
+
+const PLACEHOLDER_PATTERN = /\[.*?\]/u
 
 type RequiredDraftField = (typeof REQUIRED_DRAFT_FIELDS)[number]
 
@@ -77,7 +88,7 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
       draft,
       missingFields,
       confidence: this.normalizeConfidence(response.confidence),
-      suggestions: response.suggestions,
+      suggestions: this.sanitizeSuggestions(response.suggestions, intent, draft, missingFields, userRole),
     }
   }
 
@@ -260,5 +271,99 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
     }
 
     return confidence
+  }
+
+  private sanitizeSuggestions(
+    suggestions: AiGatewaySuggestion[],
+    intent: AiChatIntent,
+    draft: AiDraftPayload | null,
+    missingFields: RequiredDraftField[],
+    userRole: AiChatUserRole,
+  ): AiGatewaySuggestion[] {
+    if (suggestions.length > 0) {
+      const seenLabels = new Set<string>()
+      const seenIds = new Set<string>()
+      const sanitized: AiGatewaySuggestion[] = []
+      for (const s of suggestions) {
+        const id = s.id.trim()
+        const label = s.label.trim()
+        const message = s.message.trim()
+        if (id.length === 0 || label.length === 0 || message.length === 0) {
+          continue
+        }
+        if (this.hasForbiddenContent(label) || this.hasForbiddenContent(message)) {
+          continue
+        }
+        const normalizedLabel = label.toLowerCase()
+        if (seenLabels.has(normalizedLabel) || seenIds.has(id)) {
+          continue
+        }
+        seenLabels.add(normalizedLabel)
+        seenIds.add(id)
+        sanitized.push({ id, label, message })
+      }
+      if (sanitized.length > 0) {
+        return sanitized.slice(0, 4)
+      }
+    }
+
+    return this.fallbackSuggestions(intent, draft, missingFields, userRole)
+  }
+
+  private fallbackSuggestions(
+    intent: AiChatIntent,
+    draft: AiDraftPayload | null,
+    missingFields: RequiredDraftField[],
+    userRole: AiChatUserRole,
+  ): AiGatewaySuggestion[] {
+    const isAdminProfile = userRole === UserRole.OMBUDSMAN || userRole === UserRole.ADMIN
+
+    if (intent === 'manifestation_draft_ready' && !isAdminProfile && draft !== null && missingFields.length === 0) {
+      return [
+        { id: 'confirm-open', label: 'Sim, quero abrir', message: 'Sim, pode abrir a manifestação.' },
+        {
+          id: 'refine-draft',
+          label: 'Ajustar informações',
+          message: 'Gostaria de ajustar algumas informações antes de abrir.',
+        },
+      ]
+    }
+
+    if (intent === 'manifestation_candidate' && !isAdminProfile && missingFields.length > 0) {
+      if (missingFields.includes('description')) {
+        return [
+          {
+            id: 'provide-description',
+            label: 'Contar mais detalhes',
+            message: 'Vou contar mais detalhes sobre o que aconteceu.',
+          },
+          { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Quais informações preciso fornecer?' },
+        ]
+      }
+      return [
+        { id: 'fill-missing', label: 'Preencher informações', message: 'Quais informações ainda estão faltando?' },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Me explique melhor como funciona.' },
+      ]
+    }
+
+    return [
+      {
+        id: 'register-help',
+        label: 'Quero registrar algo',
+        message: 'Preciso de ajuda para registrar uma manifestação.',
+      },
+      { id: 'institutional-info', label: 'Dúvida institucional', message: 'Tenho uma dúvida sobre a Ouvidoria.' },
+    ]
+  }
+
+  private hasForbiddenContent(text: string): boolean {
+    const lower = text.toLowerCase()
+    if (PLACEHOLDER_PATTERN.test(lower)) {
+      return true
+    }
+    if (INTERNAL_FIELD_NAMES.some((name) => lower.includes(name))) {
+      return true
+    }
+    return false
   }
 }
