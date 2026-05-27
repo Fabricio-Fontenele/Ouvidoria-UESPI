@@ -31,6 +31,16 @@ export interface SendAiMessageUseCaseDeps {
   retrievalTopK: number
 }
 
+const INTERNAL_FIELD_NAMES = [
+  'campusid',
+  'administrativeunitid',
+  'missingfields',
+  'requireddraftfield',
+  'shouldopenmanifestationdraft',
+]
+
+const PLACEHOLDER_PATTERN = /\[.*?\]/u
+
 export class SendAiMessageUseCase {
   constructor(private readonly deps: SendAiMessageUseCaseDeps) {}
 
@@ -170,6 +180,9 @@ export class SendAiMessageUseCase {
         if (id.length === 0 || label.length === 0 || message.length === 0) {
           continue
         }
+        if (this.hasForbiddenContent(label) || this.hasForbiddenContent(message)) {
+          continue
+        }
         const normalizedLabel = label.toLowerCase()
         if (seenLabels.has(normalizedLabel) || seenIds.has(id)) {
           continue
@@ -184,6 +197,17 @@ export class SendAiMessageUseCase {
     }
 
     return this.fallbackSuggestions(intent, draft, missingFields, userRole)
+  }
+
+  private hasForbiddenContent(text: string): boolean {
+    const lower = text.toLowerCase()
+    if (PLACEHOLDER_PATTERN.test(lower)) {
+      return true
+    }
+    if (INTERNAL_FIELD_NAMES.some((name) => lower.includes(name))) {
+      return true
+    }
+    return false
   }
 
   private fallbackSuggestions(

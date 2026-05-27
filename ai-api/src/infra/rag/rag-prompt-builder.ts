@@ -75,6 +75,8 @@ export class RagPromptBuilder {
       '- Repetir o que o usuário acabou de perguntar',
       '- Ser genéricas como "Registrar manifestação" ou "Tipos de manifestação" — sejam específicas ao contexto',
       '- Sugerir algo que o perfil do usuário não pode fazer (ex: anônimo não pode abrir reclamação)',
+      '- Usar nomes internos de campo como "campusId", "administrativeUnitId", "type" ou "description" no texto — use linguagem natural (ex.: "campus", "unidade", "tipo", "descrição")',
+      '- Conter placeholders ou templates como "[Nome do campus]" ou "[tipo]" — o texto deve ser concreto e pronto para o usuário enviar',
       'Exemplos BONS (contextuais):',
       '  - Intent=manifestation_candidate, falta descrição: [ { id: "desc-detail", label: "Detalhar o ocorrido", message: "Vou contar mais detalhes sobre o que aconteceu." }, { id: "desc-doubt", label: "Dúvida sobre o processo", message: "Quais informações preciso fornecer?" } ]',
       '  - Intent=institutional_question sobre prazos: [ { id: "time-followup", label: "E se passar do prazo?", message: "O que acontece se o prazo for ultrapassado?" }, { id: "time-anonymous", label: "Prazos para anônimo", message: "Os prazos são diferentes para manifestações anônimas?" } ]',
