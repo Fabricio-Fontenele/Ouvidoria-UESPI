@@ -1,3 +1,4 @@
+import type { ManifestationStatusNotifier } from '#src/application/notifications/manifestation-status-notifier.js'
 import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
@@ -40,6 +41,7 @@ export class CancelManifestationUseCase implements UseCase<CancelManifestationIn
     private readonly manifestationAdministrationRepository: ManifestationAdministrationRepository,
     private readonly manifestationsRepository: ManifestationsRepository,
     private readonly usersRepository: UsersRepository,
+    private readonly manifestationStatusNotifier?: ManifestationStatusNotifier,
   ) {}
 
   async execute({
@@ -77,6 +79,10 @@ export class CancelManifestationUseCase implements UseCase<CancelManifestationIn
       reason,
       note,
     })
+
+    if (previousStatus !== manifestation.status) {
+      await this.manifestationStatusNotifier?.notify(manifestation)
+    }
 
     return {
       manifestation: {

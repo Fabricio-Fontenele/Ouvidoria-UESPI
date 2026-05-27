@@ -1,5 +1,6 @@
 import type { AiGateway } from '#src/application/ai/ai-gateway.js'
 import type { EmailSender } from '#src/application/email/email-sender.js'
+import { ManifestationStatusEmailNotifier } from '#src/application/notifications/manifestation-status-notifier.js'
 import { FakeAiGateway } from '#src/infra/ai/fake-ai-gateway.js'
 import { HttpAiGateway } from '#src/infra/ai/http-ai-gateway.js'
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
@@ -58,6 +59,7 @@ const manifestationAttachmentsRepository = new PrismaManifestationAttachmentsRep
 const manifestationAdministrationRepository = new PrismaManifestationAdministrationRepository(prisma)
 const manifestationInteractionsRepository = new PrismaManifestationInteractionsRepository(prisma)
 const manifestationEvaluationsRepository = new PrismaManifestationEvaluationsRepository(prisma)
+const manifestationStatusNotifier = new ManifestationStatusEmailNotifier(usersRepository, emailSender)
 const attachmentStorage =
   env.NODE_ENV === 'test'
     ? new InMemoryAttachmentStorage()
@@ -90,6 +92,7 @@ export const infrastructure = {
   manifestationAdministrationRepository,
   manifestationInteractionsRepository,
   manifestationEvaluationsRepository,
+  manifestationStatusNotifier,
   attachmentStorage,
   aiGateway,
 }
