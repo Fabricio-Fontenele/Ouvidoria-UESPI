@@ -1,7 +1,7 @@
 import { type FormEvent, useId, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
-import { routes } from '../../app/routes'
+import { getAuthenticatedHomeRoute, routes } from '../../app/routes'
 import type { Catalog } from '../../application/catalog/catalog-types'
 import {
   ACCEPTED_ATTACHMENT_INPUT_ACCEPT,
@@ -21,6 +21,7 @@ import { Icon } from '../../components/icons/icon'
 import { AppHeader } from '../../components/layout/app-header'
 import { SiteFooter } from '../../components/layout/site-footer'
 import { ManifestationMessagesThread } from '../../components/manifestations/manifestation-messages-thread'
+import { useAuth } from '../../hooks/use-auth'
 import { useCatalog } from '../../hooks/use-catalog'
 import { useManifestationsService } from '../../hooks/use-manifestations-service'
 import { formatBrDate } from '../../utils/format-date'
@@ -376,6 +377,31 @@ function PublicTrackedDetail({
   )
 }
 
+function IdentifiedTrackHint() {
+  const { user } = useAuth()
+  const role = user?.role ?? null
+  const isAuthenticated = user !== null
+  const targetHref = isAuthenticated && role !== null ? getAuthenticatedHomeRoute(role) : routes.login
+  const ctaLabel = isAuthenticated ? 'Ver minhas manifestações' : 'Fazer login'
+
+  return (
+    <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-home-action/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm leading-6 text-home-brown">
+        {isAuthenticated
+          ? 'Você já está logado — acompanhe pela sua conta as manifestações que registrou identificado.'
+          : 'Você se identificou ao registrar a manifestação? Faça login para acompanhá-la pela sua conta.'}
+      </p>
+      <a
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-home-blue px-4 text-sm font-bold text-white no-underline transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue"
+        href={targetHref}
+      >
+        {ctaLabel}
+        <Icon className="size-4" name="arrow-right" />
+      </a>
+    </div>
+  )
+}
+
 export function TrackPage() {
   const manifestationsService = useManifestationsService()
   const [protocol, setProtocol] = useState('')
@@ -472,6 +498,8 @@ export function TrackPage() {
               {error}
             </p>
           ) : null}
+
+          <IdentifiedTrackHint />
         </section>
 
         {status === 'ready' && detail !== null && credentials !== null ? (
