@@ -13,14 +13,11 @@ import type {
 import { SignIn } from '../application/auth/sign-in'
 import { SignUp } from '../application/auth/sign-up'
 import { clearChatMessages, clearPendingDraft } from '../infrastructure/guara-chat/guara-chat-storage'
+import { resolveApiErrorMessage } from '../infrastructure/http/resolve-api-error-message'
 import { AuthContext } from './auth-context'
 
 function resolveAuthError(error: unknown) {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return 'Não foi possível concluir a operação agora. Tente novamente.'
+  return resolveApiErrorMessage(error, 'Não foi possível concluir a operação agora. Tente novamente.')
 }
 
 export function AuthProvider({ children, service }: { children: ReactNode; service: AuthService }) {

@@ -24,6 +24,7 @@ import { CasePanelBlock, ManifestationCasePanel } from '../../components/manifes
 import { ManifestationMessagesThread } from '../../components/manifestations/manifestation-messages-thread'
 import { ManifestationTimelineCard } from '../../components/manifestations/manifestation-timeline-card'
 import { useCatalog } from '../../hooks/use-catalog'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 import { makeOmbudsmanService } from '../../infrastructure/ombudsman/ombudsman-service-factory'
 
 type LoadStatus = 'loading' | 'ready' | 'error'
@@ -106,8 +107,7 @@ function AnswerComposer({
       setContent('')
       onAnswered()
     } catch (sendError) {
-      const message =
-        sendError instanceof Error ? sendError.message : 'Não foi possível enviar a resposta. Tente novamente.'
+      const message = resolveApiErrorMessage(sendError, 'Não foi possível enviar a resposta. Tente novamente.')
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -252,8 +252,7 @@ function ForwardAction({
       setQuery('')
       onForwarded()
     } catch (forwardError) {
-      const message =
-        forwardError instanceof Error ? forwardError.message : 'Não foi possível encaminhar agora. Tente novamente.'
+      const message = resolveApiErrorMessage(forwardError, 'Não foi possível encaminhar agora. Tente novamente.')
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -451,8 +450,7 @@ function StatusActions({
       closeDialog()
       onChanged()
     } catch (finalizeError) {
-      const message =
-        finalizeError instanceof Error ? finalizeError.message : 'Não foi possível finalizar a manifestação.'
+      const message = resolveApiErrorMessage(finalizeError, 'Não foi possível finalizar a manifestação.')
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -477,7 +475,7 @@ function StatusActions({
       closeDialog()
       onChanged()
     } catch (cancelError) {
-      const message = cancelError instanceof Error ? cancelError.message : 'Não foi possível cancelar a manifestação.'
+      const message = resolveApiErrorMessage(cancelError, 'Não foi possível cancelar a manifestação.')
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -619,7 +617,7 @@ export function OmbudsmanManifestationDetailsPage() {
         if (!isMounted) {
           return
         }
-        const message = error instanceof Error ? error.message : 'Não foi possível carregar esta manifestação.'
+        const message = resolveApiErrorMessage(error, 'Não foi possível carregar esta manifestação.')
         setLoadError(message)
         setLoadStatus('error')
       }

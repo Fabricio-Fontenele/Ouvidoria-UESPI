@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { ManifestationAttachmentInfo } from '../../application/manifestations/manifestation-detail-contract'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 import { Icon } from '../icons/icon'
 import { formatFileSize } from '../forms/form-file-utils'
 
@@ -28,8 +29,7 @@ function AttachmentRow({
       const downloadUrl = await onResolveDownloadUrl(attachment)
       window.open(downloadUrl, '_blank', 'noopener,noreferrer')
     } catch (downloadError) {
-      const message =
-        downloadError instanceof Error ? downloadError.message : 'Não foi possível gerar o link de download.'
+      const message = resolveApiErrorMessage(downloadError, 'Não foi possível gerar o link de download.')
       setError(message)
     } finally {
       setIsDownloading(false)

@@ -25,6 +25,7 @@ import { AuthenticatedAppShell } from '../../components/layout/authenticated-app
 import { SiteFooter } from '../../components/layout/site-footer'
 import { useCatalog } from '../../hooks/use-catalog'
 import { useManifestationsService } from '../../hooks/use-manifestations-service'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 
 type LoadStatus = 'loading' | 'ready' | 'error'
 
@@ -118,7 +119,7 @@ function AttachmentsUploadForm({ detail, onUploaded }: { detail: ManifestationDe
       setSelectedFiles([])
       onUploaded()
     } catch (uploadError) {
-      const message = uploadError instanceof Error ? uploadError.message : 'Não foi possível enviar os anexos.'
+      const message = resolveApiErrorMessage(uploadError, 'Não foi possível enviar os anexos.')
       setError(message)
     } finally {
       setIsUploading(false)
@@ -207,8 +208,7 @@ function MessageComposer({ detail, onSent }: { detail: ManifestationDetail; onSe
       setContent('')
       onSent()
     } catch (sendError) {
-      const message =
-        sendError instanceof Error ? sendError.message : 'Não foi possível enviar a mensagem. Tente novamente.'
+      const message = resolveApiErrorMessage(sendError, 'Não foi possível enviar a mensagem. Tente novamente.')
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -327,7 +327,7 @@ export function ManifestationDetailsPage() {
         if (!isMounted) {
           return
         }
-        const message = loadError instanceof Error ? loadError.message : 'Não foi possível carregar esta manifestação.'
+        const message = resolveApiErrorMessage(loadError, 'Não foi possível carregar esta manifestação.')
         setError(message)
         setStatus('error')
       }
