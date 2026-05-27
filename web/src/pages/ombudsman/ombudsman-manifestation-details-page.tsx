@@ -55,15 +55,23 @@ function NotFoundCard({ description, title }: { description: string; title: stri
 
 function DescriptionCard({ detail }: { detail: ManifestationDetail }) {
   return (
-    <section aria-labelledby="manifestation-description-title">
+    <section
+      aria-labelledby="manifestation-description-title"
+      className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6"
+    >
       <h2 className="text-lg font-black text-home-text" id="manifestation-description-title">
         Descrição da manifestação
       </h2>
-      <p className="mt-3 text-base leading-7 break-words whitespace-pre-line text-home-text">{detail.description}</p>
+      <p className="mt-3 rounded-[24px] border border-login-brown/10 bg-white p-4 text-base leading-7 break-words whitespace-pre-line text-home-text shadow-sm">
+        {detail.description}
+      </p>
       {detail.involvedPeople !== null && detail.involvedPeople.length > 0 ? (
-        <div className="mt-4 rounded-xl bg-home-action/40 p-3">
-          <p className="text-[11px] font-bold tracking-[0.14em] text-home-brown/70 uppercase">Pessoas envolvidas</p>
-          <p className="mt-1 text-sm leading-6 break-words text-home-text">{detail.involvedPeople}</p>
+        <div className="mt-4 rounded-[24px] border border-home-chip bg-home-action/40 p-4">
+          <p className="flex items-center gap-2 text-xs font-black tracking-[0.14em] text-home-brown uppercase">
+            <Icon className="size-4 text-home-blue" name="user" />
+            Pessoas envolvidas
+          </p>
+          <p className="mt-2 text-base leading-7 break-words text-home-text">{detail.involvedPeople}</p>
         </div>
       ) : null}
     </section>
