@@ -31,6 +31,14 @@ export class FakeAiGateway implements AiGateway {
         },
         missingFields: [],
         confidence: 0.8,
+        suggestions: [
+          { id: 'fake-confirm-open', label: 'Sim, quero abrir', message: 'Sim, pode abrir a manifestação.' },
+          {
+            id: 'fake-refine',
+            label: 'Ajustar informações',
+            message: 'Gostaria de ajustar algumas informações antes de abrir.',
+          },
+        ],
       }
     }
 
@@ -42,6 +50,18 @@ export class FakeAiGateway implements AiGateway {
         draft: null,
         missingFields: [],
         confidence: 0.7,
+        suggestions: [
+          {
+            id: 'fake-register',
+            label: 'Quero registrar algo',
+            message: 'Preciso de ajuda para registrar uma manifestação.',
+          },
+          {
+            id: 'fake-types',
+            label: 'Tipos de manifestação',
+            message: 'Explique os tipos de manifestação disponíveis.',
+          },
+        ],
       }
     }
 
@@ -52,6 +72,14 @@ export class FakeAiGateway implements AiGateway {
       draft: null,
       missingFields: [],
       confidence: 0.6,
+      suggestions: [
+        {
+          id: 'fake-register',
+          label: 'Quero registrar algo',
+          message: 'Preciso de ajuda para registrar uma manifestação.',
+        },
+        { id: 'fake-help', label: 'Dúvida institucional', message: 'Tenho uma dúvida sobre a Ouvidoria.' },
+      ],
     }
   }
 }

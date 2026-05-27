@@ -3,10 +3,9 @@ import { useMemo, useState } from 'react'
 import { buildManifestationFormHref, getSearchParams, navigateTo, normalizeProtocol, routes } from '../../app/routes'
 import guaraMascot from '../../assets/guara-mascot.png'
 import { getGuaraInitialMessages, getGuaraSuggestions } from '../../application/guara-chat/guara-chat-content'
-import type { GuaraChatSuggestion } from '../../application/guara-chat/guara-chat-content'
 import { canApplyDraft, getGuaraChatCapabilities } from '../../application/guara-chat/guara-chat-policy'
 import type { GuaraChatCapabilities } from '../../application/guara-chat/guara-chat-policy'
-import type { GuaraChatMode, GuaraMessage } from '../../application/guara-chat/guara-chat-types'
+import type { GuaraChatMode, GuaraChatSuggestion, GuaraMessage } from '../../application/guara-chat/guara-chat-types'
 import { getManifestationStatusContract } from '../../application/manifestations/manifestation-status-contract'
 import type { ManifestationStatus } from '../../application/manifestations/manifestation-status-contract'
 import { ConfirmDialog } from '../../components/feedback/confirm-dialog'
@@ -226,9 +225,19 @@ function ChatPanel({ capabilities, mode }: ChatPanelProps) {
   const [draft, setDraft] = useState('')
   const [isConfirmingClear, setIsConfirmingClear] = useState(false)
   const initialMessages = useMemo(() => getGuaraInitialMessages(mode), [mode])
-  const suggestions = useMemo(() => getGuaraSuggestions(mode), [mode])
-  const { clearConversation, error, isSending, messages, pendingDraft, sendMessage, shouldOpenManifestationDraft } =
-    useGuaraChat({ initialMessages })
+  const staticSuggestions = useMemo(() => getGuaraSuggestions(mode), [mode])
+  const {
+    clearConversation,
+    error,
+    isSending,
+    messages,
+    pendingDraft,
+    sendMessage,
+    shouldOpenManifestationDraft,
+    suggestions: dynamicSuggestions,
+  } = useGuaraChat({ initialMessages })
+
+  const suggestions = dynamicSuggestions.length > 0 ? dynamicSuggestions : staticSuggestions
 
   const handleConfirmClear = () => {
     clearConversation()

@@ -97,6 +97,7 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: false,
       draft: null,
       missingFields: [],
+      suggestions: [],
     })
 
     const result = await sut.execute(request)
@@ -120,6 +121,14 @@ describe('SendAiMessageUseCase', () => {
       shouldOpenManifestationDraft: false,
       draft: null,
       missingFields: [],
+      suggestions: [
+        {
+          id: 'register-help',
+          label: 'Quero registrar algo',
+          message: 'Preciso de ajuda para registrar uma manifestação.',
+        },
+        { id: 'institutional-info', label: 'Dúvida institucional', message: 'Tenho uma dúvida sobre a Ouvidoria.' },
+      ],
     })
   })
 
@@ -137,6 +146,7 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: ' Servidor do protocolo ',
       },
       missingFields: [],
+      suggestions: [],
     })
 
     const result = await sut.execute(request)
@@ -154,6 +164,14 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: 'Servidor do protocolo',
       },
       missingFields: [],
+      suggestions: [
+        { id: 'confirm-open', label: 'Sim, quero abrir', message: 'Sim, pode abrir a manifestação.' },
+        {
+          id: 'refine-draft',
+          label: 'Ajustar informações',
+          message: 'Gostaria de ajustar algumas informações antes de abrir.',
+        },
+      ],
     })
   })
 
@@ -171,6 +189,7 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: [],
+      suggestions: [],
     })
 
     const result = await sut.execute(request)
@@ -188,6 +207,14 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: ['description'],
+      suggestions: [
+        {
+          id: 'provide-description',
+          label: 'Contar mais detalhes',
+          message: 'Vou contar mais detalhes sobre o que aconteceu.',
+        },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Quais informações preciso fornecer?' },
+      ],
     })
   })
 
@@ -205,6 +232,7 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: [],
+      suggestions: [],
     })
 
     const result = await sut.execute(request)
@@ -222,6 +250,10 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: ['campusId', 'administrativeUnitId'],
+      suggestions: [
+        { id: 'fill-missing', label: 'Preencher informações', message: 'Quais informações ainda estão faltando?' },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Me explique melhor como funciona.' },
+      ],
     })
   })
 
@@ -239,6 +271,7 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: [],
+      suggestions: [],
     })
 
     const result = await sut.execute(request)
@@ -256,6 +289,10 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: ['administrativeUnitId'],
+      suggestions: [
+        { id: 'fill-missing', label: 'Preencher informações', message: 'Quais informações ainda estão faltando?' },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Me explique melhor como funciona.' },
+      ],
     })
   })
 
@@ -273,6 +310,7 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: [],
+      suggestions: [],
     })
 
     const result = await sut.execute(request)
@@ -290,6 +328,10 @@ describe('SendAiMessageUseCase', () => {
         involvedPeople: null,
       },
       missingFields: ['administrativeUnitId'],
+      suggestions: [
+        { id: 'fill-missing', label: 'Preencher informações', message: 'Quais informações ainda estão faltando?' },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Me explique melhor como funciona.' },
+      ],
     })
   })
 

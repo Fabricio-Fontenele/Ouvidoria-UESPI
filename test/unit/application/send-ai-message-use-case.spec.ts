@@ -87,6 +87,7 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: 0.92,
+      suggestions: [],
     })
 
     const result = await sut.execute(input)
@@ -108,6 +109,7 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: 0.92,
+      suggestions: [],
     })
   })
 
@@ -119,6 +121,7 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: 0.5,
+      suggestions: [],
     })
 
     await sut.execute({ ...input, userRole: UserRole.MANIFESTANT })
@@ -140,6 +143,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 0.8,
+      suggestions: [],
     })
 
     const result = await sut.execute(input)
@@ -163,6 +167,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 0.61,
+      suggestions: [],
     })
 
     const result = await sut.execute(input)
@@ -174,6 +179,7 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: 0.61,
+      suggestions: [],
     })
   })
 
@@ -191,6 +197,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 0.86,
+      suggestions: [],
     })
 
     const result = await sut.execute(input)
@@ -208,6 +215,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 0.86,
+      suggestions: [],
     })
   })
 
@@ -225,6 +233,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 0.7,
+      suggestions: [],
     })
 
     const result = await sut.execute(input)
@@ -242,6 +251,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: ['campusId', 'description'],
       confidence: 0.7,
+      suggestions: [],
     })
   })
 
@@ -259,6 +269,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 0.78,
+      suggestions: [],
     })
 
     const result = await sut.execute(input)
@@ -276,6 +287,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: ['administrativeUnitId'],
       confidence: 0.78,
+      suggestions: [],
     })
   })
 
@@ -293,6 +305,7 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 1.5,
+      suggestions: [],
     })
 
     const result = await sut.execute(input)
@@ -304,6 +317,7 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: null,
+      suggestions: [],
     })
   })
 
@@ -333,6 +347,7 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: 0.5,
+      suggestions: [],
     }
 
     it('forwards the full history when it fits within historyMaxChars', async () => {

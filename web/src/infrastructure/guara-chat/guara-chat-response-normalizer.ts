@@ -2,6 +2,7 @@ import type {
   GuaraChatDraft,
   GuaraChatIntent,
   GuaraChatMissingField,
+  GuaraChatSuggestion,
   SendGuaraMessageOutput,
 } from '../../application/guara-chat/guara-chat-types'
 import { manifestationTypeValues } from '../../application/manifestations/manifestation-type-contract'
@@ -104,6 +105,46 @@ function normalizeAnswer(value: unknown): string {
   return value.trim()
 }
 
+function normalizeSuggestions(value: unknown): GuaraChatSuggestion[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const seenLabels = new Set<string>()
+  const seenIds = new Set<string>()
+  const suggestions: GuaraChatSuggestion[] = []
+
+  for (const entry of value) {
+    if (entry === null || typeof entry !== 'object') {
+      continue
+    }
+
+    const record = entry as Record<string, unknown>
+    const id = normalizeNullableString(record.id)
+    const label = normalizeNullableString(record.label)
+    const message = normalizeNullableString(record.message)
+
+    if (id === null || label === null || message === null) {
+      continue
+    }
+
+    const normalizedLabel = label.toLowerCase()
+    if (seenLabels.has(normalizedLabel) || seenIds.has(id)) {
+      continue
+    }
+    seenLabels.add(normalizedLabel)
+    seenIds.add(id)
+
+    suggestions.push({ id, label, message })
+
+    if (suggestions.length >= 4) {
+      break
+    }
+  }
+
+  return suggestions
+}
+
 export function normalizeGuaraChatResponse(raw: unknown): SendGuaraMessageOutput {
   if (raw === null || typeof raw !== 'object') {
     return {
@@ -113,6 +154,7 @@ export function normalizeGuaraChatResponse(raw: unknown): SendGuaraMessageOutput
       intent: 'unknown',
       missingFields: [],
       shouldOpenManifestationDraft: false,
+      suggestions: [],
     }
   }
 
@@ -132,5 +174,6 @@ export function normalizeGuaraChatResponse(raw: unknown): SendGuaraMessageOutput
     intent,
     missingFields,
     shouldOpenManifestationDraft,
+    suggestions: normalizeSuggestions(record.suggestions),
   }
 }

@@ -34,6 +34,12 @@ export interface AiGatewayChatInput {
   administrativeUnits: CatalogAdministrativeUnitItemDTO[]
 }
 
+export interface AiGatewaySuggestion {
+  id: string
+  label: string
+  message: string
+}
+
 export interface AiGatewayChatResponse {
   answer: string
   intent: string
@@ -47,6 +53,7 @@ export interface AiGatewayChatResponse {
   } | null
   missingFields: string[]
   confidence: number | null
+  suggestions: AiGatewaySuggestion[]
 }
 
 export interface AiGateway {

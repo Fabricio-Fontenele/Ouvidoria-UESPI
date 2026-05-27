@@ -19,6 +19,7 @@ const validPayload = {
   shouldOpenManifestationDraft: false,
   draft: null,
   missingFields: [],
+  suggestions: [],
 }
 
 function makeJsonResponse(payload: unknown, status = 200): Response {

@@ -4,6 +4,12 @@ import type { AiGateway, AiGatewayChatInput, AiGatewayChatResponse } from '#src/
 
 import { AiServiceError } from './ai-service-error.js'
 
+const suggestionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  message: z.string(),
+})
+
 const responseSchema = z.object({
   answer: z.string(),
   intent: z.string(),
@@ -19,6 +25,7 @@ const responseSchema = z.object({
     })
     .nullable(),
   missingFields: z.array(z.string()),
+  suggestions: z.array(suggestionSchema).default([]),
 })
 
 export interface HttpAiGatewayConfig {

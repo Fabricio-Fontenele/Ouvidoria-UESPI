@@ -6,6 +6,7 @@ import type {
   GuaraChatHistoryItem,
   GuaraChatIntent,
   GuaraChatMissingField,
+  GuaraChatSuggestion,
   GuaraMessage,
 } from '../application/guara-chat/guara-chat-types'
 import { clearChatMessages, readChatMessages, writeChatMessages } from '../infrastructure/guara-chat/guara-chat-storage'
@@ -25,6 +26,7 @@ interface UseGuaraChatResult {
   pendingIntent: GuaraChatIntent | null
   sendMessage: (message: string) => Promise<void>
   shouldOpenManifestationDraft: boolean
+  suggestions: GuaraChatSuggestion[]
 }
 
 function buildHistory(messages: GuaraMessage[]): GuaraChatHistoryItem[] {
@@ -42,6 +44,7 @@ export function useGuaraChat({ initialMessages }: UseGuaraChatParams): UseGuaraC
   const [pendingIntent, setPendingIntent] = useState<GuaraChatIntent | null>(null)
   const [missingFields, setMissingFields] = useState<GuaraChatMissingField[]>([])
   const [shouldOpenManifestationDraft, setShouldOpenManifestationDraft] = useState(false)
+  const [suggestions, setSuggestions] = useState<GuaraChatSuggestion[]>([])
 
   const initialMessagesRef = useRef(initialMessages)
 
@@ -101,6 +104,7 @@ export function useGuaraChat({ initialMessages }: UseGuaraChatParams): UseGuaraC
       setPendingIntent(output.intent)
       setMissingFields(output.missingFields)
       setShouldOpenManifestationDraft(output.shouldOpenManifestationDraft)
+      setSuggestions(output.suggestions)
     } catch {
       setError('Não foi possível enviar a mensagem. Tente novamente em instantes.')
     } finally {
@@ -114,6 +118,7 @@ export function useGuaraChat({ initialMessages }: UseGuaraChatParams): UseGuaraC
     setPendingIntent(null)
     setMissingFields([])
     setShouldOpenManifestationDraft(false)
+    setSuggestions([])
     setError(null)
     clearChatMessages()
   }
@@ -128,5 +133,6 @@ export function useGuaraChat({ initialMessages }: UseGuaraChatParams): UseGuaraC
     pendingIntent,
     sendMessage,
     shouldOpenManifestationDraft,
+    suggestions,
   }
 }

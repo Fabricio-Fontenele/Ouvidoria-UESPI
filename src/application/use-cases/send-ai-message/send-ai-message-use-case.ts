@@ -4,6 +4,7 @@ import type {
   AiChatUserRole,
   AiDraftPayload,
   AiGateway,
+  AiGatewaySuggestion,
 } from '#src/application/ai/ai-gateway.js'
 import type {
   CatalogAdministrativeUnitItemDTO,
@@ -36,6 +37,7 @@ export interface SendAiMessageOutput {
   draft: AiDraftPayload | null
   missingFields: RequiredDraftField[]
   confidence: number | null
+  suggestions: AiGatewaySuggestion[]
 }
 
 export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiMessageOutput> {
@@ -75,6 +77,7 @@ export class SendAiMessageUseCase implements UseCase<SendAiMessageInput, SendAiM
       draft,
       missingFields,
       confidence: this.normalizeConfidence(response.confidence),
+      suggestions: response.suggestions,
     }
   }
 
