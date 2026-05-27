@@ -34,7 +34,14 @@ const usersSeedData = [
     name: 'Administrador de Demonstração',
     role: 'admin' as const,
   },
+  {
+    email: 'manifestante@uespi.br',
+    name: 'Manifestante de Demonstração',
+    role: 'manifestant' as const,
+  },
 ]
+
+const anonymousAccessCode = 'ABC123'
 
 const headquartersCampusId = 'campus-poeta-torquato-neto'
 
@@ -409,6 +416,10 @@ async function main(): Promise<void> {
     where: { email: 'ouvidoriaa.guara@gmail.com' },
   })
 
+  const demonstrationManifestant = await prisma.user.findUniqueOrThrow({
+    where: { email: 'manifestante@uespi.br' },
+  })
+
   for (const administrativeUnit of catalogSeedData.administrativeUnits) {
     await prisma.userAdministrativeUnit.upsert({
       where: {
@@ -425,11 +436,150 @@ async function main(): Promise<void> {
     })
   }
 
+  const anonymousAccessCodeHash = await bcrypt.hash(anonymousAccessCode, passwordHashRounds)
+  const now = new Date()
+  const manifestationsSeedData = [
+    {
+      id: '7f8bbf7a-2f9f-4df7-88f4-4f33ff97d48f',
+      protocol: '202605270001',
+      type: 'complaint' as const,
+      status: 'in_analysis' as const,
+      campusId: headquartersCampusId,
+      administrativeUnitId: 'unit-dtic',
+      description:
+        'Não consigo acessar o sistema acadêmico há dois dias, mesmo após redefinir a senha pelo portal institucional.',
+      involvedPeople: null,
+      authorUserId: null,
+      attendantUserId: null,
+      forwardedToUnitId: null,
+      accessCodeHash: anonymousAccessCodeHash,
+      createdAt: new Date('2026-05-24T12:00:00.000Z'),
+      message: {
+        id: '14fa7fa4-8c43-4817-a87f-8d3a548e0131',
+        senderUserId: null,
+        senderType: 'anonymous_manifestant' as const,
+        content:
+          'O erro aparece após informar matrícula e senha. A página recarrega e retorna para a tela inicial sem mensagem clara.',
+      },
+    },
+    {
+      id: 'eaa7ee73-2118-4bb7-849b-2d38ac6d97f4',
+      protocol: '202605270002',
+      type: 'suggestion' as const,
+      status: 'awaiting_unit' as const,
+      campusId: headquartersCampusId,
+      administrativeUnitId: 'unit-biblioteca-central',
+      description:
+        'Sugiro ampliar o horário de funcionamento da Biblioteca Central durante o período de avaliações finais.',
+      involvedPeople: null,
+      authorUserId: demonstrationManifestant.id,
+      attendantUserId: guaraOmbudsman.id,
+      forwardedToUnitId: 'unit-biblioteca-central',
+      accessCodeHash: null,
+      createdAt: new Date('2026-05-25T12:00:00.000Z'),
+      message: {
+        id: '3091bd95-3f42-4421-bc8d-a3f156875ae4',
+        senderUserId: demonstrationManifestant.id,
+        senderType: 'manifestant' as const,
+        content:
+          'A ampliação ajudaria estudantes que trabalham durante o dia e só conseguem estudar no campus à noite.',
+      },
+    },
+    {
+      id: '798dd282-0606-4bf6-b0bf-3ce33ccdb411',
+      protocol: '202605270003',
+      type: 'report' as const,
+      status: 'in_analysis' as const,
+      campusId: 'campus-clovis-moura',
+      administrativeUnitId: 'unit-direcao-clovis-moura',
+      description:
+        'Há lâmpadas queimadas no corredor próximo às salas do bloco administrativo, prejudicando a circulação no turno da noite.',
+      involvedPeople: 'Equipe de manutenção predial do campus',
+      authorUserId: demonstrationManifestant.id,
+      attendantUserId: null,
+      forwardedToUnitId: null,
+      accessCodeHash: null,
+      createdAt: new Date('2026-05-26T12:00:00.000Z'),
+      message: {
+        id: '8f81d5c7-7871-4252-ae3d-b9866e2a7f4f',
+        senderUserId: demonstrationManifestant.id,
+        senderType: 'manifestant' as const,
+        content: 'O problema foi observado principalmente entre 18h e 21h, quando há maior circulação de alunos.',
+      },
+    },
+    {
+      id: '145d8f7f-61d7-4fe9-9b54-61909127a734',
+      protocol: '202605270004',
+      type: 'compliment' as const,
+      status: 'answered' as const,
+      campusId: headquartersCampusId,
+      administrativeUnitId: 'unit-secretaria-academica-poeta-torquato-neto',
+      description:
+        'Gostaria de registrar elogio ao atendimento da Secretaria Acadêmica pela agilidade na emissão de documentos.',
+      involvedPeople: null,
+      authorUserId: null,
+      attendantUserId: guaraOmbudsman.id,
+      forwardedToUnitId: null,
+      accessCodeHash: anonymousAccessCodeHash,
+      createdAt: new Date('2026-05-23T12:00:00.000Z'),
+      message: {
+        id: '807baed7-16ac-44b7-a9ca-1970984865fd',
+        senderUserId: null,
+        senderType: 'anonymous_manifestant' as const,
+        content: 'O atendimento foi concluído no mesmo dia e a equipe explicou todos os passos com clareza.',
+      },
+    },
+  ]
+
+  for (const manifestation of manifestationsSeedData) {
+    const { message, ...manifestationData } = manifestation
+
+    await prisma.manifestation.upsert({
+      where: { protocol: manifestationData.protocol },
+      create: manifestationData,
+      update: {
+        type: manifestationData.type,
+        status: manifestationData.status,
+        campusId: manifestationData.campusId,
+        administrativeUnitId: manifestationData.administrativeUnitId,
+        description: manifestationData.description,
+        involvedPeople: manifestationData.involvedPeople,
+        authorUserId: manifestationData.authorUserId,
+        attendantUserId: manifestationData.attendantUserId,
+        forwardedToUnitId: manifestationData.forwardedToUnitId,
+        accessCodeHash: manifestationData.accessCodeHash,
+        createdAt: manifestationData.createdAt,
+        updatedAt: now,
+      },
+    })
+
+    await prisma.manifestationMessage.upsert({
+      where: { id: message.id },
+      create: {
+        id: message.id,
+        manifestationId: manifestationData.id,
+        senderUserId: message.senderUserId,
+        senderType: message.senderType,
+        content: message.content,
+        createdAt: manifestationData.createdAt,
+      },
+      update: {
+        manifestationId: manifestationData.id,
+        senderUserId: message.senderUserId,
+        senderType: message.senderType,
+        content: message.content,
+        createdAt: manifestationData.createdAt,
+      },
+    })
+  }
+
   console.warn(`Seeded development users (password: ${developmentPassword}):`)
   for (const user of usersSeedData) {
     console.warn(`  - ${user.role.padEnd(10)} ${user.email}`)
   }
   console.warn(`  - responsible for ${catalogSeedData.administrativeUnits.length} administrative units`)
+  console.warn(`Seeded ${manifestationsSeedData.length} demonstration manifestations`)
+  console.warn(`  - anonymous access code: ${anonymousAccessCode}`)
 }
 
 main()
