@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
 import { buildManifestationFormHref, getSearchParams, navigateTo, normalizeProtocol, routes } from '../../app/routes'
 import guaraMascot from '../../assets/guara-mascot.png'
@@ -15,7 +15,12 @@ import { SiteFooter } from '../../components/layout/site-footer'
 import { getManifestationStatusBadgeClassName } from '../../components/manifestations/manifestation-status-style'
 import { useAuth } from '../../hooks/use-auth'
 import { useGuaraChat } from '../../hooks/use-guara-chat'
-import { clearChatMessages, stashPendingDraft } from '../../infrastructure/guara-chat/guara-chat-storage'
+import {
+  clearChatMessages,
+  clearPendingDraft,
+  stashPendingDraft,
+} from '../../infrastructure/guara-chat/guara-chat-storage'
+import { getAuthToken } from '../../infrastructure/http/auth-token-storage'
 import { cx } from '../../utils/cx'
 
 interface DetailItem {
@@ -400,15 +405,37 @@ function ChatPanel({ capabilities, mode }: ChatPanelProps) {
   )
 }
 
-export function GuaraPage() {
-  useEffect(() => {
-    return () => {
-      clearChatMessages()
-    }
-  }, [])
+function isPageReload(): boolean {
+  try {
+    const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+    return entry?.type === 'reload'
+  } catch {
+    return false
+  }
+}
 
+function resetAnonymousChatOnFreshEntry(): void {
+  // Em computadores compartilhados, sair da tela do bot e voltar deve começar uma conversa nova.
+  // Um F5 (navigation type 'reload') preserva a conversa; chegar de qualquer outra forma a limpa.
+  // Vale só para usuários anônimos — quem está logado mantém o histórico.
+  if (isPageReload() || getAuthToken() !== null) {
+    return
+  }
+
+  clearChatMessages()
+  clearPendingDraft()
+}
+
+export function GuaraPage() {
   const { mode, protocol } = resolveMode()
   const { isAuthenticated, user } = useAuth()
+
+  // Roda uma vez, antes de o ChatPanel ler a conversa do storage.
+  const didResetChatRef = useRef<true | null>(null)
+  if (didResetChatRef.current === null) {
+    didResetChatRef.current = true
+    resetAnonymousChatOnFreshEntry()
+  }
   const copy = getPageCopy(mode, protocol)
   const capabilities = getGuaraChatCapabilities(user)
   const banner = getRoleBannerMessage(capabilities, isAuthenticated)
