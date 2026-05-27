@@ -1,5 +1,6 @@
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import type { AdministrativeUnitForwardingNotifier } from '#src/application/notifications/administrative-unit-forwarding-notifier.js'
 import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
@@ -30,6 +31,7 @@ describe('ForwardManifestationToUnitUseCase', () => {
   let manifestationAdministrationRepository: DeepMockProxy<ManifestationAdministrationRepository>
   let usersRepository: DeepMockProxy<UsersRepository>
   let catalogRepository: DeepMockProxy<CatalogRepository>
+  let administrativeUnitForwardingNotifier: DeepMockProxy<AdministrativeUnitForwardingNotifier>
   let sut: ForwardManifestationToUnitUseCase
 
   const buildRequester = (role: UserRole, id = 'ombudsman-1'): User =>
@@ -75,17 +77,21 @@ describe('ForwardManifestationToUnitUseCase', () => {
     manifestationAdministrationRepository = mockDeep<ManifestationAdministrationRepository>()
     usersRepository = mockDeep<UsersRepository>()
     catalogRepository = mockDeep<CatalogRepository>()
+    administrativeUnitForwardingNotifier = mockDeep<AdministrativeUnitForwardingNotifier>()
 
     mockReset(manifestationsRepository)
     mockReset(manifestationAdministrationRepository)
     mockReset(usersRepository)
     mockReset(catalogRepository)
+    mockReset(administrativeUnitForwardingNotifier)
 
     sut = new ForwardManifestationToUnitUseCase(
       manifestationsRepository,
       manifestationAdministrationRepository,
       usersRepository,
       catalogRepository,
+      undefined,
+      administrativeUnitForwardingNotifier,
     )
   })
 
@@ -118,6 +124,7 @@ describe('ForwardManifestationToUnitUseCase', () => {
         },
       ],
     ])
+    expect(administrativeUnitForwardingNotifier.notify.mock.calls).toStrictEqual([[manifestation, activeUnit]])
     expect(result.manifestation).toStrictEqual({
       id: 'manifestation-1',
       status: ManifestationStatus.AWAITING_UNIT,

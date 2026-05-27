@@ -52,6 +52,7 @@ export function makeForwardManifestationToUnitController(): ForwardManifestation
     infrastructure.usersRepository,
     infrastructure.catalogRepository,
     infrastructure.manifestationStatusNotifier,
+    infrastructure.administrativeUnitForwardingNotifier,
   )
   return new ForwardManifestationToUnitController(useCase, new ZodValidator(forwardToUnitSchema))
 }

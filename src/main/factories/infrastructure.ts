@@ -1,5 +1,6 @@
 import type { AiGateway } from '#src/application/ai/ai-gateway.js'
 import type { EmailSender } from '#src/application/email/email-sender.js'
+import { AdministrativeUnitForwardingEmailNotifier } from '#src/application/notifications/administrative-unit-forwarding-notifier.js'
 import { ManifestationStatusEmailNotifier } from '#src/application/notifications/manifestation-status-notifier.js'
 import { FakeAiGateway } from '#src/infra/ai/fake-ai-gateway.js'
 import { HttpAiGateway } from '#src/infra/ai/http-ai-gateway.js'
@@ -62,6 +63,10 @@ const manifestationAdministrationRepository = new PrismaManifestationAdministrat
 const manifestationInteractionsRepository = new PrismaManifestationInteractionsRepository(prisma)
 const manifestationEvaluationsRepository = new PrismaManifestationEvaluationsRepository(prisma)
 const manifestationStatusNotifier = new ManifestationStatusEmailNotifier(usersRepository, emailSender)
+const administrativeUnitForwardingNotifier = new AdministrativeUnitForwardingEmailNotifier(
+  administrativeUnitResponsiblesRepository,
+  emailSender,
+)
 const attachmentStorage =
   env.NODE_ENV === 'test'
     ? new InMemoryAttachmentStorage()
@@ -96,6 +101,7 @@ export const infrastructure = {
   manifestationInteractionsRepository,
   manifestationEvaluationsRepository,
   manifestationStatusNotifier,
+  administrativeUnitForwardingNotifier,
   attachmentStorage,
   aiGateway,
 }
