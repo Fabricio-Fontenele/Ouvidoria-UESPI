@@ -109,7 +109,14 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: 0.92,
-      suggestions: [],
+      suggestions: [
+        {
+          id: 'register-help',
+          label: 'Quero registrar algo',
+          message: 'Preciso de ajuda para registrar uma manifestação.',
+        },
+        { id: 'institutional-info', label: 'Dúvida institucional', message: 'Tenho uma dúvida sobre a Ouvidoria.' },
+      ],
     })
   })
 
@@ -179,7 +186,14 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: 0.61,
-      suggestions: [],
+      suggestions: [
+        {
+          id: 'register-help',
+          label: 'Quero registrar algo',
+          message: 'Preciso de ajuda para registrar uma manifestação.',
+        },
+        { id: 'institutional-info', label: 'Dúvida institucional', message: 'Tenho uma dúvida sobre a Ouvidoria.' },
+      ],
     })
   })
 
@@ -215,7 +229,14 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: [],
       confidence: 0.86,
-      suggestions: [],
+      suggestions: [
+        { id: 'confirm-open', label: 'Sim, quero abrir', message: 'Sim, pode abrir a manifestação.' },
+        {
+          id: 'refine-draft',
+          label: 'Ajustar informações',
+          message: 'Gostaria de ajustar algumas informações antes de abrir.',
+        },
+      ],
     })
   })
 
@@ -251,7 +272,14 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: ['campusId', 'description'],
       confidence: 0.7,
-      suggestions: [],
+      suggestions: [
+        {
+          id: 'provide-description',
+          label: 'Contar mais detalhes',
+          message: 'Vou contar mais detalhes sobre o que aconteceu.',
+        },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Quais informações preciso fornecer?' },
+      ],
     })
   })
 
@@ -287,7 +315,10 @@ describe('SendAiMessageUseCase', () => {
       },
       missingFields: ['administrativeUnitId'],
       confidence: 0.78,
-      suggestions: [],
+      suggestions: [
+        { id: 'fill-missing', label: 'Preencher informações', message: 'Quais informações ainda estão faltando?' },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Me explique melhor como funciona.' },
+      ],
     })
   })
 
@@ -317,7 +348,14 @@ describe('SendAiMessageUseCase', () => {
       draft: null,
       missingFields: [],
       confidence: null,
-      suggestions: [],
+      suggestions: [
+        {
+          id: 'register-help',
+          label: 'Quero registrar algo',
+          message: 'Preciso de ajuda para registrar uma manifestação.',
+        },
+        { id: 'institutional-info', label: 'Dúvida institucional', message: 'Tenho uma dúvida sobre a Ouvidoria.' },
+      ],
     })
   })
 
