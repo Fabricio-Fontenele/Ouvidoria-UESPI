@@ -1,10 +1,4 @@
-import type { GuaraChatMode, GuaraMessage } from './guara-chat-types'
-
-export interface GuaraChatSuggestion {
-  id: string
-  label: string
-  message: string
-}
+import type { GuaraChatMode, GuaraChatSuggestion, GuaraMessage } from './guara-chat-types'
 
 type GuaraChatContent = Record<
   GuaraChatMode,

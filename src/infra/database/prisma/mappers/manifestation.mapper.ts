@@ -14,6 +14,7 @@ import { UniqueEntityId } from '#src/domain/value-objects/unique-entity-id.js'
 
 export const manifestationMapper = {
   toDomain(raw: PrismaManifestation): Manifestation {
+    const forwardedToUnitId = raw.forwardedToUnitId
     return Manifestation.restore(
       {
         protocol: Protocol.create(raw.protocol),
@@ -25,7 +26,7 @@ export const manifestationMapper = {
         involvedPeople: raw.involvedPeople === null ? null : ManifestationInvolvedPeople.create(raw.involvedPeople),
         authorUserId: raw.authorUserId === null ? null : new UniqueEntityId(raw.authorUserId),
         attendantUserId: raw.attendantUserId === null ? null : new UniqueEntityId(raw.attendantUserId),
-        forwardedToUnitId: raw.forwardedToUnitId === null ? null : AdministrativeUnitId.create(raw.forwardedToUnitId),
+        forwardedToUnitId: forwardedToUnitId === null ? null : AdministrativeUnitId.create(forwardedToUnitId),
         accessCodeHash: raw.accessCodeHash,
         createdAt: raw.createdAt,
       },

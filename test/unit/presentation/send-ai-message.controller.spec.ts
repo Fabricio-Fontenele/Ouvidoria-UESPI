@@ -48,6 +48,7 @@ describe('SendAiMessageController', () => {
       draft: null,
       missingFields: ['type', 'campusId', 'administrativeUnitId', 'description'],
       confidence: 0.8,
+      suggestions: [],
     })
 
     const response = await sut.handle(baseRequest)
@@ -65,6 +66,7 @@ describe('SendAiMessageController', () => {
       draft: null,
       missingFields: [],
       confidence: 0.5,
+      suggestions: [],
     })
 
     const authenticatedRequest: HttpRequest = {

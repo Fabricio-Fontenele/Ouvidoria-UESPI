@@ -23,6 +23,7 @@ const AI_SERVICE_FALLBACK_RESPONSE: SendAiMessageOutput = {
   draft: null,
   missingFields: [],
   confidence: null,
+  suggestions: [],
 }
 
 export class SendAiMessageController extends BaseController {

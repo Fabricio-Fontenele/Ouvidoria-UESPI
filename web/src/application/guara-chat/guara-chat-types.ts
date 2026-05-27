@@ -44,6 +44,12 @@ export interface SendGuaraMessageInput {
   message: string
 }
 
+export interface GuaraChatSuggestion {
+  id: string
+  label: string
+  message: string
+}
+
 export interface SendGuaraMessageOutput {
   answer: string
   intent: GuaraChatIntent
@@ -51,4 +57,5 @@ export interface SendGuaraMessageOutput {
   draft: GuaraChatDraft | null
   missingFields: GuaraChatMissingField[]
   confidence: number | null
+  suggestions: GuaraChatSuggestion[]
 }

@@ -6,6 +6,7 @@ import {
   type AiChatDraft,
   type AiChatIntent,
   type AiChatResponse,
+  type AiChatSuggestion,
   type ManifestationType,
   type RequiredDraftField,
 } from '../dtos/ai-chat-response.js'
@@ -76,6 +77,8 @@ export class SendAiMessageUseCase {
       draft !== null &&
       missingFields.length === 0
 
+    const suggestions = this.sanitizeSuggestions(response.suggestions, response.intent, draft, missingFields, userRole)
+
     return {
       answer: response.answer.trim(),
       intent: response.intent,
@@ -83,6 +86,7 @@ export class SendAiMessageUseCase {
       shouldOpenManifestationDraft,
       draft,
       missingFields,
+      suggestions,
     }
   }
 
@@ -146,5 +150,82 @@ export class SendAiMessageUseCase {
       return [...REQUIRED_DRAFT_FIELDS]
     }
     return REQUIRED_DRAFT_FIELDS.filter((field) => draft[field] === null)
+  }
+
+  private sanitizeSuggestions(
+    suggestions: AiChatSuggestion[],
+    intent: AiChatIntent,
+    draft: AiChatDraft | null,
+    missingFields: RequiredDraftField[],
+    userRole: AiChatUserRole,
+  ): AiChatSuggestion[] {
+    if (suggestions.length > 0) {
+      const seenLabels = new Set<string>()
+      const sanitized: AiChatSuggestion[] = []
+      for (const s of suggestions) {
+        const label = s.label.trim()
+        const message = s.message.trim()
+        if (label.length === 0 || message.length === 0) {
+          continue
+        }
+        const normalizedLabel = label.toLowerCase()
+        if (seenLabels.has(normalizedLabel)) {
+          continue
+        }
+        seenLabels.add(normalizedLabel)
+        sanitized.push({ id: s.id.trim(), label, message })
+      }
+      if (sanitized.length > 0) {
+        return sanitized.slice(0, 4)
+      }
+    }
+
+    return this.fallbackSuggestions(intent, draft, missingFields, userRole)
+  }
+
+  private fallbackSuggestions(
+    intent: AiChatIntent,
+    draft: AiChatDraft | null,
+    missingFields: RequiredDraftField[],
+    userRole: AiChatUserRole,
+  ): AiChatSuggestion[] {
+    const isAdminProfile = userRole === 'ombudsman' || userRole === 'admin'
+
+    if (intent === 'manifestation_draft_ready' && !isAdminProfile && draft !== null && missingFields.length === 0) {
+      return [
+        { id: 'confirm-open', label: 'Sim, quero abrir', message: 'Sim, pode abrir a manifestação.' },
+        {
+          id: 'refine-draft',
+          label: 'Ajustar informações',
+          message: 'Gostaria de ajustar algumas informações antes de abrir.',
+        },
+      ]
+    }
+
+    if (intent === 'manifestation_candidate' && !isAdminProfile && missingFields.length > 0) {
+      if (missingFields.includes('description')) {
+        return [
+          {
+            id: 'provide-description',
+            label: 'Contar mais detalhes',
+            message: 'Vou contar mais detalhes sobre o que aconteceu.',
+          },
+          { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Quais informações preciso fornecer?' },
+        ]
+      }
+      return [
+        { id: 'fill-missing', label: 'Preencher informações', message: 'Quais informações ainda estão faltando?' },
+        { id: 'doubt-process', label: 'Dúvida sobre o processo', message: 'Me explique melhor como funciona.' },
+      ]
+    }
+
+    return [
+      {
+        id: 'register-help',
+        label: 'Quero registrar algo',
+        message: 'Preciso de ajuda para registrar uma manifestação.',
+      },
+      { id: 'institutional-info', label: 'Dúvida institucional', message: 'Tenho uma dúvida sobre a Ouvidoria.' },
+    ]
   }
 }

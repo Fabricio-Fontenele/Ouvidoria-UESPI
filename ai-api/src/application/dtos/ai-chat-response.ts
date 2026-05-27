@@ -18,6 +18,12 @@ export const REQUIRED_DRAFT_FIELDS = ['type', 'campusId', 'administrativeUnitId'
 
 export type RequiredDraftField = (typeof REQUIRED_DRAFT_FIELDS)[number]
 
+export const aiSuggestionSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1).max(60),
+  message: z.string().min(1).max(200),
+})
+
 export const aiDraftSchema = z.object({
   type: z.enum(MANIFESTATION_TYPES).nullable(),
   campusId: z.string().min(1).nullable(),
@@ -33,9 +39,11 @@ export const aiChatResponseSchema = z.object({
   shouldOpenManifestationDraft: z.boolean(),
   draft: aiDraftSchema.nullable(),
   missingFields: z.array(z.enum(REQUIRED_DRAFT_FIELDS)),
+  suggestions: z.array(aiSuggestionSchema).max(4).default([]),
 })
 
 export type AiChatDraft = z.infer<typeof aiDraftSchema>
+export type AiChatSuggestion = z.infer<typeof aiSuggestionSchema>
 export type AiChatResponse = z.infer<typeof aiChatResponseSchema>
 
 export const NEUTRAL_FALLBACK_RESPONSE: AiChatResponse = {
@@ -46,4 +54,5 @@ export const NEUTRAL_FALLBACK_RESPONSE: AiChatResponse = {
   shouldOpenManifestationDraft: false,
   draft: null,
   missingFields: [],
+  suggestions: [],
 }

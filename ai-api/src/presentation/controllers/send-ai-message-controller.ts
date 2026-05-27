@@ -12,6 +12,7 @@ const RATE_LIMIT_FALLBACK_RESPONSE: AiChatResponse = {
   shouldOpenManifestationDraft: false,
   draft: null,
   missingFields: [],
+  suggestions: [],
 }
 
 function isRateLimitError(error: unknown): boolean {
