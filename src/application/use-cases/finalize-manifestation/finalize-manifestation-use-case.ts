@@ -1,3 +1,4 @@
+import type { ManifestationStatusNotifier } from '#src/application/notifications/manifestation-status-notifier.js'
 import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import { ManifestationMessageSenderType } from '#src/domain/entities/manifestation-message.js'
@@ -32,6 +33,7 @@ export class FinalizeManifestationUseCase implements UseCase<FinalizeManifestati
   constructor(
     private readonly manifestationsRepository: ManifestationsRepository,
     private readonly manifestationAdministrationRepository: ManifestationAdministrationRepository,
+    private readonly manifestationStatusNotifier?: ManifestationStatusNotifier,
   ) {}
 
   async execute({ userId, manifestationId }: FinalizeManifestationInput): Promise<FinalizeManifestationOutput> {
@@ -56,6 +58,10 @@ export class FinalizeManifestationUseCase implements UseCase<FinalizeManifestati
       fromStatus: previousStatus,
       toStatus: manifestation.status,
     })
+
+    if (previousStatus !== manifestation.status) {
+      await this.manifestationStatusNotifier?.notify(manifestation)
+    }
 
     return {
       manifestation: {

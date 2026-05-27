@@ -20,6 +20,11 @@ const passwordHashRounds = Number(process.env['PASSWORD_HASH_ROUNDS'] ?? '10')
 
 const usersSeedData = [
   {
+    email: 'ouvidoriaa.guara@gmail.com',
+    name: 'Guará Ouvidoria',
+    role: 'ombudsman' as const,
+  },
+  {
     email: 'ouvidor@uespi.br',
     name: 'Ouvidor de Demonstração',
     role: 'ombudsman' as const,
@@ -400,10 +405,31 @@ async function main(): Promise<void> {
     })
   }
 
+  const guaraOmbudsman = await prisma.user.findUniqueOrThrow({
+    where: { email: 'ouvidoriaa.guara@gmail.com' },
+  })
+
+  for (const administrativeUnit of catalogSeedData.administrativeUnits) {
+    await prisma.userAdministrativeUnit.upsert({
+      where: {
+        userId_administrativeUnitId: {
+          userId: guaraOmbudsman.id,
+          administrativeUnitId: administrativeUnit.id,
+        },
+      },
+      create: {
+        userId: guaraOmbudsman.id,
+        administrativeUnitId: administrativeUnit.id,
+      },
+      update: {},
+    })
+  }
+
   console.warn(`Seeded development users (password: ${developmentPassword}):`)
   for (const user of usersSeedData) {
     console.warn(`  - ${user.role.padEnd(10)} ${user.email}`)
   }
+  console.warn(`  - responsible for ${catalogSeedData.administrativeUnits.length} administrative units`)
 }
 
 main()

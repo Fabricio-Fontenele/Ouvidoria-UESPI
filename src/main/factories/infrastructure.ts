@@ -1,11 +1,14 @@
 import type { AiGateway } from '#src/application/ai/ai-gateway.js'
 import type { EmailSender } from '#src/application/email/email-sender.js'
+import { AdministrativeUnitForwardingEmailNotifier } from '#src/application/notifications/administrative-unit-forwarding-notifier.js'
+import { ManifestationStatusEmailNotifier } from '#src/application/notifications/manifestation-status-notifier.js'
 import { FakeAiGateway } from '#src/infra/ai/fake-ai-gateway.js'
 import { HttpAiGateway } from '#src/infra/ai/http-ai-gateway.js'
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
 import { BcryptjsHasher } from '#src/infra/cryptography/bcryptjs-hasher.js'
 import { CachedCatalogRepository } from '#src/infra/database/cached-catalog-repository.js'
 import { prisma } from '#src/infra/database/prisma/client.js'
+import { PrismaAdministrativeUnitResponsiblesRepository } from '#src/infra/database/prisma/repositories/prisma-administrative-unit-responsibles-repository.js'
 import { PrismaCatalogRepository } from '#src/infra/database/prisma/repositories/prisma-catalog-repository.js'
 import { PrismaManifestationAdministrationRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-administration-repository.js'
 import { PrismaManifestationAttachmentsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-attachments-repository.js'
@@ -53,11 +56,17 @@ const emailSender = makeEmailSender()
 
 const catalogRepository = new CachedCatalogRepository(new PrismaCatalogRepository(prisma), env.CATALOG_CACHE_TTL_MS)
 const usersRepository = new PrismaUsersRepository(prisma)
+const administrativeUnitResponsiblesRepository = new PrismaAdministrativeUnitResponsiblesRepository(prisma)
 const manifestationsRepository = new PrismaManifestationsRepository(prisma)
 const manifestationAttachmentsRepository = new PrismaManifestationAttachmentsRepository(prisma)
 const manifestationAdministrationRepository = new PrismaManifestationAdministrationRepository(prisma)
 const manifestationInteractionsRepository = new PrismaManifestationInteractionsRepository(prisma)
 const manifestationEvaluationsRepository = new PrismaManifestationEvaluationsRepository(prisma)
+const manifestationStatusNotifier = new ManifestationStatusEmailNotifier(usersRepository, emailSender)
+const administrativeUnitForwardingNotifier = new AdministrativeUnitForwardingEmailNotifier(
+  administrativeUnitResponsiblesRepository,
+  emailSender,
+)
 const attachmentStorage =
   env.NODE_ENV === 'test'
     ? new InMemoryAttachmentStorage()
@@ -85,11 +94,14 @@ export const infrastructure = {
   emailSender,
   catalogRepository,
   usersRepository,
+  administrativeUnitResponsiblesRepository,
   manifestationsRepository,
   manifestationAttachmentsRepository,
   manifestationAdministrationRepository,
   manifestationInteractionsRepository,
   manifestationEvaluationsRepository,
+  manifestationStatusNotifier,
+  administrativeUnitForwardingNotifier,
   attachmentStorage,
   aiGateway,
 }

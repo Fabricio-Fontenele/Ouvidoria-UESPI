@@ -71,6 +71,7 @@ model User {
   evaluationsAsAttendant         ManifestationEvaluation[] @relation("EvaluationAttendant")
   evaluationsAsAuthor            ManifestationEvaluation[] @relation("EvaluationAuthor")
   uploadedAttachments            ManifestationAttachment[]
+  responsibleAdministrativeUnits UserAdministrativeUnit[]
 
   @@index([role])
   @@index([emailVerifiedAt])
@@ -100,12 +101,28 @@ model AdministrativeUnit {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   campus      Campus   @relation(fields: [campusId], references: [id])
 
-  forwardedManifestations Manifestation[] @relation("ManifestationForwardedUnit")
+  forwardedManifestations Manifestation[]          @relation("ManifestationForwardedUnit")
+  responsibleUsers        UserAdministrativeUnit[]
 
   @@index([campusId])
   @@index([isActive])
   @@index([campusId, isActive])
   @@map("administrative_units")
+}
+
+model UserAdministrativeUnit {
+  userId               String @map("user_id") @db.Uuid
+  administrativeUnitId String @map("administrative_unit_id")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  administrativeUnit AdministrativeUnit @relation(fields: [administrativeUnitId], references: [id], onDelete: Cascade)
+
+  @@id([userId, administrativeUnitId])
+  @@index([administrativeUnitId])
+  @@index([userId])
+  @@map("user_administrative_units")
 }
 
 model Manifestation {

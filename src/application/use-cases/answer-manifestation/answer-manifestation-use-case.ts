@@ -1,4 +1,5 @@
 import type { ManifestationMessageDTO } from '#src/application/dto/manifestation-query-dtos.js'
+import type { ManifestationStatusNotifier } from '#src/application/notifications/manifestation-status-notifier.js'
 import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
 import type { UsersRepository } from '#src/application/repositories/users-repository.js'
@@ -26,6 +27,7 @@ export class AnswerManifestationUseCase implements UseCase<AnswerManifestationIn
     private readonly manifestationsRepository: ManifestationsRepository,
     private readonly manifestationAdministrationRepository: ManifestationAdministrationRepository,
     private readonly usersRepository: UsersRepository,
+    private readonly manifestationStatusNotifier?: ManifestationStatusNotifier,
   ) {}
 
   async execute({
@@ -69,6 +71,10 @@ export class AnswerManifestationUseCase implements UseCase<AnswerManifestationIn
         content: normalizedContent,
       }),
     })
+
+    if (previousStatus !== manifestation.status) {
+      await this.manifestationStatusNotifier?.notify(manifestation)
+    }
 
     return { message }
   }

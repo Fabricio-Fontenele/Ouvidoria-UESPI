@@ -1,3 +1,5 @@
+import type { AdministrativeUnitForwardingNotifier } from '#src/application/notifications/administrative-unit-forwarding-notifier.js'
+import type { ManifestationStatusNotifier } from '#src/application/notifications/manifestation-status-notifier.js'
 import type { CatalogRepository } from '#src/application/repositories/catalog-repository.js'
 import type { ManifestationAdministrationRepository } from '#src/application/repositories/manifestation-administration-repository.js'
 import type { ManifestationsRepository } from '#src/application/repositories/manifestations-repository.js'
@@ -37,6 +39,8 @@ export class ForwardManifestationToUnitUseCase implements UseCase<
     private readonly manifestationAdministrationRepository: ManifestationAdministrationRepository,
     private readonly usersRepository: UsersRepository,
     private readonly catalogRepository: CatalogRepository,
+    private readonly manifestationStatusNotifier?: ManifestationStatusNotifier,
+    private readonly administrativeUnitForwardingNotifier?: AdministrativeUnitForwardingNotifier,
   ) {}
 
   async execute({
@@ -86,6 +90,11 @@ export class ForwardManifestationToUnitUseCase implements UseCase<
       fromStatus: previousStatus,
       toStatus: manifestation.status,
     })
+
+    if (previousStatus !== manifestation.status) {
+      await this.manifestationStatusNotifier?.notify(manifestation)
+    }
+    await this.administrativeUnitForwardingNotifier?.notify(manifestation, targetUnit)
 
     return {
       manifestation: {

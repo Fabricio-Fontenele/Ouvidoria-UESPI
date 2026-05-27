@@ -96,6 +96,7 @@ export function makeFinalizeManifestationController(): FinalizeManifestationCont
   const useCase = new FinalizeManifestationUseCase(
     infrastructure.manifestationsRepository,
     infrastructure.manifestationAdministrationRepository,
+    infrastructure.manifestationStatusNotifier,
   )
   return new FinalizeManifestationController(useCase)
 }

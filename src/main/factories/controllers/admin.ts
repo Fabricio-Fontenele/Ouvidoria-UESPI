@@ -40,6 +40,7 @@ export function makeAnswerManifestationController(): AnswerManifestationControll
     infrastructure.manifestationsRepository,
     infrastructure.manifestationAdministrationRepository,
     infrastructure.usersRepository,
+    infrastructure.manifestationStatusNotifier,
   )
   return new AnswerManifestationController(useCase, new ZodValidator(answerSchema))
 }
@@ -50,6 +51,8 @@ export function makeForwardManifestationToUnitController(): ForwardManifestation
     infrastructure.manifestationAdministrationRepository,
     infrastructure.usersRepository,
     infrastructure.catalogRepository,
+    infrastructure.manifestationStatusNotifier,
+    infrastructure.administrativeUnitForwardingNotifier,
   )
   return new ForwardManifestationToUnitController(useCase, new ZodValidator(forwardToUnitSchema))
 }
@@ -59,6 +62,7 @@ export function makeUpdateManifestationStatusController(): UpdateManifestationSt
     infrastructure.manifestationAdministrationRepository,
     infrastructure.manifestationsRepository,
     infrastructure.usersRepository,
+    infrastructure.manifestationStatusNotifier,
   )
   return new UpdateManifestationStatusController(useCase, new ZodValidator(updateStatusSchema))
 }
@@ -68,6 +72,7 @@ export function makeCancelManifestationController(): CancelManifestationControll
     infrastructure.manifestationAdministrationRepository,
     infrastructure.manifestationsRepository,
     infrastructure.usersRepository,
+    infrastructure.manifestationStatusNotifier,
   )
   return new CancelManifestationController(useCase, new ZodValidator(cancelSchema))
 }
