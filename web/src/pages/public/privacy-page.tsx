@@ -12,7 +12,7 @@ interface PrivacyTopic {
 const privacyTopics: PrivacyTopic[] = [
   {
     description:
-      'Para registrar, acompanhar ou responder uma manifestação, o sistema pode solicitar nome, CPF, e-mail, telefone, vínculo com a UESPI, campus, unidade administrativa, relato da manifestação, anexos e dados de acesso. Em registros anônimos, são usados apenas os dados necessários para gerar o protocolo e o código de acompanhamento.',
+      'Para registrar, acompanhar ou responder uma manifestação, o sistema pode solicitar nome, e-mail, vínculo com a UESPI, campus, unidade administrativa, relato da manifestação, anexos e dados de acesso. Em registros anônimos, são usados apenas os dados necessários para gerar o protocolo e o código de acompanhamento.',
     icon: 'file-text',
     title: 'Dados coletados',
   },
@@ -33,6 +33,12 @@ const privacyTopics: PrivacyTopic[] = [
       'Os dados podem ser compartilhados com setores internos da UESPI ou órgãos competentes quando isso for necessário para apurar, responder ou cumprir uma obrigação legal. O compartilhamento é limitado à finalidade do atendimento e às regras aplicáveis de sigilo.',
     icon: 'share',
     title: 'Compartilhamento com terceiros',
+  },
+  {
+    description:
+      'O assistente virtual Guará usa inteligência artificial fornecida pelo Google. O texto que você escreve no chat é enviado a esse provedor — que pode tratar os dados fora do Brasil — para gerar respostas e montar rascunhos de manifestação. O provedor não usa esse conteúdo para treinar seus modelos, e não compartilhamos seu nome ou e-mail junto da conversa. Evite incluir dados sensíveis que não sejam necessários ao relato.',
+    icon: 'message-circle',
+    title: 'Assistente virtual com inteligência artificial',
   },
   {
     description:

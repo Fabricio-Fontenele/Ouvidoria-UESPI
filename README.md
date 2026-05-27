@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🦅 Ouvidoria UESPI
+# Ouvidoria UESPI
 
 ### Sistema de Ouvidoria Institucional da Universidade Estadual do Piauí
 
@@ -20,35 +20,35 @@ _Plataforma para registro, encaminhamento e acompanhamento de manifestações (d
 
 ---
 
-## 📑 Sumário
+## Sumário
 
-- [🦅 Ouvidoria UESPI](#-ouvidoria-uespi)
+- [Ouvidoria UESPI](#ouvidoria-uespi)
   - [Sistema de Ouvidoria Institucional da Universidade Estadual do Piauí](#sistema-de-ouvidoria-institucional-da-universidade-estadual-do-piauí)
-  - [📑 Sumário](#-sumário)
-  - [🎯 Sobre o projeto](#-sobre-o-projeto)
-  - [✨ Funcionalidades](#-funcionalidades)
-  - [🏛️ Arquitetura](#️-arquitetura)
+  - [Sumário](#sumário)
+  - [Sobre o projeto](#sobre-o-projeto)
+  - [Funcionalidades](#funcionalidades)
+  - [Arquitetura](#arquitetura)
     - [Backend — Clean Architecture](#backend--clean-architecture)
     - [Trilha de auditoria sem tabela de auditoria](#trilha-de-auditoria-sem-tabela-de-auditoria)
     - [Microserviço de IA (`ai-api`)](#microserviço-de-ia-ai-api)
-  - [🧰 Stack utilizada](#-stack-utilizada)
+  - [Stack utilizada](#stack-utilizada)
     - [Backend (`ouvidoria-backend-core`)](#backend-ouvidoria-backend-core)
     - [Microserviço de IA (`@ouvidoria/ai-api`)](#microserviço-de-ia-ouvidoriaai-api)
     - [Frontend (`web`)](#frontend-web)
-  - [🧩 Padrões de projeto](#-padrões-de-projeto)
-  - [📁 Estrutura de pastas](#-estrutura-de-pastas)
-  - [✅ Pré-requisitos](#-pré-requisitos)
-  - [🚀 Passo a passo de instalação e execução](#-passo-a-passo-de-instalação-e-execução)
+  - [Padrões de projeto](#padrões-de-projeto)
+  - [Estrutura de pastas](#estrutura-de-pastas)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Passo a passo de instalação e execução](#passo-a-passo-de-instalação-e-execução)
     - [A) Subir a stack completa via Docker](#a-subir-a-stack-completa-via-docker)
     - [B) Desenvolvimento local (hot-reload)](#b-desenvolvimento-local-hot-reload)
-  - [🔐 Variáveis de ambiente](#-variáveis-de-ambiente)
-  - [🛠️ Comandos úteis](#️-comandos-úteis)
-  - [🧪 Testes e qualidade](#-testes-e-qualidade)
-  - [📚 Vocabulário de domínio](#-vocabulário-de-domínio)
+  - [Variáveis de ambiente](#variáveis-de-ambiente)
+  - [Comandos úteis](#comandos-úteis)
+  - [Testes e qualidade](#testes-e-qualidade)
+  - [Vocabulário de domínio](#vocabulário-de-domínio)
 
 ---
 
-## 🎯 Sobre o projeto
+## Sobre o projeto
 
 A **Ouvidoria UESPI** é o canal oficial pelo qual a comunidade acadêmica e a sociedade comunicam demandas à universidade. Este repositório implementa a plataforma de ponta a ponta:
 
@@ -62,9 +62,9 @@ As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
-### 👤 Manifestante
+### Manifestante
 
 - **Cadastro e autenticação** — registro de conta, login com emissão de JWT (HS256) e consulta do próprio perfil (`/me`).
 - **Registro de manifestação** — abertura de denúncia, reclamação, sugestão ou elogio, com geração automática de **protocolo** e **código de acesso**.
@@ -74,12 +74,12 @@ As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn
 - **Mensagens** — troca de mensagens com a ouvidoria dentro de uma manifestação aberta.
 - **Encerramento e avaliação** — finalização da manifestação pelo autor e **avaliação** (nota + comentário) do atendimento.
 
-### 🔎 Acompanhamento anônimo (por protocolo)
+### Acompanhamento anônimo (por protocolo)
 
 - Consulta de manifestação por **protocolo + código de acesso**, sem login.
 - Visualização de detalhes, envio de mensagens e download de anexos — tudo autenticado pelo par protocolo/código.
 
-### 🛠️ Ouvidor / Administrador
+### Ouvidor / Administrador
 
 - **Painel de manifestações** — listagem com filtros e **métricas agregadas** (por status, tipo, período).
 - **Detalhes administrativos** — visão completa da manifestação, histórico e download de anexos.
@@ -87,12 +87,12 @@ As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn
 - **Encaminhamento** — direcionar a manifestação à **unidade administrativa** responsável.
 - **Controle de acesso por papel** — rotas protegidas por `requireRoles` (`ombudsman`, `admin`).
 
-### 🦅 Assistente virtual (Guará)
+### Assistente virtual (Guará)
 
 - **Chat orientado por RAG** — responde dúvidas institucionais com base em documentos oficiais (Gemini + pgVector no `ai-api`).
 - **Rascunho assistido** — detecta a intenção de manifestar e monta um **rascunho estruturado** (tipo, campus, unidade) para o usuário revisar antes de registrar.
 
-### 🗂️ Catálogo
+### Catálogo
 
 - Listagem pública de **campi** e **unidades administrativas** (com cache + TTL via `CachedCatalogRepository`) para alimentar formulários de registro e encaminhamento.
 
@@ -100,7 +100,7 @@ As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn
 
 <div align="center">
   
-  <h3> Equipe de Desenvolvimento</h3>
+  <h3>Equipe de Desenvolvimento</h3>
   <table>
     <tr>
       <td align="center">
@@ -108,33 +108,33 @@ As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn
           <img src="https://github.com/ericSilvaP.png" width="100px;" alt="Foto do Erick"/><br>
           <sub><b>Erick</b></sub>
         </a><br>
-        💻 FrontEnd
+        FrontEnd
       </td>
       <td align="center">
         <a href="https://github.com/Fabricio-Fontenele">
           <img src="https://github.com/Fabricio-Fontenele.png" width="100px;" alt="Foto do Fabricio"/><br>
           <sub><b>Fabricio Fontenele</b></sub>
         </a><br>
-        💻 BackEnd
+        BackEnd
       </td>
       <td align="center">
         <a href="https://github.com/gaboliveira-alt">
           <img src="https://github.com/gaboliveira-alt.png" width="100px;" alt="Foto do Gabriel"/><br>
           <sub><b>Gabriel</b></sub>
         </a><br>
-        💻 ChatBot
+        ChatBot
       </td>
       <td align="center">
         <a href="https://github.com/Kaua-cel">
           <img src="https://github.com/Kaua-cel.png" width="100px;" alt="Foto do Kauã"/><br>
           <sub><b>Kauã</b></sub>
         </a><br>
-        💻 FrontEnd
+        FrontEnd
       </td>
     </tr>
   </table>
 
-  <h3> Orientador</h3>
+  <h3>Orientador</h3>
   <table>
     <tr>
       <td align="center">
@@ -151,17 +151,17 @@ As regras de negócio são rastreáveis ao **PRD**, aos **casos de uso (Cockburn
 
 ---
 
-## 🏛️ Arquitetura
+## Arquitetura
 
 O sistema é dividido em **três aplicações** que se comunicam apenas por contratos bem definidos:
 
 ```mermaid
 flowchart TB
-    subgraph Front["🖥️  web — React 19 + Vite + Tailwind"]
+    subgraph Front["web — React 19 + Vite + Tailwind"]
         UI["Interface<br/>Manifestante · Ouvidor · Admin"]
     end
 
-    subgraph Back["⚙️  ouvidoria-backend-core — Fastify + Prisma"]
+    subgraph Back["ouvidoria-backend-core — Fastify + Prisma"]
         direction TB
         PRE["presentation<br/>controllers · validators"]
         APP["application<br/>use cases · contratos (ports)"]
@@ -174,7 +174,7 @@ flowchart TB
         MAIN --> PRE
     end
 
-    subgraph IA["🦅  ai-api — microserviço RAG"]
+    subgraph IA["ai-api — microserviço RAG"]
         RAG["LangChain v1 · Gemini · pgVector"]
     end
 
@@ -210,7 +210,7 @@ O **pipeline RAG**: documentos oficiais em `ai-api/docs/knowledge-base/` → _ch
 
 ---
 
-## 🧰 Stack utilizada
+## Stack utilizada
 
 ### Backend (`ouvidoria-backend-core`)
 
@@ -244,7 +244,7 @@ O **pipeline RAG**: documentos oficiais em `ai-api/docs/knowledge-base/` → _ch
 
 ---
 
-## 🧩 Padrões de projeto
+## Padrões de projeto
 
 | Padrão                                    | Onde aparece                                                                                                   |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -262,7 +262,7 @@ O **pipeline RAG**: documentos oficiais em `ai-api/docs/knowledge-base/` → _ch
 
 ---
 
-## 📁 Estrutura de pastas
+## Estrutura de pastas
 
 ```
 projeto-ouvidoria/
@@ -285,7 +285,7 @@ projeto-ouvidoria/
 
 ---
 
-## ✅ Pré-requisitos
+## Pré-requisitos
 
 - **Node.js 22** (`>=22 <23`)
 - **pnpm 10** (`npm i -g pnpm`)
@@ -294,7 +294,7 @@ projeto-ouvidoria/
 
 ---
 
-## 🚀 Passo a passo de instalação e execução
+## Passo a passo de instalação e execução
 
 > Há dois caminhos: **(A) tudo via Docker** (mais rápido para ver rodando) e **(B) desenvolvimento local** (hot-reload em cada serviço). Comece clonando o repositório.
 
@@ -314,7 +314,7 @@ cp ai-api/.env.sample ai-api/.env    # ai-api  (coloque sua GOOGLE_API_KEY aqui)
 # 2. Suba tudo (2 Postgres + ai-api + backend + web)
 docker compose up -d --build
 
-# 3. ⚠️ Ingerir a base de conhecimento do Guará (o índice começa VAZIO)
+# 3. Ingerir a base de conhecimento do Guará (o índice começa VAZIO)
 docker compose exec ai-api pnpm ingest:reset
 
 # 4. Verifique a saúde
@@ -344,11 +344,11 @@ pnpm dev                                     # backend -> :3333
 pnpm --filter web dev                        # web     -> :5173
 ```
 
-> 💡 O backend usa a flag `--env-file` do Node 22 para carregar o `.env` **antes** de qualquer `import`, evitando a corrida de carregamento do Prisma (`DATABASE_URL must be set...`).
+> O backend usa a flag `--env-file` do Node 22 para carregar o `.env` **antes** de qualquer `import`, evitando a corrida de carregamento do Prisma (`DATABASE_URL must be set...`).
 
 ---
 
-## 🔐 Variáveis de ambiente
+## Variáveis de ambiente
 
 **Backend (`.env`)** — destaques:
 
@@ -375,7 +375,7 @@ pnpm --filter web dev                        # web     -> :5173
 
 ---
 
-## 🛠️ Comandos úteis
+## Comandos úteis
 
 **Backend (raiz):**
 
@@ -406,7 +406,7 @@ pnpm --filter web build    # build de produção
 
 ---
 
-## 🧪 Testes e qualidade
+## Testes e qualidade
 
 - **Unitários** (`test/unit/`) espelham a árvore de produção; mock via `vitest-mock-extended` contra os **contratos** — sem banco/HTTP/cripto reais.
 - **E2E** (`test/e2e/`) rodam contra um Postgres real, cada spec em um schema isolado (`e2e_<uuid>`).
@@ -420,7 +420,7 @@ A tipagem é **estrita** (`exactOptionalPropertyTypes`, `noUncheckedIndexedAcces
 
 ---
 
-## 📚 Vocabulário de domínio
+## Vocabulário de domínio
 
 Termos canônicos — usados de forma consistente em todo o código (não use `ticket`, `issue` ou `chamado`):
 
@@ -433,7 +433,7 @@ Termos canônicos — usados de forma consistente em todo o código (não use `t
 
 <div align="center">
 
-Desenvolvido com 💚 por **Erick · Fabricio · Gabriel · Kauã** — orientação do Prof. **Dário Brito Calçada**
+Desenvolvido por **Erick · Fabricio · Gabriel · Kauã** — orientação do Prof. **Dário Brito Calçada**
 <br/>
 Universidade Estadual do Piauí — UESPI
 
