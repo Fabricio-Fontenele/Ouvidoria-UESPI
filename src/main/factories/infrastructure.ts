@@ -1,4 +1,5 @@
 import type { AiGateway } from '#src/application/ai/ai-gateway.js'
+import type { EmailSender } from '#src/application/email/email-sender.js'
 import { FakeAiGateway } from '#src/infra/ai/fake-ai-gateway.js'
 import { HttpAiGateway } from '#src/infra/ai/http-ai-gateway.js'
 import { JwtTokenGenerator } from '#src/infra/auth/jwt-token-generator.js'
@@ -12,6 +13,7 @@ import { PrismaManifestationEvaluationsRepository } from '#src/infra/database/pr
 import { PrismaManifestationInteractionsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-interactions-repository.js'
 import { PrismaManifestationsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestations-repository.js'
 import { PrismaUsersRepository } from '#src/infra/database/prisma/repositories/prisma-users-repository.js'
+import { BrevoEmailSender } from '#src/infra/email/brevo-email-sender.js'
 import { ConsoleEmailSender } from '#src/infra/email/console-email-sender.js'
 import { RandomAccessCodeGenerator } from '#src/infra/protocol/random-access-code-generator.js'
 import { RandomVerificationCodeGenerator } from '#src/infra/protocol/random-verification-code-generator.js'
@@ -30,7 +32,24 @@ const protocolGenerator = new UuidProtocolGenerator()
 const accessCodeGenerator = new RandomAccessCodeGenerator()
 const verificationCodeGenerator =
   env.NODE_ENV === 'test' ? { generate: async () => '123456' } : new RandomVerificationCodeGenerator()
-const emailSender = new ConsoleEmailSender()
+
+function makeEmailSender(): EmailSender {
+  if (env.EMAIL_PROVIDER !== 'brevo') {
+    return new ConsoleEmailSender()
+  }
+
+  if (env.BREVO_API_KEY === undefined || env.EMAIL_FROM === undefined) {
+    throw new Error('BREVO_API_KEY and EMAIL_FROM are required when EMAIL_PROVIDER=brevo')
+  }
+
+  return new BrevoEmailSender({
+    apiKey: env.BREVO_API_KEY,
+    fromEmail: env.EMAIL_FROM,
+    fromName: env.EMAIL_FROM_NAME,
+  })
+}
+
+const emailSender = makeEmailSender()
 
 const catalogRepository = new CachedCatalogRepository(new PrismaCatalogRepository(prisma), env.CATALOG_CACHE_TTL_MS)
 const usersRepository = new PrismaUsersRepository(prisma)
