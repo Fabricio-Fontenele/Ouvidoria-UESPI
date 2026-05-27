@@ -109,6 +109,7 @@ describe('Anonymous manifestation (e2e)', () => {
       manifestation: {
         protocol: string
         status: string
+        description: string
         messages: Array<{ senderUserId?: string }>
         attachments: Array<{ id: string; originalName: string }>
       }
@@ -126,13 +127,14 @@ describe('Anonymous manifestation (e2e)', () => {
         'status',
         'campusId',
         'administrativeUnitId',
+        'description',
         'forwardedToUnit',
         'createdAt',
         'messages',
         'attachments',
       ].sort(),
     )
-    expect('description' in details.manifestation).toBe(false)
+    expect(details.manifestation.description).toBe('Há ruído excessivo no setor administrativo.')
     expect('history' in details.manifestation).toBe(false)
     expect('authorUserId' in details.manifestation).toBe(false)
     expect(details.manifestation.messages.every((message) => !('senderUserId' in message))).toBe(true)

@@ -117,6 +117,7 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
         status: details.status,
         campusId: details.campusId,
         administrativeUnitId: details.administrativeUnitId,
+        description: details.description,
         forwardedToUnit: details.forwardedToUnit,
         createdAt: details.createdAt,
         // Internal sender user ids are dropped — only senderType is exposed to anonymous trackers.
@@ -144,6 +145,7 @@ describe('GetTrackedManifestationDetailsUseCase', () => {
         'status',
         'campusId',
         'administrativeUnitId',
+        'description',
         'forwardedToUnit',
         'createdAt',
         'messages',
