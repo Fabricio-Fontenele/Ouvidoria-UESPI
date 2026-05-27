@@ -123,23 +123,36 @@ describe('HttpAuthService', () => {
     expect(session.user).toStrictEqual(buildUserResponse().user)
   })
 
-  it('registers, signs in and returns the hydrated /me session', async () => {
+  it('registers without creating a session before email verification', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        buildJsonResponse({
+          emailVerificationRequired: true,
+          user: {
+            createdAt: '2026-05-25T12:00:00.000Z',
+            email: 'ana@example.com',
+            id: 'user-1',
+            name: 'Ana Souza',
+            role: 'manifestant',
+          },
+        }),
+      ),
+    )
+    const service = new HttpAuthService()
+
+    await service.signUp({ email: 'ana@example.com', name: 'Ana Souza', password: 'Senha1234' })
+
+    expect(getFetchCall(0)[0]).toBe(`${apiBaseUrl}/users`)
+    expect(vi.mocked(fetch).mock.calls).toHaveLength(1)
+  })
+
+  it('confirms email verification, persists the token and returns the hydrated /me session', async () => {
     const token = buildToken({ role: 'manifestant', sub: 'user-1' })
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce(
-          buildJsonResponse({
-            user: {
-              createdAt: '2026-05-25T12:00:00.000Z',
-              email: 'ana@example.com',
-              id: 'user-1',
-              name: 'Ana Souza',
-              role: 'manifestant',
-            },
-          }),
-        )
         .mockResolvedValueOnce(buildJsonResponse({ token }))
         .mockResolvedValueOnce(
           buildJsonResponse({
@@ -156,11 +169,10 @@ describe('HttpAuthService', () => {
     )
     const service = new HttpAuthService()
 
-    const session = await service.signUp({ email: 'ana@example.com', name: 'Ana Souza', password: 'Senha1234' })
+    const session = await service.confirmEmailVerification({ code: '123456', email: 'ana@example.com' })
 
-    expect(getFetchCall(0)[0]).toBe(`${apiBaseUrl}/users`)
-    expect(getFetchCall(1)[0]).toBe(`${apiBaseUrl}/sessions`)
-    expect(getFetchCall(2)[0]).toBe(`${apiBaseUrl}/me`)
+    expect(getFetchCall(0)[0]).toBe(`${apiBaseUrl}/email-verification/confirm`)
+    expect(getFetchCall(1)[0]).toBe(`${apiBaseUrl}/me`)
     expect(session.user.attendanceRating).toBeNull()
     expect(session.user.name).toBe('Ana Souza')
   })

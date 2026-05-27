@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
 
+import { EmailNotVerifiedError } from '#src/application/use-cases/signin/errors/email-not-verified-error.js'
 import { InvalidCredentialsError } from '#src/application/use-cases/signin/errors/invalid-credentials-error.js'
 import type { SignInUseCase } from '#src/application/use-cases/signin/sign-in-use-case.js'
 import { InvalidEmailError } from '#src/domain/value-objects/email.js'
@@ -59,6 +60,16 @@ describe('SignInController', () => {
 
     expect(response.statusCode).toBe(401)
     expect(response.body).toBeInstanceOf(InvalidCredentialsError)
+  })
+
+  it('maps EmailNotVerifiedError to 403', async () => {
+    validator.validate.mockReturnValue({ success: true, data: validBody })
+    useCase.execute.mockRejectedValue(new EmailNotVerifiedError())
+
+    const response = await sut.handle(baseRequest)
+
+    expect(response.statusCode).toBe(403)
+    expect(response.body).toBeInstanceOf(EmailNotVerifiedError)
   })
 
   it('maps InvalidEmailError to 400', async () => {

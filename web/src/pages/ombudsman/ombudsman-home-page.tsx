@@ -23,6 +23,7 @@ import type { OmbudsmanListFilters } from '../../application/ombudsman/ombudsman
 import type { PaginationMeta } from '../../application/pagination/pagination-contract'
 import { Icon } from '../../components/icons/icon'
 import type { IconName } from '../../components/icons/icon'
+import { DashboardStatusMessage } from '../../components/feedback/dashboard-status-message'
 import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../../components/manifestations/manifestation-status-style'
@@ -651,6 +652,7 @@ export function OmbudsmanHomePage() {
       <AuthenticatedAppShell allowedRoles={ombudsmanAreaRoles}>
         <div className="flex min-h-[calc(100svh-5.5rem)] flex-col md:min-h-[calc(100svh-6rem)]">
           <main className="mx-auto w-full max-w-6xl flex-1 px-5 pt-8 pb-12 min-[390px]:px-7 sm:px-8 md:pt-12 lg:px-12">
+            <DashboardStatusMessage />
             <header className="max-w-2xl">
               <h1 className="max-w-[440px] text-[42px] leading-[1.06] font-black text-home-text sm:text-6xl sm:leading-[1.08]">
                 Dashboard de Demandas

@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import type { AuthService } from '../application/auth/auth-service'
-import type { AuthSession, SignInCredentials, SignUpCredentials } from '../application/auth/auth-types'
+import type {
+  AuthSession,
+  EmailVerificationCredentials,
+  PasswordResetCodeCredentials,
+  ResetPasswordCredentials,
+  SignInCredentials,
+  SignUpCredentials,
+} from '../application/auth/auth-types'
 import { SignIn } from '../application/auth/sign-in'
 import { SignUp } from '../application/auth/sign-up'
 import { clearChatMessages, clearPendingDraft } from '../infrastructure/guara-chat/guara-chat-storage'
@@ -68,8 +75,7 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
       setIsLoading(true)
 
       try {
-        const nextSession = await signUpUseCase.execute(credentials)
-        setSession(nextSession)
+        await signUpUseCase.execute(credentials)
         return true
       } catch (signUpError) {
         setSession(null)
@@ -82,6 +88,99 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
     [signUpUseCase],
   )
 
+  const confirmEmailVerification = useCallback(
+    async (credentials: EmailVerificationCredentials) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        const nextSession = await service.confirmEmailVerification(credentials)
+        setSession(nextSession)
+        return true
+      } catch (confirmationError) {
+        setSession(null)
+        setError(resolveAuthError(confirmationError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [service],
+  )
+
+  const resendEmailVerificationCode = useCallback(
+    async (email: string) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        await service.resendEmailVerificationCode(email)
+        return true
+      } catch (resendError) {
+        setError(resolveAuthError(resendError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [service],
+  )
+
+  const requestPasswordReset = useCallback(
+    async (email: string) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        await service.requestPasswordReset(email)
+        return true
+      } catch (requestError) {
+        setError(resolveAuthError(requestError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [service],
+  )
+
+  const confirmPasswordResetCode = useCallback(
+    async (credentials: PasswordResetCodeCredentials) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        await service.confirmPasswordResetCode(credentials)
+        return true
+      } catch (confirmationError) {
+        setError(resolveAuthError(confirmationError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [service],
+  )
+
+  const resetPassword = useCallback(
+    async (credentials: ResetPasswordCredentials) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        const nextSession = await service.resetPassword(credentials)
+        setSession(nextSession)
+        return true
+      } catch (resetError) {
+        setError(resolveAuthError(resetError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [service],
+  )
+
   const signOut = useCallback(async () => {
     await service.signOut()
     clearChatMessages()
@@ -92,16 +191,33 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
 
   const value = useMemo(
     () => ({
+      confirmPasswordResetCode,
+      confirmEmailVerification,
       error,
       isAuthenticated: session !== null,
       isLoading,
+      requestPasswordReset,
+      resendEmailVerificationCode,
+      resetPassword,
       session,
       signIn,
       signUp,
       signOut,
       user: session?.user ?? null,
     }),
-    [error, isLoading, session, signIn, signUp, signOut],
+    [
+      confirmEmailVerification,
+      confirmPasswordResetCode,
+      error,
+      isLoading,
+      requestPasswordReset,
+      resendEmailVerificationCode,
+      resetPassword,
+      session,
+      signIn,
+      signUp,
+      signOut,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -17,6 +17,7 @@ import type { PaginationMeta } from '../../application/pagination/pagination-con
 import guaraMascot from '../../assets/guara-mascot.png'
 import guaraPoses from '../../assets/poses-guara.webp'
 import { Icon } from '../../components/icons/icon'
+import { DashboardStatusMessage } from '../../components/feedback/dashboard-status-message'
 import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../../components/manifestations/manifestation-status-style'
@@ -456,6 +457,7 @@ export function HomePage() {
     <div className="min-h-svh bg-home-surface font-sans text-home-text">
       <AuthenticatedAppShell allowedRoles={manifestantOnlyRoles}>
         <main className="mx-auto w-full max-w-6xl px-3 pt-8 min-[375px]:px-6 sm:px-8 md:pt-14 lg:px-12">
+          <DashboardStatusMessage />
           <section className="grid max-w-3xl gap-8 md:gap-10 lg:max-w-none">
             <div>
               <h1 className="max-w-[320px] text-[38px] leading-[0.98] font-black text-home-text min-[375px]:text-5xl sm:max-w-xl sm:text-6xl lg:text-7xl">

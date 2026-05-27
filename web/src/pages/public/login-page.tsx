@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 
-import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
+import { buildForgotPasswordHref, getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
 import type { AuthenticatedUserRole } from '../../application/auth/auth-types'
 import { getSignInFormDefaultValues, signInFormSchema } from '../../application/auth/sign-in-form-contract'
 import type { SignInFormData } from '../../application/auth/sign-in-form-contract'
@@ -52,6 +52,7 @@ function LoginPageBase({ allowedRoles, showSignUpLink, subtitle, unauthorizedMes
     reValidateMode: 'onSubmit',
     resolver: zodResolver(signInFormSchema),
   })
+  const emailValue = useWatch({ control: form.control, name: 'email' })
   const linkFocusClasses =
     'transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
 
@@ -82,6 +83,7 @@ function LoginPageBase({ allowedRoles, showSignUpLink, subtitle, unauthorizedMes
 
   const isAuthorizedAuthenticatedUser = isAuthenticated && user !== null && allowedRoles.includes(user.role)
   const statusMessage = authorizationError ?? error ?? undefined
+  const forgotPasswordHref = buildForgotPasswordHref(emailValue)
 
   if (isAuthorizedAuthenticatedUser) {
     return null
@@ -115,7 +117,7 @@ function LoginPageBase({ allowedRoles, showSignUpLink, subtitle, unauthorizedMes
       >
         <a
           className={cx('self-end text-sm leading-5 text-login-blue no-underline md:text-[15px]', linkFocusClasses)}
-          href="#recuperar-senha"
+          href={forgotPasswordHref}
         >
           Esqueci minha senha.
         </a>

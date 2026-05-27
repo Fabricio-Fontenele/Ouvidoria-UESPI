@@ -3,6 +3,9 @@ import type {
   AttendanceRatingSummary,
   AuthenticatedUserRole,
   AuthSession,
+  EmailVerificationCredentials,
+  PasswordResetCodeCredentials,
+  ResetPasswordCredentials,
   SignInCredentials,
   SignUpCredentials,
 } from '../../application/auth/auth-types'
@@ -132,16 +135,59 @@ export class HttpAuthService implements AuthService {
     return session
   }
 
-  async signUp(credentials: SignUpCredentials): Promise<AuthSession> {
+  async signUp(credentials: SignUpCredentials): Promise<void> {
     await apiFetch('/users', {
       auth: 'none',
       body: { email: credentials.email, name: credentials.name, password: credentials.password },
       method: 'POST',
     })
+  }
 
-    const sessionResponse = await apiFetch<SessionResponse>('/sessions', {
+  async confirmEmailVerification(credentials: EmailVerificationCredentials): Promise<AuthSession> {
+    const sessionResponse = await apiFetch<SessionResponse>('/email-verification/confirm', {
       auth: 'none',
-      body: { email: credentials.email, password: credentials.password },
+      body: { code: credentials.code, email: credentials.email },
+      method: 'POST',
+    })
+
+    setAuthToken(sessionResponse.token)
+    const session = await this.getSession()
+
+    if (session === null) {
+      throw new Error('Não foi possível carregar os dados do usuário autenticado.')
+    }
+
+    return session
+  }
+
+  async resendEmailVerificationCode(email: string): Promise<void> {
+    await apiFetch('/email-verification/codes', {
+      auth: 'none',
+      body: { email },
+      method: 'POST',
+    })
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    await apiFetch('/password-reset/codes', {
+      auth: 'none',
+      body: { email },
+      method: 'POST',
+    })
+  }
+
+  async confirmPasswordResetCode(credentials: PasswordResetCodeCredentials): Promise<void> {
+    await apiFetch('/password-reset/confirm', {
+      auth: 'none',
+      body: { code: credentials.code, email: credentials.email },
+      method: 'POST',
+    })
+  }
+
+  async resetPassword(credentials: ResetPasswordCredentials): Promise<AuthSession> {
+    const sessionResponse = await apiFetch<SessionResponse>('/password-reset', {
+      auth: 'none',
+      body: { code: credentials.code, email: credentials.email, password: credentials.password },
       method: 'POST',
     })
 

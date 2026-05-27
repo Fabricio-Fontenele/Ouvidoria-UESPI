@@ -59,6 +59,7 @@ async function assertSchemaIsolation(): Promise<void> {
       email: markerEmail,
       passwordHash,
       role: 'manifestant',
+      emailVerifiedAt: new Date(),
     },
   })
 

@@ -2,10 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import type { SubmitHandler, UseFormRegisterReturn } from 'react-hook-form'
 import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { getAuthenticatedHomeRoute, replaceWith, routes } from '../../app/routes'
+import { savePostAuthNotification } from '../../application/auth/post-auth-notification'
 import { getSignUpFormDefaultValues, signUpFormSchema } from '../../application/auth/sign-up-form-contract'
 import type { SignUpFormData } from '../../application/auth/sign-up-form-contract'
+import { AuthField } from '../../components/auth/auth-field'
 import { AuthForm, AuthFormMessage } from '../../components/auth/auth-form'
 import type { AuthFormField } from '../../components/auth/auth-form'
 import { AuthPageShell } from '../../components/layout/auth-page-shell'
@@ -46,6 +49,15 @@ const signUpFields: AuthFormField<SignUpFormData>[] = [
     placeholder: '••••••••',
   },
 ]
+
+const emailVerificationFormSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Informe o código de 6 dígitos.'),
+})
+
+type EmailVerificationFormData = z.infer<typeof emailVerificationFormSchema>
 
 function TermsCheckbox({ error, inputProps }: { error?: string; inputProps: UseFormRegisterReturn<'acceptedTerms'> }) {
   const linkFocusClasses =
@@ -95,13 +107,27 @@ function TermsCheckbox({ error, inputProps }: { error?: string; inputProps: UseF
 }
 
 export function SignPage() {
-  const { error: authError, isAuthenticated, signUp, user } = useAuth()
+  const {
+    confirmEmailVerification,
+    error: authError,
+    isAuthenticated,
+    resendEmailVerificationCode,
+    signUp,
+    user,
+  } = useAuth()
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const form = useForm<SignUpFormData>({
     defaultValues: getSignUpFormDefaultValues(),
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     resolver: zodResolver(signUpFormSchema),
+  })
+  const verificationForm = useForm<EmailVerificationFormData>({
+    defaultValues: { code: '' },
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
+    resolver: zodResolver(emailVerificationFormSchema),
   })
   const linkFocusClasses =
     'transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue'
@@ -126,8 +152,40 @@ export function SignPage() {
     })
 
     if (ok) {
-      setSuccessMessage('Conta criada com sucesso. Redirecionando...')
+      setPendingEmail(values.email.trim())
+      setSuccessMessage('Enviamos um código de verificação para seu email.')
+    }
+  }
+
+  const handleVerificationSubmit: SubmitHandler<EmailVerificationFormData> = async (values) => {
+    if (pendingEmail === null) {
+      return
+    }
+
+    setSuccessMessage(null)
+
+    const ok = await confirmEmailVerification({
+      code: values.code.trim(),
+      email: pendingEmail,
+    })
+
+    if (ok) {
+      savePostAuthNotification('email-verified')
+      setSuccessMessage('Email confirmado. Redirecionando...')
       window.location.assign(routes.home)
+    }
+  }
+
+  const handleResendVerificationCode = async () => {
+    if (pendingEmail === null) {
+      return
+    }
+
+    setSuccessMessage(null)
+    const ok = await resendEmailVerificationCode(pendingEmail)
+
+    if (ok) {
+      setSuccessMessage('Enviamos um novo código para seu email.')
     }
   }
 
@@ -154,20 +212,68 @@ export function SignPage() {
         Inicie seu diálogo com a Universidade de forma segura e transparente.
       </p>
 
-      <AuthForm
-        className="grid gap-y-[17px] md:grid-cols-2 md:gap-x-6 md:gap-y-5"
-        fields={signUpFields}
-        form={form}
-        onInvalid={() => setSuccessMessage(null)}
-        onSubmit={handleSubmit}
-        status={status}
-        statusMessage={statusMessage}
-        submitLabel="Cadastrar"
-      >
-        <div className="mt-[2px] md:col-span-2 md:mt-1">
-          <TermsCheckbox error={acceptedTermsError} inputProps={acceptedTermsInputProps} />
-        </div>
-      </AuthForm>
+      {pendingEmail === null ? (
+        <AuthForm
+          className="grid gap-y-[17px] md:grid-cols-2 md:gap-x-6 md:gap-y-5"
+          fields={signUpFields}
+          form={form}
+          onInvalid={() => setSuccessMessage(null)}
+          onSubmit={handleSubmit}
+          status={status}
+          statusMessage={statusMessage}
+          submitLabel="Cadastrar"
+        >
+          <div className="mt-[2px] md:col-span-2 md:mt-1">
+            <TermsCheckbox error={acceptedTermsError} inputProps={acceptedTermsInputProps} />
+          </div>
+        </AuthForm>
+      ) : (
+        <form
+          className="mx-auto grid max-w-[360px] gap-y-[17px]"
+          noValidate
+          onSubmit={verificationForm.handleSubmit(handleVerificationSubmit, () => setSuccessMessage(null))}
+        >
+          <AuthField
+            aria-describedby={verificationForm.formState.errors.code?.message === undefined ? undefined : 'code-error'}
+            aria-invalid={verificationForm.formState.errors.code?.message === undefined ? undefined : true}
+            autoComplete="one-time-code"
+            icon="lock"
+            id="auth-email-verification-code"
+            inputMode="numeric"
+            label="Código de verificação"
+            maxLength={6}
+            placeholder="000000"
+            required
+            type="text"
+            {...verificationForm.register('code')}
+          />
+          <AuthFormMessage id="code-error" variant="error">
+            {verificationForm.formState.errors.code?.message}
+          </AuthFormMessage>
+
+          <button
+            className="mt-2 inline-flex min-h-[48px] w-56 cursor-pointer items-center justify-center self-center justify-self-center rounded-lg bg-login-blue text-lg leading-7 font-bold text-login-on-blue transition duration-150 hover:opacity-85 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={verificationForm.formState.isSubmitting}
+            type="submit"
+          >
+            {verificationForm.formState.isSubmitting ? 'Verificando...' : 'Confirmar email'}
+          </button>
+
+          <button
+            className="justify-self-center rounded-sm text-sm leading-5 font-bold text-login-blue transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-login-blue"
+            onClick={() => void handleResendVerificationCode()}
+            type="button"
+          >
+            Reenviar código
+          </button>
+
+          {status !== null && statusMessage !== undefined ? (
+            <div className="text-center">
+              <AuthFormMessage variant={status}>{statusMessage}</AuthFormMessage>
+            </div>
+          ) : null}
+        </form>
+      )}
 
       <p className="mx-auto mt-[15px] w-[225px] text-center text-sm leading-5 text-login-brown sm:w-auto md:mt-5 md:text-[15px]">
         Já tem uma conta?{' '}

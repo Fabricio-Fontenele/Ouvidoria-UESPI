@@ -19,6 +19,10 @@ const envSchema = z
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
     SUPABASE_STORAGE_BUCKET: z.string().min(1, 'SUPABASE_STORAGE_BUCKET is required'),
     SUPABASE_SIGNED_URL_EXPIRES_IN_SECONDS: z.coerce.number().int().positive().default(300),
+    EMAIL_PROVIDER: z.enum(['console', 'brevo']).default('console'),
+    BREVO_API_KEY: z.string().min(1).optional(),
+    EMAIL_FROM: z.email().optional(),
+    EMAIL_FROM_NAME: z.string().min(1).default('Ouvidoria UESPI'),
     AI_GATEWAY_PROVIDER: z.enum(['fake', 'http']).default('fake'),
     AI_SERVICE_BASE_URL: z.url().optional(),
     AI_SERVICE_API_KEY: z.string().min(1).optional(),
@@ -31,6 +35,23 @@ const envSchema = z
       .default(5 * 60_000),
   })
   .superRefine((data, ctx) => {
+    if (data.EMAIL_PROVIDER === 'brevo') {
+      if (data.BREVO_API_KEY === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['BREVO_API_KEY'],
+          message: 'BREVO_API_KEY is required when EMAIL_PROVIDER=brevo',
+        })
+      }
+      if (data.EMAIL_FROM === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['EMAIL_FROM'],
+          message: 'EMAIL_FROM is required when EMAIL_PROVIDER=brevo',
+        })
+      }
+    }
+
     if (data.AI_GATEWAY_PROVIDER !== 'http') {
       return
     }

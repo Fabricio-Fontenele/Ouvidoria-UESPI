@@ -43,8 +43,10 @@ describe('RegisterUserController', () => {
         name: 'Ada Lovelace',
         email: 'ada@example.com',
         role: UserRole.MANIFESTANT,
+        emailVerifiedAt: null,
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
       },
+      emailVerificationRequired: true,
     })
 
     const response = await sut.handle(baseRequest)
