@@ -27,6 +27,11 @@ corepack enable >/dev/null 2>&1 || true
 pnpm install --frozen-lockfile
 
 echo "==> Backend: migrations + build + restart"
+# `pnpm install --frozen-lockfile` é no-op quando as deps não mudaram e, nesse caso,
+# NÃO re-roda o postinstall (`prisma generate`). Um deploy que muda só o schema ficaria
+# com o client desatualizado e quebraria em runtime (PrismaClientValidationError -> 500).
+# Por isso regeneramos o client explicitamente, sempre.
+pnpm prisma generate
 pnpm prisma migrate deploy
 pnpm build
 sudo systemctl restart "$BACKEND_SERVICE"
