@@ -3,6 +3,7 @@ import type {
   AttendanceRatingSummary,
   AuthenticatedUserRole,
   AuthSession,
+  EmailVerificationCredentials,
   SignInCredentials,
   SignUpCredentials,
 } from '../../application/auth/auth-types'
@@ -132,16 +133,18 @@ export class HttpAuthService implements AuthService {
     return session
   }
 
-  async signUp(credentials: SignUpCredentials): Promise<AuthSession> {
+  async signUp(credentials: SignUpCredentials): Promise<void> {
     await apiFetch('/users', {
       auth: 'none',
       body: { email: credentials.email, name: credentials.name, password: credentials.password },
       method: 'POST',
     })
+  }
 
-    const sessionResponse = await apiFetch<SessionResponse>('/sessions', {
+  async confirmEmailVerification(credentials: EmailVerificationCredentials): Promise<AuthSession> {
+    const sessionResponse = await apiFetch<SessionResponse>('/email-verification/confirm', {
       auth: 'none',
-      body: { email: credentials.email, password: credentials.password },
+      body: { code: credentials.code, email: credentials.email },
       method: 'POST',
     })
 
@@ -153,6 +156,14 @@ export class HttpAuthService implements AuthService {
     }
 
     return session
+  }
+
+  async resendEmailVerificationCode(email: string): Promise<void> {
+    await apiFetch('/email-verification/codes', {
+      auth: 'none',
+      body: { email },
+      method: 'POST',
+    })
   }
 
   async signOut(): Promise<void> {

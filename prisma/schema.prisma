@@ -53,21 +53,25 @@ enum ManifestationAttachmentUploadedByType {
 }
 
 model User {
-  id                     String                    @id @default(uuid()) @db.Uuid
-  name                   String
-  email                  String                    @unique
-  passwordHash           String                    @map("password_hash")
-  role                   UserRole
-  createdAt              DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt              DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  authoredManifestations Manifestation[]           @relation("ManifestationAuthor")
-  attendedManifestations Manifestation[]           @relation("ManifestationAttendant")
-  sentMessages           ManifestationMessage[]
-  evaluationsAsAttendant ManifestationEvaluation[] @relation("EvaluationAttendant")
-  evaluationsAsAuthor    ManifestationEvaluation[] @relation("EvaluationAuthor")
-  uploadedAttachments    ManifestationAttachment[]
+  id                             String                    @id @default(uuid()) @db.Uuid
+  name                           String
+  email                          String                    @unique
+  passwordHash                   String                    @map("password_hash")
+  role                           UserRole
+  emailVerifiedAt                DateTime?                 @map("email_verified_at") @db.Timestamptz(6)
+  emailVerificationCodeHash      String?                   @map("email_verification_code_hash")
+  emailVerificationCodeExpiresAt DateTime?                 @map("email_verification_code_expires_at") @db.Timestamptz(6)
+  createdAt                      DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                      DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  authoredManifestations         Manifestation[]           @relation("ManifestationAuthor")
+  attendedManifestations         Manifestation[]           @relation("ManifestationAttendant")
+  sentMessages                   ManifestationMessage[]
+  evaluationsAsAttendant         ManifestationEvaluation[] @relation("EvaluationAttendant")
+  evaluationsAsAuthor            ManifestationEvaluation[] @relation("EvaluationAuthor")
+  uploadedAttachments            ManifestationAttachment[]
 
   @@index([role])
+  @@index([emailVerifiedAt])
   @@map("users")
 }
 

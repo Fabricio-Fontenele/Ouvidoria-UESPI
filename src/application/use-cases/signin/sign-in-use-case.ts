@@ -4,6 +4,7 @@ import type { UsersRepository } from '#src/application/repositories/users-reposi
 import { Email } from '#src/domain/value-objects/email.js'
 
 import type { UseCase } from '../use-case.js'
+import { EmailNotVerifiedError } from './errors/email-not-verified-error.js'
 import { InvalidCredentialsError } from './errors/invalid-credentials-error.js'
 
 export interface SignInInput {
@@ -35,6 +36,10 @@ export class SignInUseCase implements UseCase<SignInInput, SignInOutput> {
 
     if (!isPasswordValid) {
       throw new InvalidCredentialsError()
+    }
+
+    if (!user.isEmailVerified) {
+      throw new EmailNotVerifiedError()
     }
 
     const token = await this.tokenGenerator.generate({

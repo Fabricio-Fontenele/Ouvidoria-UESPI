@@ -19,6 +19,11 @@ export interface AuthSession {
   user: AuthenticatedUser
 }
 
+export interface EmailVerificationCredentials {
+  code: string
+  email: string
+}
+
 export interface SignInCredentials {
   email: string
   password: string

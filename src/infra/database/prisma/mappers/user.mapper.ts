@@ -13,6 +13,9 @@ export const userMapper = {
         email: Email.create(raw.email),
         passwordHash: raw.passwordHash,
         role: raw.role as UserRole,
+        emailVerifiedAt: raw.emailVerifiedAt,
+        emailVerificationCodeHash: raw.emailVerificationCodeHash,
+        emailVerificationCodeExpiresAt: raw.emailVerificationCodeExpiresAt,
         createdAt: raw.createdAt,
       },
       new UniqueEntityId(raw.id),
@@ -25,6 +28,9 @@ export const userMapper = {
     email: string
     passwordHash: string
     role: PrismaUserRole
+    emailVerifiedAt: Date | null
+    emailVerificationCodeHash: string | null
+    emailVerificationCodeExpiresAt: Date | null
     createdAt: Date
   } {
     return {
@@ -33,6 +39,9 @@ export const userMapper = {
       email: user.email.getValue(),
       passwordHash: user.passwordHash,
       role: user.role,
+      emailVerifiedAt: user.emailVerifiedAt,
+      emailVerificationCodeHash: user.emailVerificationCodeHash,
+      emailVerificationCodeExpiresAt: user.emailVerificationCodeExpiresAt,
       createdAt: user.createdAt,
     }
   },

@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import type { AuthService } from '../application/auth/auth-service'
-import type { AuthSession, SignInCredentials, SignUpCredentials } from '../application/auth/auth-types'
+import type {
+  AuthSession,
+  EmailVerificationCredentials,
+  SignInCredentials,
+  SignUpCredentials,
+} from '../application/auth/auth-types'
 import { SignIn } from '../application/auth/sign-in'
 import { SignUp } from '../application/auth/sign-up'
 import { clearChatMessages, clearPendingDraft } from '../infrastructure/guara-chat/guara-chat-storage'
@@ -68,8 +73,7 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
       setIsLoading(true)
 
       try {
-        const nextSession = await signUpUseCase.execute(credentials)
-        setSession(nextSession)
+        await signUpUseCase.execute(credentials)
         return true
       } catch (signUpError) {
         setSession(null)
@@ -82,6 +86,44 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
     [signUpUseCase],
   )
 
+  const confirmEmailVerification = useCallback(
+    async (credentials: EmailVerificationCredentials) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        const nextSession = await service.confirmEmailVerification(credentials)
+        setSession(nextSession)
+        return true
+      } catch (confirmationError) {
+        setSession(null)
+        setError(resolveAuthError(confirmationError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [service],
+  )
+
+  const resendEmailVerificationCode = useCallback(
+    async (email: string) => {
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        await service.resendEmailVerificationCode(email)
+        return true
+      } catch (resendError) {
+        setError(resolveAuthError(resendError))
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [service],
+  )
+
   const signOut = useCallback(async () => {
     await service.signOut()
     clearChatMessages()
@@ -92,16 +134,18 @@ export function AuthProvider({ children, service }: { children: ReactNode; servi
 
   const value = useMemo(
     () => ({
+      confirmEmailVerification,
       error,
       isAuthenticated: session !== null,
       isLoading,
+      resendEmailVerificationCode,
       session,
       signIn,
       signUp,
       signOut,
       user: session?.user ?? null,
     }),
-    [error, isLoading, session, signIn, signUp, signOut],
+    [confirmEmailVerification, error, isLoading, resendEmailVerificationCode, session, signIn, signUp, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

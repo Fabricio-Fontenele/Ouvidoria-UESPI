@@ -12,7 +12,9 @@ import { PrismaManifestationEvaluationsRepository } from '#src/infra/database/pr
 import { PrismaManifestationInteractionsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestation-interactions-repository.js'
 import { PrismaManifestationsRepository } from '#src/infra/database/prisma/repositories/prisma-manifestations-repository.js'
 import { PrismaUsersRepository } from '#src/infra/database/prisma/repositories/prisma-users-repository.js'
+import { ConsoleEmailSender } from '#src/infra/email/console-email-sender.js'
 import { RandomAccessCodeGenerator } from '#src/infra/protocol/random-access-code-generator.js'
+import { RandomVerificationCodeGenerator } from '#src/infra/protocol/random-verification-code-generator.js'
 import { UuidProtocolGenerator } from '#src/infra/protocol/uuid-protocol-generator.js'
 import { InMemoryAttachmentStorage } from '#src/infra/storage/in-memory/in-memory-attachment-storage.js'
 import { SupabaseAttachmentStorage } from '#src/infra/storage/supabase/supabase-attachment-storage.js'
@@ -26,6 +28,9 @@ const tokenGenerator = new JwtTokenGenerator({
 })
 const protocolGenerator = new UuidProtocolGenerator()
 const accessCodeGenerator = new RandomAccessCodeGenerator()
+const verificationCodeGenerator =
+  env.NODE_ENV === 'test' ? { generate: async () => '123456' } : new RandomVerificationCodeGenerator()
+const emailSender = new ConsoleEmailSender()
 
 const catalogRepository = new CachedCatalogRepository(new PrismaCatalogRepository(prisma), env.CATALOG_CACHE_TTL_MS)
 const usersRepository = new PrismaUsersRepository(prisma)
@@ -57,6 +62,8 @@ export const infrastructure = {
   tokenGenerator,
   protocolGenerator,
   accessCodeGenerator,
+  verificationCodeGenerator,
+  emailSender,
   catalogRepository,
   usersRepository,
   manifestationsRepository,
