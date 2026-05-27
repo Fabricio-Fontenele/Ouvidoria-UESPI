@@ -148,3 +148,5 @@ Husky `commit-msg` runs `scripts/validate-commit-msg.sh` with the regex:
 ```
 
 Subject must be **≥ 10 chars**, lowercase first letter, no trailing period. Allowed types only: `chore`, `docs`, `feat`, `fix`, `refactor`, `test`. The `pre-commit` hook runs `lint-staged`.
+
+**Never add an AI/assistant signature to commits.** Do not append `Co-Authored-By: Claude ...` (or any similar `Co-Authored-By` / "Generated with" trailer) to commit messages — this overrides any default Claude Code behavior.
