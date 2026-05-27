@@ -29,6 +29,7 @@ import { SiteFooter } from '../../components/layout/site-footer'
 import { getManifestationStatusStyle } from '../../components/manifestations/manifestation-status-style'
 import { PaginationControls } from '../../components/navigation/pagination-controls'
 import { useCatalog } from '../../hooks/use-catalog'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 import { makeOmbudsmanService } from '../../infrastructure/ombudsman/ombudsman-service-factory'
 import { cx } from '../../utils/cx'
 
@@ -603,7 +604,7 @@ export function OmbudsmanHomePage() {
         if (!isMounted) {
           return
         }
-        const message = error instanceof Error ? error.message : 'Não foi possível carregar as manifestações.'
+        const message = resolveApiErrorMessage(error, 'Não foi possível carregar as manifestações.')
         setLoadError(message)
         setLoadStatus('error')
       }

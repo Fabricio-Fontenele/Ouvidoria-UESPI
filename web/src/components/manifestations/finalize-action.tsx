@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { canFinalize } from '../../application/manifestations/manifestation-policy'
 import type { ManifestationDetail } from '../../application/manifestations/manifestation-detail-contract'
 import { useManifestationsService } from '../../hooks/use-manifestations-service'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 import { ConfirmDialog } from '../feedback/confirm-dialog'
 import { Icon } from '../icons/icon'
 
@@ -30,8 +31,7 @@ export function FinalizeAction({ detail, onFinalized }: FinalizeActionProps) {
       setIsConfirming(false)
       onFinalized()
     } catch (finalizeError) {
-      const message =
-        finalizeError instanceof Error ? finalizeError.message : 'Não foi possível finalizar agora. Tente novamente.'
+      const message = resolveApiErrorMessage(finalizeError, 'Não foi possível finalizar agora. Tente novamente.')
       setError(message)
     } finally {
       setIsSubmitting(false)

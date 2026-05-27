@@ -3,15 +3,12 @@ import type { ReactNode } from 'react'
 
 import type { CatalogService } from '../application/catalog/catalog-service'
 import type { Catalog } from '../application/catalog/catalog-types'
+import { resolveApiErrorMessage } from '../infrastructure/http/resolve-api-error-message'
 import { CatalogContext } from './catalog-context'
 import type { CatalogStatus } from './catalog-context'
 
 function resolveCatalogError(error: unknown) {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return 'Não foi possível carregar o catálogo institucional.'
+  return resolveApiErrorMessage(error, 'Não foi possível carregar o catálogo institucional.')
 }
 
 export function CatalogProvider({ children, service }: { children: ReactNode; service: CatalogService }) {

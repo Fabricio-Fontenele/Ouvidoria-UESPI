@@ -8,6 +8,7 @@ import { Icon } from '../../components/icons/icon'
 import { AuthenticatedAppShell } from '../../components/layout/authenticated-app-shell'
 import { SiteFooter } from '../../components/layout/site-footer'
 import { useManifestationsService } from '../../hooks/use-manifestations-service'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 import { cx } from '../../utils/cx'
 
 type DetailStatus = 'loading' | 'ready' | 'error'
@@ -138,7 +139,7 @@ export function EvaluationPage() {
         if (!isMounted) {
           return
         }
-        const message = loadError instanceof Error ? loadError.message : 'Não foi possível carregar esta manifestação.'
+        const message = resolveApiErrorMessage(loadError, 'Não foi possível carregar esta manifestação.')
         setDetailError(message)
         setDetailStatus('error')
       }
@@ -210,10 +211,10 @@ export function EvaluationPage() {
       })
       navigateTo(buildManifestationDetailsHref(detail.id))
     } catch (evaluationError) {
-      const message =
-        evaluationError instanceof Error
-          ? evaluationError.message
-          : 'Não foi possível registrar a avaliação. Tente novamente.'
+      const message = resolveApiErrorMessage(
+        evaluationError,
+        'Não foi possível registrar a avaliação. Tente novamente.',
+      )
       setSubmitError(message)
       setSubmitStatus('error')
     }

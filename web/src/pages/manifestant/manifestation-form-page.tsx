@@ -35,6 +35,7 @@ import { ManifestationSubmissionSuccess } from '../../components/manifestations/
 import { useAuth } from '../../hooks/use-auth'
 import { useCatalog } from '../../hooks/use-catalog'
 import { useManifestationsService } from '../../hooks/use-manifestations-service'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 import { consumePendingDraft } from '../../infrastructure/guara-chat/guara-chat-storage'
 import { cx } from '../../utils/cx'
 
@@ -336,10 +337,10 @@ export function ManifestationFormPage() {
           }
         }
       } catch (uploadError) {
-        uploadWarning =
-          uploadError instanceof Error
-            ? `A manifestação foi registrada, mas nem todos os anexos foram enviados: ${uploadError.message}`
-            : 'A manifestação foi registrada, mas nem todos os anexos foram enviados.'
+        uploadWarning = `A manifestação foi registrada, mas nem todos os anexos foram enviados. ${resolveApiErrorMessage(
+          uploadError,
+          'Tente reenviá-los na tela da manifestação.',
+        )}`
       }
 
       setSubmittedManifestation({
@@ -349,10 +350,10 @@ export function ManifestationFormPage() {
         uploadWarning,
       })
     } catch (creationError) {
-      const message =
-        creationError instanceof Error
-          ? creationError.message
-          : 'Não foi possível registrar a manifestação. Tente novamente.'
+      const message = resolveApiErrorMessage(
+        creationError,
+        'Não foi possível registrar a manifestação. Tente novamente.',
+      )
       setSubmissionError(message)
     }
   }

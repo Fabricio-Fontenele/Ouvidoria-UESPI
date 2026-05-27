@@ -24,6 +24,7 @@ import { getManifestationStatusStyle } from '../../components/manifestations/man
 import { PaginationControls } from '../../components/navigation/pagination-controls'
 import { useCatalog } from '../../hooks/use-catalog'
 import { useManifestationsService } from '../../hooks/use-manifestations-service'
+import { resolveApiErrorMessage } from '../../infrastructure/http/resolve-api-error-message'
 import { cx } from '../../utils/cx'
 import { formatBrDate } from '../../utils/format-date'
 
@@ -412,7 +413,7 @@ export function HomePage() {
           return
         }
 
-        const message = loadError instanceof Error ? loadError.message : 'Não foi possível carregar suas manifestações.'
+        const message = resolveApiErrorMessage(loadError, 'Não foi possível carregar suas manifestações.')
         setListError(message)
         setListStatus('error')
       }
