@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { buildManifestationFormHref, getSearchParams, navigateTo, normalizeProtocol, routes } from '../../app/routes'
 import guaraMascot from '../../assets/guara-mascot.png'
@@ -15,7 +15,7 @@ import { SiteFooter } from '../../components/layout/site-footer'
 import { getManifestationStatusBadgeClassName } from '../../components/manifestations/manifestation-status-style'
 import { useAuth } from '../../hooks/use-auth'
 import { useGuaraChat } from '../../hooks/use-guara-chat'
-import { stashPendingDraft } from '../../infrastructure/guara-chat/guara-chat-storage'
+import { clearChatMessages, stashPendingDraft } from '../../infrastructure/guara-chat/guara-chat-storage'
 import { cx } from '../../utils/cx'
 
 interface DetailItem {
@@ -401,6 +401,12 @@ function ChatPanel({ capabilities, mode }: ChatPanelProps) {
 }
 
 export function GuaraPage() {
+  useEffect(() => {
+    return () => {
+      clearChatMessages()
+    }
+  }, [])
+
   const { mode, protocol } = resolveMode()
   const { isAuthenticated, user } = useAuth()
   const copy = getPageCopy(mode, protocol)
