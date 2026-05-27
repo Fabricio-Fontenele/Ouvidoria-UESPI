@@ -54,9 +54,11 @@ sudo chmod 440 /etc/sudoers.d/ouvidoria-deploy
 
 - Repositório clonado em `~/projects/Ouvidoria-UESPI` (caminho usado pelo workflow).
 - `.env` (raiz) e `ai-api/.env` presentes, `chmod 600`, com os segredos de produção.
-  O `.env` da raiz precisa conter `VITE_API_BASE_URL` (origem pública da API; em
-  prod, o mesmo domínio do site) — o `deploy.sh` embute esse valor no bundle do
-  front em build time e **aborta** se faltar.
+  O `.env` da raiz precisa conter `CORS_ORIGIN` e `VITE_API_BASE_URL` com a
+  origem pública da aplicação (em prod, o mesmo domínio do site) — o backend
+  agora aborta em `NODE_ENV=production` se `CORS_ORIGIN` faltar, e o
+  `deploy.sh` embute `VITE_API_BASE_URL` no bundle do front em build time e
+  **aborta** se faltar.
 - O proxy reverso (Caddy) precisa rotear **todas** as rotas de topo da API para
   `127.0.0.1:3333`: `/health /ready /catalog /me /sessions /users
 /email-verification/* /password-reset* /manifestations* /admin/* /ai/*`

@@ -27,12 +27,33 @@ import {
   makeUploadManifestationAttachmentController,
 } from '../factories/controllers/manifestation.js'
 
+const anonymousAccessRateLimit = {
+  config: {
+    rateLimit: { max: 10, timeWindow: '1 minute' },
+  },
+} as const
+
+const publicWriteRateLimit = {
+  config: {
+    rateLimit: { max: 20, timeWindow: '10 minutes' },
+  },
+} as const
+
 export async function registerManifestationRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/manifestations/track', adaptRoute(makeTrackManifestationByProtocolController()))
-  app.post('/manifestations/track/details', adaptRoute(makeGetTrackedManifestationDetailsController()))
-  app.post('/manifestations/track/messages', adaptRoute(makeAddTrackedManifestationMessageController()))
+  app.post('/manifestations/track', anonymousAccessRateLimit, adaptRoute(makeTrackManifestationByProtocolController()))
+  app.post(
+    '/manifestations/track/details',
+    anonymousAccessRateLimit,
+    adaptRoute(makeGetTrackedManifestationDetailsController()),
+  )
+  app.post(
+    '/manifestations/track/messages',
+    publicWriteRateLimit,
+    adaptRoute(makeAddTrackedManifestationMessageController()),
+  )
   app.post(
     '/manifestations/track/attachments',
+    publicWriteRateLimit,
     adaptMultipartRoute(makeUploadAnonymousManifestationAttachmentController(), {
       expectedFieldNames: ['protocol', 'accessCode'],
       multipartOptions: {
@@ -52,10 +73,15 @@ export async function registerManifestationRoutes(app: FastifyInstance): Promise
   )
   app.post(
     '/manifestations/track/attachments/:attachmentId/download-url',
+    anonymousAccessRateLimit,
     adaptRoute(makeGetTrackedManifestationAttachmentDownloadUrlController()),
   )
 
-  app.post('/manifestations', { preHandler: optionalAuthenticate }, adaptRoute(makeRegisterManifestationController()))
+  app.post(
+    '/manifestations',
+    { preHandler: optionalAuthenticate, ...publicWriteRateLimit },
+    adaptRoute(makeRegisterManifestationController()),
+  )
 
   const authenticatedManifestant: ReadonlyArray<typeof ensureAuthenticated> = [
     ensureAuthenticated,

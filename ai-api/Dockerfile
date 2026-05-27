@@ -14,6 +14,8 @@ COPY ai-api ./ai-api
 
 WORKDIR /app/ai-api
 
+RUN pnpm build
+
 EXPOSE 4000
 
-CMD ["pnpm", "dev"]
+CMD ["pnpm", "start"]
