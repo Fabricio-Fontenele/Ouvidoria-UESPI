@@ -55,15 +55,23 @@ function NotFoundCard({ description, title }: { description: string; title: stri
 
 function DescriptionCard({ detail }: { detail: ManifestationDetail }) {
   return (
-    <section aria-labelledby="manifestation-description-title">
+    <section
+      aria-labelledby="manifestation-description-title"
+      className="rounded-[32px] border border-login-brown/10 bg-home-surface p-5 shadow-login-frame sm:p-6"
+    >
       <h2 className="text-lg font-black text-home-text" id="manifestation-description-title">
         Descrição da manifestação
       </h2>
-      <p className="mt-3 text-base leading-7 break-words whitespace-pre-line text-home-text">{detail.description}</p>
+      <p className="mt-3 rounded-[24px] border border-login-brown/10 bg-white p-4 text-base leading-7 break-words whitespace-pre-line text-home-text shadow-sm">
+        {detail.description}
+      </p>
       {detail.involvedPeople !== null && detail.involvedPeople.length > 0 ? (
-        <div className="mt-4 rounded-xl bg-home-action/40 p-3">
-          <p className="text-[11px] font-bold tracking-[0.14em] text-home-brown/70 uppercase">Pessoas envolvidas</p>
-          <p className="mt-1 text-sm leading-6 break-words text-home-text">{detail.involvedPeople}</p>
+        <div className="mt-4 rounded-[24px] border border-home-chip bg-home-action/40 p-4">
+          <p className="flex items-center gap-2 text-xs font-black tracking-[0.14em] text-home-brown uppercase">
+            <Icon className="size-4 text-home-blue" name="user" />
+            Pessoas envolvidas
+          </p>
+          <p className="mt-2 text-base leading-7 break-words text-home-text">{detail.involvedPeople}</p>
         </div>
       ) : null}
     </section>
@@ -190,7 +198,13 @@ function ForwardAction({
 }) {
   const inputId = useId()
   const listboxId = useId()
-  const [administrativeUnitId, setAdministrativeUnitId] = useState('')
+  // Default the forward target to the sector already on the manifestation (the one the manifestant
+  // chose, or the unit it was last forwarded to) so the ombudsman can forward in a single click and
+  // only needs the search when actually changing it.
+  const defaultUnitId = detail.forwardedToUnit?.id ?? detail.administrativeUnitId
+  const [selectedUnitId, setSelectedUnitId] = useState(defaultUnitId)
+  const [syncedDefaultUnitId, setSyncedDefaultUnitId] = useState(defaultUnitId)
+  const [isChanging, setIsChanging] = useState(false)
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -210,6 +224,15 @@ function ForwardAction({
     }
   }, [])
 
+  // Resync the selection to the default whenever the detail reloads (e.g. after forwarding). This
+  // render-time reset is the recommended pattern over a syncing effect.
+  if (defaultUnitId !== syncedDefaultUnitId) {
+    setSyncedDefaultUnitId(defaultUnitId)
+    setSelectedUnitId(defaultUnitId)
+    setIsChanging(false)
+    setQuery('')
+  }
+
   if (!canForward(detail)) {
     return null
   }
@@ -227,18 +250,37 @@ function ForwardAction({
   const matches =
     normalizedQuery === '' ? options : options.filter((option) => option.searchText.includes(normalizedQuery))
   const hasCatalog = options.length > 0
+  const selectedOption = options.find((option) => option.id === selectedUnitId) ?? null
+  const isDefaultTarget = selectedUnitId === defaultUnitId
 
   function selectOption(option: SectorOption) {
-    setAdministrativeUnitId(option.id)
-    setQuery(`${option.label} — ${option.campusLabel}`)
+    setSelectedUnitId(option.id)
+    setQuery('')
     setIsOpen(false)
+    setIsChanging(false)
     setError(null)
+  }
+
+  function toggleChanging() {
+    setError(null)
+    if (isChanging) {
+      // Cancelling a change restores the default target so the forward button stays ready.
+      setSelectedUnitId(defaultUnitId)
+      setQuery('')
+      setIsOpen(false)
+      setIsChanging(false)
+      return
+    }
+
+    setQuery('')
+    setIsChanging(true)
+    setIsOpen(true)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (administrativeUnitId === '') {
+    if (selectedUnitId === '') {
       setError('Selecione o setor responsável para encaminhar.')
       return
     }
@@ -247,8 +289,8 @@ function ForwardAction({
     setIsSubmitting(true)
 
     try {
-      await ombudsmanService.forwardToUnit({ administrativeUnitId, manifestationId: detail.id })
-      setAdministrativeUnitId('')
+      await ombudsmanService.forwardToUnit({ administrativeUnitId: selectedUnitId, manifestationId: detail.id })
+      setIsChanging(false)
       setQuery('')
       onForwarded()
     } catch (forwardError) {
@@ -273,61 +315,92 @@ function ForwardAction({
 
       <form className="mt-3 grid gap-3" onSubmit={(event) => void handleSubmit(event)}>
         <div className="grid gap-2" ref={containerRef}>
-          <label className="text-sm font-bold text-home-text" htmlFor={inputId}>
-            Setor responsável
-          </label>
-          <div className="relative">
-            <input
-              aria-autocomplete="list"
-              aria-controls={listboxId}
-              aria-expanded={isOpen}
-              autoComplete="off"
-              className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-home-action/35 px-4 text-sm leading-6 text-home-text outline-none placeholder:text-home-brown/70 focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={isSubmitting || !hasCatalog}
-              id={inputId}
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setAdministrativeUnitId('')
-                setIsOpen(true)
-                setError(null)
-              }}
-              onFocus={() => setIsOpen(true)}
-              placeholder="Digite para buscar o setor (nome, campus ou cidade)..."
-              role="combobox"
-              type="text"
-              value={query}
-            />
-            {isOpen && hasCatalog ? (
-              <ul
-                className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-login-brown/10 bg-white py-1 shadow-login-frame"
-                id={listboxId}
-                role="listbox"
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-bold text-home-text">Setor responsável</span>
+            {hasCatalog ? (
+              <button
+                className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-home-blue transition duration-150 hover:bg-home-blue/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isSubmitting}
+                onClick={toggleChanging}
+                type="button"
               >
-                {matches.length === 0 ? (
-                  <li className="px-4 py-3 text-sm leading-6 text-home-brown">Nenhum setor encontrado.</li>
-                ) : (
-                  matches.map((option) => (
-                    <li aria-selected={option.id === administrativeUnitId} key={option.id} role="option">
-                      <button
-                        className="block w-full px-4 py-2 text-left transition duration-150 hover:bg-home-action/60 focus-visible:bg-home-action/60 focus-visible:outline-none"
-                        onClick={() => {
-                          selectOption(option)
-                        }}
-                        type="button"
-                      >
-                        <span className="block text-sm font-semibold text-home-text">{option.label}</span>
-                        <span className="block text-xs text-home-brown">{option.campusLabel}</span>
-                      </button>
-                    </li>
-                  ))
-                )}
-              </ul>
+                {isChanging ? 'Cancelar' : 'Trocar'}
+              </button>
             ) : null}
           </div>
+
+          <div className="rounded-[18px] border border-login-brown/10 bg-home-action/35 px-4 py-3">
+            <span className="block text-sm font-semibold break-words text-home-text">
+              {selectedOption?.label ?? (selectedUnitId === '' ? 'Nenhum setor selecionado' : 'Setor não identificado')}
+            </span>
+            {selectedOption !== null ? (
+              <span className="mt-0.5 block text-xs text-home-brown">{selectedOption.campusLabel}</span>
+            ) : null}
+            <span className="mt-1 block text-[11px] leading-4 text-home-brown/70">
+              {selectedUnitId === ''
+                ? 'Selecione um setor para encaminhar.'
+                : isDefaultTarget
+                  ? detail.forwardedToUnit !== null
+                    ? 'Setor atual da manifestação.'
+                    : 'Setor escolhido pelo manifestante.'
+                  : 'Novo setor selecionado.'}
+            </span>
+          </div>
+
+          {isChanging ? (
+            <div className="relative">
+              <input
+                aria-autocomplete="list"
+                aria-controls={listboxId}
+                aria-expanded={isOpen}
+                autoComplete="off"
+                className="min-h-12 w-full rounded-[26px] border border-login-brown/10 bg-white px-4 text-sm leading-6 text-home-text outline-none placeholder:text-home-brown/70 focus:border-home-blue focus:ring-2 focus:ring-home-blue/20 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isSubmitting || !hasCatalog}
+                id={inputId}
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  setSelectedUnitId('')
+                  setIsOpen(true)
+                  setError(null)
+                }}
+                onFocus={() => setIsOpen(true)}
+                placeholder="Digite para buscar o setor (nome, campus ou cidade)..."
+                role="combobox"
+                type="text"
+                value={query}
+              />
+              {isOpen && hasCatalog ? (
+                <ul
+                  className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-login-brown/10 bg-white py-1 shadow-login-frame"
+                  id={listboxId}
+                  role="listbox"
+                >
+                  {matches.length === 0 ? (
+                    <li className="px-4 py-3 text-sm leading-6 text-home-brown">Nenhum setor encontrado.</li>
+                  ) : (
+                    matches.map((option) => (
+                      <li aria-selected={option.id === selectedUnitId} key={option.id} role="option">
+                        <button
+                          className="block w-full px-4 py-2 text-left transition duration-150 hover:bg-home-action/60 focus-visible:bg-home-action/60 focus-visible:outline-none"
+                          onClick={() => {
+                            selectOption(option)
+                          }}
+                          type="button"
+                        >
+                          <span className="block text-sm font-semibold text-home-text">{option.label}</span>
+                          <span className="block text-xs text-home-brown">{option.campusLabel}</span>
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <button
           className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-home-blue px-5 text-sm font-bold text-white transition duration-150 hover:bg-home-blue/90 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-home-blue disabled:cursor-not-allowed disabled:bg-home-muted disabled:opacity-70"
-          disabled={isSubmitting || administrativeUnitId === ''}
+          disabled={isSubmitting || selectedUnitId === ''}
           type="submit"
         >
           {isSubmitting ? 'Encaminhando...' : 'Encaminhar ao setor'}

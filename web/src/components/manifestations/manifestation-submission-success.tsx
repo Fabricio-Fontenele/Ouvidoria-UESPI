@@ -123,20 +123,18 @@ export function ManifestationSubmissionSuccess({
               Código do protocolo
             </p>
 
-            <div className="mt-3 grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
-              <span aria-hidden="true" />
-              <strong className="min-w-0 text-center font-mono text-2xl leading-8 font-bold tracking-[0.05em] break-all text-[#2b5bb5] sm:break-normal">
-                {protocol}
-              </strong>
-              <button
-                aria-label={`Copiar protocolo ${protocol}`}
-                className="grid size-11 shrink-0 place-items-center rounded-lg text-[#2b5bb5] transition duration-150 hover:bg-[#2b5bb5]/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
-                onClick={() => void handleCopyProtocol()}
-                type="button"
-              >
-                <Icon className="size-5" name="copy" />
-              </button>
-            </div>
+            <strong className="mt-3 block min-w-0 text-center font-mono text-2xl leading-8 font-bold tracking-[0.05em] break-all text-[#2b5bb5] sm:break-normal">
+              {protocol}
+            </strong>
+            <button
+              aria-label={`Copiar protocolo ${protocol}`}
+              className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#2b5bb5]/20 text-sm font-bold text-[#2b5bb5] transition duration-150 hover:bg-[#2b5bb5]/10 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
+              onClick={() => void handleCopyProtocol()}
+              type="button"
+            >
+              <Icon className="size-4" name="copy" />
+              {copyStatus === 'copied' ? 'Copiado' : 'Copiar'}
+            </button>
           </div>
 
           {isAnonymous ? (
@@ -145,20 +143,18 @@ export function ManifestationSubmissionSuccess({
                 Código de acesso
               </p>
 
-              <div className="mt-3 grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
-                <span aria-hidden="true" />
-                <strong className="min-w-0 text-center font-mono text-2xl leading-8 font-bold tracking-[0.05em] break-all text-[#2b5bb5] sm:break-normal">
-                  {accessCode}
-                </strong>
-                <button
-                  aria-label="Copiar código de acesso"
-                  className="grid size-11 shrink-0 place-items-center rounded-lg text-[#2b5bb5] transition duration-150 hover:bg-[#2b5bb5]/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
-                  onClick={() => void handleCopyAccessCode()}
-                  type="button"
-                >
-                  <Icon className="size-5" name="copy" />
-                </button>
-              </div>
+              <strong className="mt-3 block min-w-0 text-center font-mono text-2xl leading-8 font-bold tracking-[0.05em] break-all text-[#2b5bb5] sm:break-normal">
+                {accessCode}
+              </strong>
+              <button
+                aria-label="Copiar código de acesso"
+                className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#2b5bb5]/20 text-sm font-bold text-[#2b5bb5] transition duration-150 hover:bg-[#2b5bb5]/10 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#0d47a1]"
+                onClick={() => void handleCopyAccessCode()}
+                type="button"
+              >
+                <Icon className="size-4" name="copy" />
+                {accessCodeCopyStatus === 'copied' ? 'Copiado' : 'Copiar'}
+              </button>
             </div>
           ) : null}
 
