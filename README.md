@@ -41,6 +41,7 @@ _Plataforma para registro, encaminhamento e acompanhamento de manifestações (d
   - [Passo a passo de instalação e execução](#passo-a-passo-de-instalação-e-execução)
     - [A) Subir a stack completa via Docker](#a-subir-a-stack-completa-via-docker)
     - [B) Desenvolvimento local (hot-reload)](#b-desenvolvimento-local-hot-reload)
+  - [Segurança](#segurança)
   - [Variáveis de ambiente](#variáveis-de-ambiente)
   - [Comandos úteis](#comandos-úteis)
   - [Testes e qualidade](#testes-e-qualidade)
@@ -301,7 +302,7 @@ projeto-ouvidoria/
 ```bash
 git clone https://github.com/Fabricio-Fontenele/Ouvidoria-UESPI.git
 cd Ouvidoria-UESPI
-pnpm install
+pnpm install      # backend + ai-api
 ```
 
 ### A) Subir a stack completa via Docker
@@ -309,7 +310,12 @@ pnpm install
 ```bash
 # 1. Configure os arquivos de ambiente (veja a seção "Variáveis de ambiente")
 cp .env.example .env                 # backend
-cp ai-api/.env.sample ai-api/.env    # ai-api  (coloque sua GOOGLE_API_KEY aqui)
+cp ai-api/.env.sample ai-api/.env    # ai-api
+
+# Ajuste no mínimo:
+# - .env: JWT_SECRET, Supabase e AI_SERVICE_API_KEY
+# - ai-api/.env: GOOGLE_API_KEY e AI_API_KEY
+# AI_SERVICE_API_KEY deve ser igual ao AI_API_KEY.
 
 # 2. Suba tudo (2 Postgres + ai-api + backend + web)
 docker compose up -d --build
@@ -327,39 +333,97 @@ Acesse o frontend em **http://localhost:5173**.
 ### B) Desenvolvimento local (hot-reload)
 
 ```bash
-# 1. Suba apenas os bancos
+# 1. Configure os arquivos de ambiente
+cp .env.example .env
+cp ai-api/.env.sample ai-api/.env
+cp web/.env.example web/.env
+
+# Ajuste no mínimo:
+# - .env: JWT_SECRET e Supabase
+# - ai-api/.env: GOOGLE_API_KEY
+# - web/.env: VITE_API_BASE_URL=http://localhost:3333
+#
+# Se quiser usar o Guará real no backend local, configure também:
+# - .env: AI_GATEWAY_PROVIDER=http, AI_SERVICE_BASE_URL=http://localhost:4000 e AI_SERVICE_API_KEY
+# - ai-api/.env: AI_API_KEY igual ao AI_SERVICE_API_KEY
+
+# 2. Instale as dependências do frontend, que é um app npm fora do workspace pnpm
+(cd web && npm install)
+
+# 3. Suba apenas os bancos
 pnpm db:up                                   # Postgres do backend (porta 5432)
 pnpm --filter @ouvidoria/ai-api db:up        # pgVector do ai-api  (porta 5433)
 
-# 2. Backend: aplique migrations + seed
+# 4. Backend: aplique migrations + seed
 pnpm prisma migrate deploy
 pnpm db:seed
 
-# 3. ai-api: ingerir a base de conhecimento (chamadas reais de embedding)
+# 5. ai-api: ingerir a base de conhecimento (chamadas reais de embedding)
 pnpm --filter @ouvidoria/ai-api ingest:reset
 
-# 4. Rode os três serviços (terminais separados)
+# 6. Rode os três serviços (terminais separados)
 pnpm --filter @ouvidoria/ai-api dev          # ai-api  -> :4000
 pnpm dev                                     # backend -> :3333
-pnpm --filter web dev                        # web     -> :5173
+(cd web && npm run dev)                      # web     -> :5173
 ```
 
 > O backend usa a flag `--env-file` do Node 22 para carregar o `.env` **antes** de qualquer `import`, evitando a corrida de carregamento do Prisma (`DATABASE_URL must be set...`).
 
 ---
 
+## Segurança
+
+O backend valida a configuração na inicialização (`src/main/config/env.ts`) e falha rápido quando uma variável obrigatória ou condicional está ausente.
+
+- **JWT** — tokens HS256 assinados com `JWT_SECRET`; use um segredo forte com pelo menos 32 caracteres.
+- **Senhas** — hash via `bcryptjs`; o custo é configurado por `PASSWORD_HASH_ROUNDS`.
+- **CORS** — em desenvolvimento permite a origem informada ou qualquer origem; em produção exige `CORS_ORIGIN`.
+- **Headers e abuso** — Fastify registra `@fastify/helmet` e `@fastify/rate-limit` (120 req/min nas rotas que usam rate limit).
+- **Anexos** — arquivos ficam no Supabase Storage e downloads são feitos por URL assinada com expiração configurável.
+- **E-mail transacional** — por padrão usa provider `console`; para envio real use Brevo e configure as credenciais obrigatórias.
+- **IA** — o backend pode usar `FakeAiGateway` local ou chamar o `ai-api` por HTTP com chave compartilhada.
+
+---
+
 ## Variáveis de ambiente
 
-**Backend (`.env`)** — destaques:
+Copie `.env.example` para `.env` e ajuste os valores sensíveis antes de subir a aplicação.
 
-| Variável                | Descrição                                                            |
-| ----------------------- | -------------------------------------------------------------------- |
-| `DATABASE_URL`          | conexão do Postgres principal                                        |
-| `JWT_SECRET`            | segredo HS256 para os tokens                                         |
-| `AI_GATEWAY_PROVIDER`   | `http` (usa o `ai-api`) ou `fake` (em processo)                      |
-| `AI_SERVICE_BASE_URL`   | URL do `ai-api` (ex.: `http://localhost:4000`)                       |
-| `AI_SERVICE_API_KEY`    | chave compartilhada — **deve ser igual** ao `AI_API_KEY` do `ai-api` |
-| `AI_SERVICE_TIMEOUT_MS` | timeout da chamada ao `ai-api` (padrão 30000)                        |
+```bash
+cp .env.example .env
+```
+
+**Backend (`.env`)** — variáveis lidas pela aplicação:
+
+| Variável                                     | Descrição                                                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                   | ambiente (`development`, `test` ou `production`); padrão `development`                          |
+| `HOST` / `PORT`                              | host e porta do servidor HTTP; padrões `0.0.0.0` e `3333`                                       |
+| `CORS_ORIGIN`                                | origem pública do frontend; **obrigatória em produção**                                         |
+| `DATABASE_URL`                               | conexão do Postgres principal                                                                   |
+| `JWT_SECRET`                                 | segredo HS256 dos tokens; mínimo de 32 caracteres                                               |
+| `JWT_EXPIRES_IN_SECONDS`                     | duração do token JWT; padrão 8h                                                                 |
+| `PASSWORD_HASH_ROUNDS`                       | custo do bcrypt; permitido entre 4 e 15, padrão 10                                              |
+| `SUPABASE_URL`                               | URL do projeto Supabase                                                                         |
+| `SUPABASE_SERVICE_ROLE_KEY`                  | service role key usada pelo backend para gravar e assinar anexos                                |
+| `SUPABASE_STORAGE_BUCKET`                    | bucket dos anexos, ex.: `manifestation-attachments`                                             |
+| `SUPABASE_SIGNED_URL_EXPIRES_IN_SECONDS`     | expiração das URLs assinadas de download; padrão 300                                            |
+| `EMAIL_PROVIDER`                             | `console` (logs locais) ou `brevo` (envio real)                                                 |
+| `BREVO_API_KEY` / `EMAIL_FROM`               | obrigatórias quando `EMAIL_PROVIDER=brevo`; `EMAIL_FROM` precisa ser remetente verificado       |
+| `EMAIL_FROM_NAME`                            | nome exibido no remetente; padrão `Ouvidoria UESPI`                                             |
+| `AI_GATEWAY_PROVIDER`                        | `fake` (sem serviço externo) ou `http` (usa o `ai-api`)                                         |
+| `AI_SERVICE_BASE_URL` / `AI_SERVICE_API_KEY` | obrigatórias quando `AI_GATEWAY_PROVIDER=http`; a chave deve bater com `AI_API_KEY` do `ai-api` |
+| `AI_SERVICE_TIMEOUT_MS`                      | timeout das chamadas ao `ai-api`; padrão 30000                                                  |
+| `AI_HISTORY_MAX_CHARS`                       | limite do histórico enviado ao assistente; padrão 12000                                         |
+| `CATALOG_CACHE_TTL_MS`                       | TTL do cache de catálogo de campi/unidades; padrão 300000                                       |
+
+**Variáveis auxiliares no `.env.example`** — usadas por Docker/deploy, não pela aplicação backend:
+
+| Variável               | Uso                                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`    | interpolação do `docker-compose.yml`; deve bater com a senha de `DATABASE_URL`                      |
+| `AI_POSTGRES_PASSWORD` | senha do Postgres do `ai-api` no Compose; deve bater com a senha interpolada no `DATABASE_URL` dele |
+| `VITE_API_BASE_URL`    | embutida no build do frontend pelo Vite e validada por `scripts/deploy.sh` em produção              |
 
 **`ai-api/.env`** — destaques:
 
@@ -371,7 +435,7 @@ pnpm --filter web dev                        # web     -> :5173
 | `AI_API_KEY`                                         | chave compartilhada com o backend                       |
 | `RAG_TOP_K` / `RAG_CHUNK_SIZE` / `RAG_CHUNK_OVERLAP` | parâmetros do RAG                                       |
 
-> Os arquivos `.env` **não** são versionados. Use `.env.example` e `ai-api/.env.sample` como base.
+> Os arquivos `.env` **não** são versionados. Use `.env.example`, `ai-api/.env.sample` e `web/.env.example` como base.
 
 ---
 
@@ -400,8 +464,8 @@ pnpm --filter @ouvidoria/ai-api test           # testes
 **web:**
 
 ```bash
-pnpm --filter web dev      # Vite dev server :5173
-pnpm --filter web build    # build de produção
+(cd web && npm run dev)     # Vite dev server :5173
+(cd web && npm run build)   # build de produção
 ```
 
 ---
