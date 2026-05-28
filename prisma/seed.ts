@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -365,6 +367,562 @@ const catalogSeedData = {
   administrativeUnits: [...centralAdministrativeUnits, ...poetaTorquatoCenters, ...campusAdministrativeUnits],
 } as const
 
+type SeedStatus = 'in_analysis' | 'awaiting_unit' | 'answered' | 'canceled' | 'finalized'
+type SeedSenderType = 'manifestant' | 'anonymous_manifestant' | 'ombudsman' | 'admin' | 'system'
+type SeedHistoryType =
+  | 'status_changed'
+  | 'forwarded_to_unit'
+  | 'finalized_by_author'
+  | 'evaluation_recorded'
+  | 'canceled'
+
+interface SeedSystemPayload {
+  type: SeedHistoryType
+  description: string
+  actorUserId: string | null
+  actorType: SeedSenderType
+  fromStatus: SeedStatus | null
+  toStatus: SeedStatus | null
+  rating?: number
+  attendantUserId?: string
+  cancellationReason?: string
+  cancellationNote?: string
+}
+
+interface ManifestationScenario {
+  protocol: string
+  type: 'complaint' | 'suggestion' | 'report' | 'compliment'
+  campusId: string
+  administrativeUnitId: string
+  description: string
+  involvedPeople: string | null
+  anonymous: boolean
+  createdAt: Date
+  authorMessage: string
+  reply?: string
+  forwardTo?: { id: string; name: string }
+  finalize?: boolean
+  evaluation?: { rating: number; comment: string | null }
+  cancel?: { reason: string; note: string | null }
+}
+
+interface SeedMessage {
+  id: string
+  senderUserId: string | null
+  senderType: SeedSenderType
+  content: string
+  createdAt: Date
+}
+
+interface SeedEvaluation {
+  id: string
+  rating: number
+  comment: string | null
+  createdAt: Date
+}
+
+interface BuiltManifestation {
+  id: string
+  status: SeedStatus
+  authorUserId: string | null
+  attendantUserId: string | null
+  forwardedToUnitId: string | null
+  accessCodeHash: string | null
+  messages: SeedMessage[]
+  evaluation: SeedEvaluation | null
+}
+
+interface SeedActors {
+  manifestantId: string
+  guaraId: string
+  anonymousAccessCodeHash: string
+}
+
+const cancellationReasonLabels: Record<string, string> = {
+  duplicate: 'Manifestação duplicada',
+  out_of_scope: 'Fora da competência da ouvidoria',
+  insufficient_information: 'Informações insuficientes para análise',
+  offensive_content: 'Conteúdo ofensivo ou impróprio',
+  spam_or_test: 'Registro de teste ou spam',
+  requested_by_author: 'Cancelamento solicitado pelo autor',
+  other: 'Outro',
+}
+
+const MESSAGE_INTERVAL_MS = 45 * 60 * 1000
+
+function deterministicUuid(seed: string): string {
+  const hex = createHash('sha1').update(seed).digest('hex')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`
+}
+
+function encodeSystemPayload(payload: SeedSystemPayload): string {
+  const serializable: Record<string, unknown> = {
+    type: payload.type,
+    description: payload.description,
+    actorUserId: payload.actorUserId,
+    actorType: payload.actorType,
+    fromStatus: payload.fromStatus,
+    toStatus: payload.toStatus,
+  }
+  if (payload.rating !== undefined) {
+    serializable['rating'] = payload.rating
+  }
+  if (payload.attendantUserId !== undefined) {
+    serializable['attendantUserId'] = payload.attendantUserId
+  }
+  if (payload.cancellationReason !== undefined) {
+    serializable['cancellationReason'] = payload.cancellationReason
+  }
+  if (payload.cancellationNote !== undefined) {
+    serializable['cancellationNote'] = payload.cancellationNote
+  }
+  return JSON.stringify(serializable)
+}
+
+function buildManifestationRecord(scenario: ManifestationScenario, actors: SeedActors): BuiltManifestation {
+  const authorUserId = scenario.anonymous ? null : actors.manifestantId
+  const authorSenderType: SeedSenderType = scenario.anonymous ? 'anonymous_manifestant' : 'manifestant'
+  const messages: SeedMessage[] = []
+  let messageIndex = 0
+
+  const pushMessage = (senderUserId: string | null, senderType: SeedSenderType, content: string): void => {
+    messages.push({
+      id: deterministicUuid(`message:${scenario.protocol}:${String(messageIndex)}`),
+      senderUserId,
+      senderType,
+      content,
+      createdAt: new Date(scenario.createdAt.getTime() + messageIndex * MESSAGE_INTERVAL_MS),
+    })
+    messageIndex += 1
+  }
+
+  pushMessage(authorUserId, authorSenderType, scenario.authorMessage)
+
+  let status: SeedStatus = 'in_analysis'
+
+  if (scenario.forwardTo !== undefined) {
+    pushMessage(
+      null,
+      'system',
+      encodeSystemPayload({
+        type: 'forwarded_to_unit',
+        description: `Manifestação encaminhada ao setor responsável: ${scenario.forwardTo.name}.`,
+        actorUserId: actors.guaraId,
+        actorType: 'ombudsman',
+        fromStatus: status,
+        toStatus: 'awaiting_unit',
+      }),
+    )
+    status = 'awaiting_unit'
+  }
+
+  if (scenario.reply !== undefined) {
+    pushMessage(actors.guaraId, 'ombudsman', scenario.reply)
+    pushMessage(
+      null,
+      'system',
+      encodeSystemPayload({
+        type: 'status_changed',
+        description: `Status alterado de ${status} para answered via resposta administrativa.`,
+        actorUserId: actors.guaraId,
+        actorType: 'ombudsman',
+        fromStatus: status,
+        toStatus: 'answered',
+      }),
+    )
+    status = 'answered'
+  }
+
+  let evaluation: SeedEvaluation | null = null
+
+  if (scenario.finalize === true) {
+    pushMessage(
+      null,
+      'system',
+      encodeSystemPayload({
+        type: 'finalized_by_author',
+        description: 'Manifestação finalizada pelo autor.',
+        actorUserId: authorUserId,
+        actorType: 'manifestant',
+        fromStatus: 'answered',
+        toStatus: 'finalized',
+      }),
+    )
+    status = 'finalized'
+
+    if (scenario.evaluation !== undefined) {
+      const evaluationCreatedAt = new Date(scenario.createdAt.getTime() + messageIndex * MESSAGE_INTERVAL_MS)
+      pushMessage(
+        null,
+        'system',
+        encodeSystemPayload({
+          type: 'evaluation_recorded',
+          description: `Atendimento avaliado pelo autor (${String(scenario.evaluation.rating)}/5).`,
+          actorUserId: authorUserId,
+          actorType: 'manifestant',
+          fromStatus: null,
+          toStatus: null,
+          rating: scenario.evaluation.rating,
+          attendantUserId: actors.guaraId,
+        }),
+      )
+      evaluation = {
+        id: deterministicUuid(`evaluation:${scenario.protocol}`),
+        rating: scenario.evaluation.rating,
+        comment: scenario.evaluation.comment,
+        createdAt: evaluationCreatedAt,
+      }
+    }
+  }
+
+  if (scenario.cancel !== undefined) {
+    const label = cancellationReasonLabels[scenario.cancel.reason] ?? 'Outro'
+    const description =
+      scenario.cancel.note === null
+        ? `Manifestação cancelada pela ouvidoria. Motivo: ${label}.`
+        : `Manifestação cancelada pela ouvidoria. Motivo: ${label}. Observação: ${scenario.cancel.note}`
+    pushMessage(
+      null,
+      'system',
+      encodeSystemPayload({
+        type: 'canceled',
+        description,
+        actorUserId: actors.guaraId,
+        actorType: 'ombudsman',
+        fromStatus: status,
+        toStatus: 'canceled',
+        cancellationReason: scenario.cancel.reason,
+        ...(scenario.cancel.note === null ? {} : { cancellationNote: scenario.cancel.note }),
+      }),
+    )
+    status = 'canceled'
+  }
+
+  const attendantUserId = scenario.reply !== undefined || scenario.forwardTo !== undefined ? actors.guaraId : null
+
+  return {
+    id: deterministicUuid(`manifestation:${scenario.protocol}`),
+    status,
+    authorUserId,
+    attendantUserId,
+    forwardedToUnitId: scenario.forwardTo === undefined ? null : scenario.forwardTo.id,
+    accessCodeHash: scenario.anonymous ? actors.anonymousAccessCodeHash : null,
+    messages,
+    evaluation,
+  }
+}
+
+const manifestationScenarios: ManifestationScenario[] = [
+  {
+    protocol: '202605270001',
+    type: 'complaint',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-dtic',
+    description:
+      'Não consigo acessar o sistema acadêmico há dois dias, mesmo após redefinir a senha pelo portal institucional.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-24T12:00:00.000Z'),
+    authorMessage:
+      'O erro aparece após informar matrícula e senha. A página recarrega e retorna para a tela inicial sem mensagem clara.',
+  },
+  {
+    protocol: '202605270002',
+    type: 'suggestion',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ouvidoria',
+    description:
+      'Sugiro ampliar o horário de funcionamento da Biblioteca Central durante o período de avaliações finais.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-25T12:00:00.000Z'),
+    authorMessage:
+      'A ampliação ajudaria estudantes que trabalham durante o dia e só conseguem estudar no campus à noite.',
+    forwardTo: { id: 'unit-biblioteca-central', name: 'Biblioteca Central' },
+  },
+  {
+    protocol: '202605270003',
+    type: 'report',
+    campusId: 'campus-clovis-moura',
+    administrativeUnitId: 'unit-direcao-clovis-moura',
+    description:
+      'Há lâmpadas queimadas no corredor próximo às salas do bloco administrativo, prejudicando a circulação no turno da noite.',
+    involvedPeople: 'Equipe de manutenção predial do campus',
+    anonymous: false,
+    createdAt: new Date('2026-05-26T12:00:00.000Z'),
+    authorMessage: 'O problema foi observado principalmente entre 18h e 21h, quando há maior circulação de alunos.',
+  },
+  {
+    protocol: '202605270004',
+    type: 'compliment',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-secretaria-academica-poeta-torquato-neto',
+    description:
+      'Gostaria de registrar elogio ao atendimento da Secretaria Acadêmica pela agilidade na emissão de documentos.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-23T12:00:00.000Z'),
+    authorMessage: 'O atendimento foi concluído no mesmo dia e a equipe explicou todos os passos com clareza.',
+    reply: 'Agradecemos o retorno! Encaminhamos o seu elogio à equipe da Secretaria Acadêmica.',
+  },
+  {
+    protocol: '202605270005',
+    type: 'complaint',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-dtic',
+    description: 'O e-mail institucional parou de sincronizar no aplicativo de celular após a última manutenção.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-10T13:00:00.000Z'),
+    authorMessage: 'No computador funciona normalmente, mas no celular aparece erro de autenticação.',
+    reply: 'Ajustamos a configuração do servidor de e-mail. Pedimos que remova e adicione a conta novamente no app.',
+    finalize: true,
+    evaluation: { rating: 5, comment: 'Problema resolvido rapidamente e com orientação clara.' },
+  },
+  {
+    protocol: '202605270006',
+    type: 'report',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-prefeitura-universitaria',
+    description: 'Há um vazamento de água no banheiro do segundo andar do bloco de salas de aula.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-18T14:30:00.000Z'),
+    authorMessage: 'A água escorre para o corredor e deixa o piso escorregadio durante todo o dia.',
+    reply: 'A equipe de manutenção foi acionada e a reparação está prevista para esta semana.',
+  },
+  {
+    protocol: '202605270007',
+    type: 'suggestion',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-preg',
+    description: 'Sugiro disponibilizar as ementas das disciplinas em formato digital no portal do aluno.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-22T09:15:00.000Z'),
+    authorMessage: 'Hoje só conseguimos as ementas presencialmente na coordenação, o que dificulta o planejamento.',
+  },
+  {
+    protocol: '202605270008',
+    type: 'complaint',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ascom',
+    description: 'Reclamação sobre uma postagem em rede social que não é do perfil oficial da universidade.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-12T16:00:00.000Z'),
+    authorMessage: 'O perfil citado não tem vínculo com a instituição.',
+    cancel: { reason: 'out_of_scope', note: null },
+  },
+  {
+    protocol: '202605270009',
+    type: 'report',
+    campusId: 'campus-clovis-moura',
+    administrativeUnitId: 'unit-biblioteca-clovis-moura',
+    description: 'O ar-condicionado da sala de estudos da biblioteca setorial está desligado há semanas.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-05T10:00:00.000Z'),
+    authorMessage: 'Com o calor, fica inviável usar a sala de estudos no período da tarde.',
+    reply: 'O equipamento foi consertado e já está em funcionamento. Obrigado por reportar.',
+    finalize: true,
+    evaluation: { rating: 4, comment: 'Demorou um pouco, mas foi resolvido.' },
+  },
+  {
+    protocol: '202605270010',
+    type: 'complaint',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ouvidoria',
+    description: 'A rede Wi-Fi do campus fica instável nos horários de pico, atrapalhando atividades em laboratório.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-19T11:00:00.000Z'),
+    authorMessage: 'A conexão cai com frequência entre 10h e 12h, quando há mais usuários conectados.',
+    forwardTo: { id: 'unit-dtic', name: 'Departamento de Tecnologia da Informação e Comunicação' },
+  },
+  {
+    protocol: '202605270011',
+    type: 'compliment',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ccs',
+    description: 'Elogio ao atendimento humanizado da clínica-escola do Centro de Ciências da Saúde.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-04-28T15:00:00.000Z'),
+    authorMessage: 'A equipe foi muito atenciosa durante todo o acompanhamento.',
+    reply: 'Ficamos felizes com o retorno! Repassaremos o reconhecimento à coordenação da clínica-escola.',
+    finalize: true,
+  },
+  {
+    protocol: '202605270012',
+    type: 'report',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ascom',
+    description: 'Registro de teste enviado durante a homologação do formulário.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-02T08:00:00.000Z'),
+    authorMessage: 'teste',
+    cancel: { reason: 'spam_or_test', note: 'Registro sem conteúdo identificável, criado durante testes.' },
+  },
+  {
+    protocol: '202605270013',
+    type: 'suggestion',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-biblioteca-central',
+    description: 'Sugiro instalar mais tomadas nas mesas de estudo individuais da Biblioteca Central.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-15T17:30:00.000Z'),
+    authorMessage: 'A maioria das mesas não tem ponto de energia, o que dificulta usar o notebook por muito tempo.',
+    reply: 'A sugestão foi registrada e será avaliada no próximo plano de melhorias da biblioteca.',
+  },
+  {
+    protocol: '202605270014',
+    type: 'complaint',
+    campusId: 'campus-urucui',
+    administrativeUnitId: 'unit-direcao-urucui',
+    description: 'O transporte universitário tem chegado atrasado no turno da manhã com frequência.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-21T07:45:00.000Z'),
+    authorMessage: 'Nas últimas duas semanas o ônibus chegou em média 20 minutos depois do horário previsto.',
+  },
+  {
+    protocol: '202605270015',
+    type: 'report',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ctu',
+    description: 'Um dos computadores do laboratório de informática não liga desde a semana passada.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-08T13:20:00.000Z'),
+    authorMessage: 'A máquina próxima à porta do laboratório não responde ao botão de ligar.',
+    forwardTo: { id: 'unit-dtic', name: 'Departamento de Tecnologia da Informação e Comunicação' },
+    reply: 'O equipamento foi recolhido para manutenção e será substituído enquanto isso.',
+  },
+  {
+    protocol: '202605270016',
+    type: 'complaint',
+    campusId: 'campus-professor-barros-araujo',
+    administrativeUnitId: 'unit-secretaria-academica-professor-barros-araujo',
+    description: 'Solicitei a emissão do diploma há mais de 60 dias e ainda não obtive retorno.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-04-20T10:30:00.000Z'),
+    authorMessage: 'Preciso do diploma para um processo seletivo e o prazo está se esgotando.',
+    reply: 'Seu diploma foi localizado e já está disponível para retirada na Secretaria Acadêmica.',
+    finalize: true,
+    evaluation: { rating: 5, comment: null },
+  },
+  {
+    protocol: '202605270017',
+    type: 'suggestion',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-cchl',
+    description: 'Sugiro a criação de um curso de extensão em redação acadêmica para os calouros.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-16T19:00:00.000Z'),
+    authorMessage: 'Muitos calouros têm dificuldade com a escrita acadêmica logo no primeiro período.',
+  },
+  {
+    protocol: '202605270018',
+    type: 'report',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ouvidoria',
+    description: 'Mesma ocorrência de iluminação já registrada anteriormente por outro protocolo.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-13T20:10:00.000Z'),
+    authorMessage: 'Acredito que já exista um registro sobre esse mesmo problema.',
+    cancel: { reason: 'duplicate', note: null },
+  },
+  {
+    protocol: '202605270019',
+    type: 'complaint',
+    campusId: 'campus-professor-alexandre-alves-de-oliveira',
+    administrativeUnitId: 'unit-direcao-professor-alexandre-alves-de-oliveira',
+    description: 'A iluminação do estacionamento do campus é insuficiente no período noturno.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-09T18:40:00.000Z'),
+    authorMessage: 'À noite o estacionamento fica muito escuro, gerando insegurança para quem sai das aulas.',
+    reply: 'A direção do campus solicitou a instalação de novas luminárias na área do estacionamento.',
+  },
+  {
+    protocol: '202605270020',
+    type: 'compliment',
+    campusId: 'campus-doutora-josefina-demes',
+    administrativeUnitId: 'unit-secretaria-academica-doutora-josefina-demes',
+    description: 'Elogio à organização do processo de rematrícula realizado neste semestre.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-20T14:00:00.000Z'),
+    authorMessage: 'O processo foi rápido, bem sinalizado e sem filas.',
+  },
+  {
+    protocol: '202605270021',
+    type: 'report',
+    campusId: 'campus-possidonio-queiroz',
+    administrativeUnitId: 'unit-direcao-possidonio-queiroz',
+    description: 'A sala de aula 03 precisa de reparo no forro do teto, que apresenta infiltração.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-11T09:50:00.000Z'),
+    authorMessage: 'Em dias de chuva a infiltração piora e cai água próximo às carteiras.',
+    forwardTo: { id: 'unit-prad', name: 'Pró-Reitoria de Administração' },
+  },
+  {
+    protocol: '202605270022',
+    type: 'complaint',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-prad',
+    description: 'O reembolso de uma taxa paga em duplicidade ainda não foi processado.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-04-25T11:30:00.000Z'),
+    authorMessage: 'Paguei a taxa duas vezes por erro do sistema e solicitei o reembolso há um mês.',
+    reply: 'O reembolso foi autorizado e será creditado na conta informada em até cinco dias úteis.',
+    finalize: true,
+  },
+  {
+    protocol: '202605270023',
+    type: 'suggestion',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-prex',
+    description: 'Sugiro ampliar o número de bolsas de extensão oferecidas por edital.',
+    involvedPeople: null,
+    anonymous: false,
+    createdAt: new Date('2026-05-03T15:45:00.000Z'),
+    authorMessage: 'A procura por bolsas de extensão é muito maior do que a oferta atual.',
+    cancel: { reason: 'other', note: 'Sugestão já contemplada em projeto institucional em andamento.' },
+  },
+  {
+    protocol: '202605270024',
+    type: 'report',
+    campusId: 'nucleo-barras',
+    administrativeUnitId: 'unit-coordenacao-barras',
+    description: 'A catraca de acesso ao prédio principal está travando com o cartão de estudante.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-07T08:20:00.000Z'),
+    authorMessage: 'O cartão precisa ser passado várias vezes até a catraca liberar o acesso.',
+    reply: 'A leitora da catraca foi recalibrada e o acesso já está funcionando normalmente.',
+  },
+  {
+    protocol: '202605270025',
+    type: 'complaint',
+    campusId: headquartersCampusId,
+    administrativeUnitId: 'unit-ouvidoria',
+    description: 'Gostaria de entender melhor qual é o prazo médio de resposta de uma manifestação.',
+    involvedPeople: null,
+    anonymous: true,
+    createdAt: new Date('2026-05-26T21:00:00.000Z'),
+    authorMessage: 'Registrei uma manifestação e gostaria de saber em quanto tempo costuma haver retorno.',
+  },
+]
+
 async function main(): Promise<void> {
   for (const campus of catalogSeedData.campuses) {
     await prisma.campus.upsert({
@@ -438,139 +996,87 @@ async function main(): Promise<void> {
 
   const anonymousAccessCodeHash = await bcrypt.hash(anonymousAccessCode, passwordHashRounds)
   const now = new Date()
-  const manifestationsSeedData = [
-    {
-      id: '7f8bbf7a-2f9f-4df7-88f4-4f33ff97d48f',
-      protocol: '202605270001',
-      type: 'complaint' as const,
-      status: 'in_analysis' as const,
-      campusId: headquartersCampusId,
-      administrativeUnitId: 'unit-dtic',
-      description:
-        'Não consigo acessar o sistema acadêmico há dois dias, mesmo após redefinir a senha pelo portal institucional.',
-      involvedPeople: null,
-      authorUserId: null,
-      attendantUserId: null,
-      forwardedToUnitId: null,
-      accessCodeHash: anonymousAccessCodeHash,
-      createdAt: new Date('2026-05-24T12:00:00.000Z'),
-      message: {
-        id: '14fa7fa4-8c43-4817-a87f-8d3a548e0131',
-        senderUserId: null,
-        senderType: 'anonymous_manifestant' as const,
-        content:
-          'O erro aparece após informar matrícula e senha. A página recarrega e retorna para a tela inicial sem mensagem clara.',
-      },
-    },
-    {
-      id: 'eaa7ee73-2118-4bb7-849b-2d38ac6d97f4',
-      protocol: '202605270002',
-      type: 'suggestion' as const,
-      status: 'awaiting_unit' as const,
-      campusId: headquartersCampusId,
-      administrativeUnitId: 'unit-biblioteca-central',
-      description:
-        'Sugiro ampliar o horário de funcionamento da Biblioteca Central durante o período de avaliações finais.',
-      involvedPeople: null,
-      authorUserId: demonstrationManifestant.id,
-      attendantUserId: guaraOmbudsman.id,
-      forwardedToUnitId: 'unit-biblioteca-central',
-      accessCodeHash: null,
-      createdAt: new Date('2026-05-25T12:00:00.000Z'),
-      message: {
-        id: '3091bd95-3f42-4421-bc8d-a3f156875ae4',
-        senderUserId: demonstrationManifestant.id,
-        senderType: 'manifestant' as const,
-        content:
-          'A ampliação ajudaria estudantes que trabalham durante o dia e só conseguem estudar no campus à noite.',
-      },
-    },
-    {
-      id: '798dd282-0606-4bf6-b0bf-3ce33ccdb411',
-      protocol: '202605270003',
-      type: 'report' as const,
-      status: 'in_analysis' as const,
-      campusId: 'campus-clovis-moura',
-      administrativeUnitId: 'unit-direcao-clovis-moura',
-      description:
-        'Há lâmpadas queimadas no corredor próximo às salas do bloco administrativo, prejudicando a circulação no turno da noite.',
-      involvedPeople: 'Equipe de manutenção predial do campus',
-      authorUserId: demonstrationManifestant.id,
-      attendantUserId: null,
-      forwardedToUnitId: null,
-      accessCodeHash: null,
-      createdAt: new Date('2026-05-26T12:00:00.000Z'),
-      message: {
-        id: '8f81d5c7-7871-4252-ae3d-b9866e2a7f4f',
-        senderUserId: demonstrationManifestant.id,
-        senderType: 'manifestant' as const,
-        content: 'O problema foi observado principalmente entre 18h e 21h, quando há maior circulação de alunos.',
-      },
-    },
-    {
-      id: '145d8f7f-61d7-4fe9-9b54-61909127a734',
-      protocol: '202605270004',
-      type: 'compliment' as const,
-      status: 'answered' as const,
-      campusId: headquartersCampusId,
-      administrativeUnitId: 'unit-secretaria-academica-poeta-torquato-neto',
-      description:
-        'Gostaria de registrar elogio ao atendimento da Secretaria Acadêmica pela agilidade na emissão de documentos.',
-      involvedPeople: null,
-      authorUserId: null,
-      attendantUserId: guaraOmbudsman.id,
-      forwardedToUnitId: null,
-      accessCodeHash: anonymousAccessCodeHash,
-      createdAt: new Date('2026-05-23T12:00:00.000Z'),
-      message: {
-        id: '807baed7-16ac-44b7-a9ca-1970984865fd',
-        senderUserId: null,
-        senderType: 'anonymous_manifestant' as const,
-        content: 'O atendimento foi concluído no mesmo dia e a equipe explicou todos os passos com clareza.',
-      },
-    },
-  ]
+  const actors: SeedActors = {
+    manifestantId: demonstrationManifestant.id,
+    guaraId: guaraOmbudsman.id,
+    anonymousAccessCodeHash,
+  }
 
-  for (const manifestation of manifestationsSeedData) {
-    const { message, ...manifestationData } = manifestation
+  const statusTotals: Record<SeedStatus, number> = {
+    in_analysis: 0,
+    awaiting_unit: 0,
+    answered: 0,
+    canceled: 0,
+    finalized: 0,
+  }
 
-    await prisma.manifestation.upsert({
-      where: { protocol: manifestationData.protocol },
-      create: manifestationData,
+  for (const scenario of manifestationScenarios) {
+    const built = buildManifestationRecord(scenario, actors)
+    statusTotals[built.status] += 1
+
+    const persisted = await prisma.manifestation.upsert({
+      where: { protocol: scenario.protocol },
+      create: {
+        id: built.id,
+        protocol: scenario.protocol,
+        type: scenario.type,
+        status: built.status,
+        campusId: scenario.campusId,
+        administrativeUnitId: scenario.administrativeUnitId,
+        description: scenario.description,
+        involvedPeople: scenario.involvedPeople,
+        authorUserId: built.authorUserId,
+        attendantUserId: built.attendantUserId,
+        forwardedToUnitId: built.forwardedToUnitId,
+        accessCodeHash: built.accessCodeHash,
+        createdAt: scenario.createdAt,
+      },
       update: {
-        type: manifestationData.type,
-        status: manifestationData.status,
-        campusId: manifestationData.campusId,
-        administrativeUnitId: manifestationData.administrativeUnitId,
-        description: manifestationData.description,
-        involvedPeople: manifestationData.involvedPeople,
-        authorUserId: manifestationData.authorUserId,
-        attendantUserId: manifestationData.attendantUserId,
-        forwardedToUnitId: manifestationData.forwardedToUnitId,
-        accessCodeHash: manifestationData.accessCodeHash,
-        createdAt: manifestationData.createdAt,
+        type: scenario.type,
+        status: built.status,
+        campusId: scenario.campusId,
+        administrativeUnitId: scenario.administrativeUnitId,
+        description: scenario.description,
+        involvedPeople: scenario.involvedPeople,
+        authorUserId: built.authorUserId,
+        attendantUserId: built.attendantUserId,
+        forwardedToUnitId: built.forwardedToUnitId,
+        accessCodeHash: built.accessCodeHash,
+        createdAt: scenario.createdAt,
         updatedAt: now,
       },
     })
 
-    await prisma.manifestationMessage.upsert({
-      where: { id: message.id },
-      create: {
-        id: message.id,
-        manifestationId: manifestationData.id,
-        senderUserId: message.senderUserId,
-        senderType: message.senderType,
-        content: message.content,
-        createdAt: manifestationData.createdAt,
-      },
-      update: {
-        manifestationId: manifestationData.id,
-        senderUserId: message.senderUserId,
-        senderType: message.senderType,
-        content: message.content,
-        createdAt: manifestationData.createdAt,
-      },
-    })
+    await prisma.manifestationEvaluation.deleteMany({ where: { manifestationId: persisted.id } })
+    await prisma.manifestationMessage.deleteMany({ where: { manifestationId: persisted.id } })
+
+    for (const message of built.messages) {
+      await prisma.manifestationMessage.create({
+        data: {
+          id: message.id,
+          manifestationId: persisted.id,
+          senderUserId: message.senderUserId,
+          senderType: message.senderType,
+          content: message.content,
+          createdAt: message.createdAt,
+        },
+      })
+    }
+
+    if (built.evaluation !== null && built.authorUserId !== null && built.attendantUserId !== null) {
+      await prisma.manifestationEvaluation.create({
+        data: {
+          id: built.evaluation.id,
+          manifestationId: persisted.id,
+          attendantUserId: built.attendantUserId,
+          attendantRoleSnapshot: 'ombudsman',
+          authorUserId: built.authorUserId,
+          rating: built.evaluation.rating,
+          comment: built.evaluation.comment,
+          createdAt: built.evaluation.createdAt,
+        },
+      })
+    }
   }
 
   console.warn(`Seeded development users (password: ${developmentPassword}):`)
@@ -578,7 +1084,10 @@ async function main(): Promise<void> {
     console.warn(`  - ${user.role.padEnd(10)} ${user.email}`)
   }
   console.warn(`  - responsible for ${catalogSeedData.administrativeUnits.length} administrative units`)
-  console.warn(`Seeded ${manifestationsSeedData.length} demonstration manifestations`)
+  console.warn(`Seeded ${manifestationScenarios.length} demonstration manifestations:`)
+  for (const status of Object.keys(statusTotals) as SeedStatus[]) {
+    console.warn(`  - ${status.padEnd(13)} ${statusTotals[status]}`)
+  }
   console.warn(`  - anonymous access code: ${anonymousAccessCode}`)
 }
 
