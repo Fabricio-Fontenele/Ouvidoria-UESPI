@@ -300,6 +300,7 @@ projeto-ouvidoria/
 ## Passo a passo de instalação e execução
 
 > Há dois caminhos: **(A) tudo via Docker** (mais rápido para ver rodando) e **(B) desenvolvimento local** (hot-reload em cada serviço). Comece clonando o repositório.
+> Se já tentou rodar antes e alguma porta ficou ocupada, pare a stack com `docker compose down` e, no caso do banco isolado do `ai-api`, também rode `(cd ai-api && docker compose down)`.
 
 ```bash
 git clone https://github.com/Fabricio-Fontenele/Ouvidoria-UESPI.git
@@ -315,17 +316,21 @@ cp .env.example .env                 # backend
 cp ai-api/.env.sample ai-api/.env    # ai-api
 
 # Ajuste no mínimo:
-# - .env: JWT_SECRET, Supabase e AI_SERVICE_API_KEY
+# - .env: JWT_SECRET, Supabase, AI_SERVICE_API_KEY e VITE_API_BASE_URL=http://localhost:3333
 # - ai-api/.env: GOOGLE_API_KEY e AI_API_KEY
 # AI_SERVICE_API_KEY deve ser igual ao AI_API_KEY.
 
 # 2. Suba tudo (2 Postgres + ai-api + backend + web)
 docker compose up -d --build
 
-# 3. Ingerir a base de conhecimento do Guará (o índice começa VAZIO)
+# 3. Backend: aplique migrations + seed
+docker compose exec backend pnpm prisma migrate deploy
+docker compose exec backend pnpm db:seed
+
+# 4. Ingerir a base de conhecimento do Guará (o índice começa VAZIO)
 docker compose exec ai-api pnpm ingest:reset
 
-# 4. Verifique a saúde
+# 5. Verifique a saúde
 curl localhost:3333/health     # backend  -> {"status":"ok"}
 curl localhost:4000/ready      # ai-api   -> hasIndexedChunks:true
 ```
@@ -341,12 +346,10 @@ cp ai-api/.env.sample ai-api/.env
 cp web/.env.example web/.env
 
 # Ajuste no mínimo:
-# - .env: JWT_SECRET e Supabase
+# - .env: JWT_SECRET, Supabase, AI_GATEWAY_PROVIDER=http,
+#         AI_SERVICE_BASE_URL=http://localhost:4000 e AI_SERVICE_API_KEY
 # - ai-api/.env: GOOGLE_API_KEY
 # - web/.env: VITE_API_BASE_URL=http://localhost:3333
-#
-# Se quiser usar o Guará real no backend local, configure também:
-# - .env: AI_GATEWAY_PROVIDER=http, AI_SERVICE_BASE_URL=http://localhost:4000 e AI_SERVICE_API_KEY
 # - ai-api/.env: AI_API_KEY igual ao AI_SERVICE_API_KEY
 
 # 2. Instale as dependências do frontend, que é um app npm fora do workspace pnpm
@@ -360,7 +363,7 @@ pnpm --filter @ouvidoria/ai-api db:up        # pgVector do ai-api  (porta 5433)
 pnpm prisma migrate deploy
 pnpm db:seed
 
-# 5. ai-api: ingerir a base de conhecimento (chamadas reais de embedding)
+# 5. ai-api: ingerir a base de conhecimento (requer GOOGLE_API_KEY válida)
 pnpm --filter @ouvidoria/ai-api ingest:reset
 
 # 6. Rode os três serviços (terminais separados)
