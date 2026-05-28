@@ -56,7 +56,7 @@ Esta feature não contempla:
 - consulta de manifestação anônima por protocolo;
 - anexos em mensagens;
 - remoção ou substituição de anexos;
-- notificações;
+- notificações (implementadas à parte — ver [UC-5d](./UC5d-manifestation-notifications.md));
 - resposta administrativa;
 - alteração de status;
 - encerramento da manifestação;
@@ -305,6 +305,8 @@ O sistema deve bloquear o envio de nova mensagem.
 
 ### 13.1 Saída da listagem
 
+A listagem retorna uma página (`ManifestationsPage`): `manifestations`, `statusTotals` (contagem por status das manifestações do usuário) e `totalItems`.
+
 ```json
 {
   "manifestations": [
@@ -319,9 +321,19 @@ O sistema deve bloquear o envio de nova mensagem.
       "authorUserId": "user-1",
       "createdAt": "2026-05-10T12:00:00.000Z"
     }
-  ]
+  ],
+  "statusTotals": {
+    "in_analysis": 1,
+    "awaiting_unit": 0,
+    "answered": 0,
+    "canceled": 0,
+    "finalized": 0
+  },
+  "totalItems": 1
 }
 ```
+
+> O manifestante também tem um resumo agregado em `GET /manifestations/metrics` (`{ statusTotals, totalItems }`) — ver [UC-8](./UC8-managerial-reports.md).
 
 ### 13.2 Saída do detalhamento
 
@@ -560,10 +572,16 @@ export class ManifestationMessage extends Entity<ManifestationMessageProps> {
   static create(props: CreateManifestationMessageProps, id?: UniqueEntityId): ManifestationMessage
 }
 
+export interface ManifestationsPage {
+  manifestations: ManifestationListItemDTO[]
+  statusTotals: Record<ManifestationStatus, number>
+  totalItems: number
+}
+
 export interface ManifestationsRepository {
   findById(manifestationId: string): Promise<Manifestation | null>
   findDetailsById(manifestationId: string): Promise<ManifestationDetailsDTO | null>
-  findManyByAuthorUserId(authorUserId: string, paginationParams: PaginationParams): Promise<ManifestationListItemDTO[]>
+  findManyByAuthorUserId(authorUserId: string, paginationParams: PaginationParams): Promise<ManifestationsPage>
 }
 
 export interface ManifestationInteractionsRepository {

@@ -11,6 +11,8 @@
 | Prioridade     | Alta                                                                                    |
 | Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
+> **Atualização (pós-MVP):** `campusId` e `administrativeUnitId` agora são **validados contra o catálogo** (`CatalogRepository`): precisam existir, estar ativos e a unidade precisa pertencer ao campus. O catálogo consultável está em [UC-4b](./UC4b-list-catalog.md).
+
 ---
 
 ## 2. Objetivo
@@ -240,7 +242,7 @@ O campo `campusId` deve:
 - não conter apenas espaços em branco.
 
 Observação:
-No MVP atual, `campusId` referencia um catálogo fixo de campi previamente carregado por seed. O caso de uso exige o identificador informado, mas não implementa CRUD próprio de campus nem validação de existência contra repositório nesta versão.
+`campusId` referencia o catálogo de campi (carregado por seed; consultável em [UC-4b](./UC4b-list-catalog.md)). O caso de uso **valida o identificador contra o catálogo** via `CatalogRepository.findCampusById`: o campus precisa existir (`CampusNotFoundError`) e estar ativo (`CampusInactiveError`). Não há CRUD de campus nesta versão.
 
 ### 10.3 Unidade administrativa
 
@@ -251,7 +253,7 @@ O campo `administrativeUnitId` deve:
 - não conter apenas espaços em branco.
 
 Observação:
-No MVP atual, `administrativeUnitId` referencia um catálogo fixo de unidades administrativas previamente carregado por seed. O caso de uso exige o identificador informado, mas não implementa CRUD próprio de unidade nem validação de existência contra repositório nesta versão.
+`administrativeUnitId` referencia o catálogo de unidades administrativas. O caso de uso **valida contra o catálogo** via `CatalogRepository.findAdministrativeUnitById`: a unidade precisa existir (`AdministrativeUnitNotFoundError`), estar ativa (`AdministrativeUnitInactiveError`) e **pertencer ao `campusId` informado** (`AdministrativeUnitDoesNotBelongToCampusError`). Não há CRUD de unidade nesta versão.
 
 ### 10.4 Descrição
 
@@ -307,15 +309,15 @@ No recorte atual do MVP, o caso de uso deriva `authorUserId` internamente a part
 ### FA01 - Campus inválido
 
 Condição:
-O usuário informa `campusId` vazio ou composto apenas por espaços.
+O usuário informa `campusId` vazio/apenas espaços (rejeitado pelo value-object `CampusId`), inexistente no catálogo (`CampusNotFoundError`) ou inativo (`CampusInactiveError`).
 
 Comportamento esperado:
-O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação.
+O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação. A validação de catálogo ocorre após a normalização dos value-objects e antes da geração de protocolo.
 
 ### FA02 - Unidade administrativa inválida
 
 Condição:
-O usuário informa `administrativeUnitId` vazio ou composto apenas por espaços.
+O usuário informa `administrativeUnitId` vazio/apenas espaços, inexistente (`AdministrativeUnitNotFoundError`), inativo (`AdministrativeUnitInactiveError`) ou que não pertence ao campus informado (`AdministrativeUnitDoesNotBelongToCampusError`).
 
 Comportamento esperado:
 O sistema deve rejeitar o registro antes de gerar protocolo ou persistir a manifestação.
@@ -458,6 +460,22 @@ Exemplo de resposta:
   "message": "Authentication required."
 }
 ```
+
+### 14.4 Campus ou unidade administrativa inválidos no catálogo
+
+Status HTTP:
+
+`400 Bad Request`
+
+O caso de uso lança erros específicos quando o identificador não passa na validação de catálogo. O `RegisterManifestationController` mapeia todos para `400 Bad Request`:
+
+| Erro                                           | Condição                                                                 |
+| ---------------------------------------------- | ------------------------------------------------------------------------ |
+| `CampusNotFoundError`                          | `campusId` não existe no catálogo.                                       |
+| `CampusInactiveError`                          | O campus existe mas está inativo.                                        |
+| `AdministrativeUnitNotFoundError`              | `administrativeUnitId` não existe no catálogo.                           |
+| `AdministrativeUnitInactiveError`              | A unidade existe mas está inativa.                                       |
+| `AdministrativeUnitDoesNotBelongToCampusError` | A unidade existe e está ativa, mas não pertence ao `campusId` informado. |
 
 ---
 
@@ -619,11 +637,17 @@ interface RegisterManifestationOutput {
 }
 ```
 
-Repositório:
+Repositórios:
 
 ```ts
 interface ManifestationsRepository {
   save(manifestation: Manifestation): Promise<void>
+}
+
+// usado para validar campus/unidade contra o catálogo no momento do registro
+interface CatalogRepository {
+  findCampusById(id: string): Promise<CatalogCampusRecordDTO | null>
+  findAdministrativeUnitById(id: string): Promise<CatalogAdministrativeUnitRecordDTO | null>
 }
 ```
 
@@ -662,9 +686,9 @@ interface PasswordHasher {
 - O endpoint `POST /manifestations` é registrado em `src/main/routes/manifestation.routes.ts` com `preHandler: optionalAuthenticate` (middleware em `src/infra/http/fastify/middlewares/auth-middleware.ts`), permitindo registro anônimo sem token e injetando `request.user` quando um Bearer válido for enviado.
 - A guarda de papel (RN-UC04-15) é aplicada no `RegisterManifestationController` logo após o check de autenticação: se `request.user.role !== UserRole.MANIFESTANT` e `isAnonymous=false`, retorna `403` com `IdentifiedManifestationRequiresManifestantRoleError` (`src/application/use-cases/register-manifestation/errors/`). Anônimas seguem o caminho normal porque o use case ignora `requesterId` nesse caso.
 - Cobertura e2e: `test/e2e/anonymous-manifestation.e2e.spec.ts` valida o fluxo anônimo + `accessCode` retornado; `test/e2e/identified-manifestation.e2e.spec.ts` cobre registro autenticado, rejeição sem auth (401) e isolamento entre manifestantes (403); `test/e2e/manifestation-administration.e2e.spec.ts` cobre o `403` para ombudsman tentando abrir identificada.
-- `Campus` e `AdministrativeUnit` não possuem CRUD próprio neste MVP.
-- Nesta versão, campus e unidade administrativa são tratados como catálogos fixos previamente carregados por seed.
-- O caso de uso exige apenas que `campusId` e `administrativeUnitId` sejam informados e usados como referência.
+- `Campus` e `AdministrativeUnit` não possuem CRUD próprio neste MVP, mas são tratados como catálogo carregado por seed e **validado em runtime** pelo `RegisterManifestationUseCase`.
+- O construtor do `RegisterManifestationUseCase` recebe `ManifestationsRepository`, `CatalogRepository`, `ProtocolGenerator`, `AccessCodeGenerator` e `PasswordHasher`. A validação de catálogo (`findCampusById` → existe/ativo; `findAdministrativeUnitById` → existe/ativo/pertence ao campus) ocorre **após** a normalização dos value-objects e **antes** de gerar protocolo e persistir.
+- A implementação concreta é `PrismaCatalogRepository` (`src/infra/database/prisma/repositories/`); o catálogo público consultável está documentado em [UC-4b](./UC4b-list-catalog.md).
 - A validação de tipo pode ocorrer na camada de entrada ou por enum do domínio.
 - Em manifestações anônimas, o caso de uso gera `accessCode` em texto plano, cria `accessCodeHash` por `PasswordHasher` e persiste apenas o hash no agregado.
 - O `accessCode` em texto plano só deve ser retornado no output do registro anônimo, nunca persistido nem reexposto em projeções futuras.

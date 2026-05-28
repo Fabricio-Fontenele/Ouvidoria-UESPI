@@ -88,13 +88,14 @@ Use these names consistently — do not introduce parallel terms like `ticket`, 
 - `User` (roles: `manifestant`, `ombudsman`, `admin`)
 - `Manifestation`, `Protocol`, `Attachment`
 - `ManifestationType`: `report` | `complaint` | `suggestion` | `compliment`
-- `ManifestationStatus`: `in_analysis` | `answered` | `canceled` | `finalized`
+- `ManifestationStatus`: `in_analysis` | `awaiting_unit` | `answered` | `canceled` | `finalized` (`awaiting_unit` é alcançado apenas via encaminhamento administrativo — `forwardToUnit`)
+- `ManifestationCancellationReason`: `duplicate` | `out_of_scope` | `insufficient_information` | `offensive_content` | `spam_or_test` | `requested_by_author` | `other` (motivo obrigatório no cancelamento administrativo; `other` exige justificativa)
 
 Entities should expose **behavior** (e.g. `Manifestation.canReceiveMessages()`, `belongsTo()`, `isAnonymous()`), and use static factories like `Manifestation.open(...)` / `Manifestation.restore(...)` rather than public constructors.
 
 ### Aggregate-driven status transitions
 
-Status transitions live on the aggregate, not in the use case. Each transition is a method that mutates `this.props.status` after validating its own guard, and throws a domain error exported from the same module — see `ManifestationStatusTransitionNotAllowedError` in `src/domain/entities/manifestation.ts` and the existing methods `recordAdministrativeAnswer()`, `transitionStatusAdministratively(target)`, `finalizeByAuthor()`. The use case orchestrates: load aggregate → call behavior → `repository.save(aggregate)`. Don't replicate guards (or status comparisons) in the use case.
+Status transitions live on the aggregate, not in the use case. Each transition is a method that mutates `this.props.status` after validating its own guard, and throws a domain error exported from the same module — see `ManifestationStatusTransitionNotAllowedError` / `CancellationReasonRequiresNoteError` in `src/domain/entities/manifestation.ts` and the methods `recordAdministrativeAnswer()`, `transitionStatusAdministratively(target)` (matrix-driven), `forwardToUnit(unitId)` (→ `awaiting_unit`), `cancelByOmbudsman(reason, note)` (→ `canceled`), `finalizeByAuthor()`, and the idempotent `assignAttendant(userId, role)`. The use case orchestrates: load aggregate → call behavior → `repository.save(aggregate)` (or a `ManifestationAdministrationRepository` method for audited transitions). Don't replicate guards (or status comparisons) in the use case.
 
 ### Shared use-case errors
 
