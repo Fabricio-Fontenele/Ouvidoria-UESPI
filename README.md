@@ -6,6 +6,8 @@
 
 _Plataforma para registro, encaminhamento e acompanhamento de manifestações (denúncias, reclamações, sugestões e elogios), com um assistente virtual — o **Guará** — que orienta o cidadão e ajuda a montar o rascunho da manifestação._
 
+**Veja o projeto:** [ouvidoria.fabriciofontenele.com.br](https://ouvidoria.fabriciofontenele.com.br)
+
 ![Node](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-ESM-3178C6?logo=typescript&logoColor=white)
