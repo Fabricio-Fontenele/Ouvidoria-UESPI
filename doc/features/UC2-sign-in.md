@@ -11,6 +11,8 @@
 | Prioridade     | Alta                                                                                    |
 | Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
+> **Atualização (pós-MVP):** o login agora **bloqueia contas com e-mail ainda não verificado** (`EmailNotVerifiedError → 403`). A verificação de e-mail está em [UC-1b](./UC1b-email-verification.md) e a recuperação de senha em [UC-3](./UC3-password-reset.md).
+
 ---
 
 ## 2. Objetivo
@@ -46,15 +48,17 @@ Esta feature deve permitir:
 - retornar apenas o token na resposta;
 - impedir exposição de detalhes sensíveis sobre a falha de autenticação.
 
+- bloquear autenticação de conta cujo e-mail ainda não foi verificado, quando houver verificação pendente.
+
 ### 4.2 Não incluído
 
 Esta feature não contempla:
 
-- cadastro de usuários;
+- cadastro de usuários (UC-01);
+- emissão/confirmação do código de verificação de e-mail (UC-1b — aqui apenas verificamos o estado verificado);
+- recuperação de senha (UC-03);
 - renovação de token;
 - logout;
-- confirmação de e-mail;
-- recuperação de senha;
 - bloqueio por tentativas inválidas;
 - refresh token;
 - autenticação multifator.
@@ -280,6 +284,23 @@ Exemplo de resposta:
   "message": "Invalid credentials"
 }
 ```
+
+### 14.3 E-mail não verificado
+
+Status HTTP:
+
+`403 Forbidden`
+
+Exemplo de resposta:
+
+```json
+{
+  "error": "EmailNotVerifiedError",
+  "message": "Email not verified"
+}
+```
+
+Condição: as credenciais conferem (usuário existe e a senha bate), mas o e-mail ainda **não foi verificado** e há verificação pendente (`emailVerificationCodeHash` e `emailVerificationCodeExpiresAt` não nulos). Diferente do `401`, este erro é específico e orienta o frontend a redirecionar para a tela de verificação (UC-1b), inclusive oferecendo o reenvio do código. A ordem importa: a checagem de e-mail verificado ocorre **depois** da validação de credenciais, para não revelar a contas erradas se um e-mail existe.
 
 ---
 
@@ -544,7 +565,8 @@ interface TokenGenerator {
 - O caso de uso não deve depender diretamente de biblioteca de JWT.
 - Erros de domínio devem ser mapeados para status HTTP na camada de apresentação.
 - A resposta pública de falha de autenticação deve permanecer genérica.
-- A camada de apresentação fornece `SignInController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<SignInBody>` agnóstico, mapeia `InvalidCredentialsError` para `401 Unauthorized` e `InvalidEmailError` para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
+- A camada de apresentação fornece `SignInController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<SignInBody>` agnóstico, mapeia `InvalidCredentialsError` para `401 Unauthorized`, `EmailNotVerifiedError` para `403 Forbidden` e `InvalidEmailError` para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
+- O `SignInUseCase` (`src/application/use-cases/signin/sign-in-use-case.ts`) lança `EmailNotVerifiedError` (em `signin/errors/`) quando `!user.isEmailVerified` e há código de verificação pendente. A checagem ocorre após `hashComparer.compare`, então credenciais inválidas continuam retornando o `401` genérico.
 - A infraestrutura concreta está materializada: `PrismaUsersRepository` implementa `UsersRepository`, `BcryptjsHasher` implementa `HashComparer` (mesma instância usada como `PasswordHasher`) e `JwtTokenGenerator` (`src/infra/auth/`, jsonwebtoken HS256) implementa `TokenGenerator` com payload `{ sub, role }`; `ZodValidator<SignInBody>` (`src/infra/http/fastify/validators/`) materializa o contrato `Validator<T>`.
 - O endpoint `POST /sessions` é registrado em `src/main/routes/auth.routes.ts` via `adaptRoute(makeSignInController())`. O token emitido aqui é validado pelos middlewares `ensureAuthenticated`/`optionalAuthenticate`/`requireRoles` (`src/infra/http/fastify/middlewares/auth-middleware.ts`) através do plugin `@fastify/jwt`, compartilhando o segredo `JWT_SECRET` carregado em `src/main/config/env.ts`.
 - Cobertura e2e em `test/e2e/auth.e2e.spec.ts` cobre autenticação válida, credenciais inválidas (401) e o fluxo register → sign-in.

@@ -11,11 +11,13 @@
 | Prioridade     | Alta                                                                                    |
 | Status         | Implementado de ponta a ponta (domínio, aplicação, presentation, infra, rota HTTP, e2e) |
 
+> **Atualização (pós-MVP):** o cadastro agora dispara **verificação de e-mail por código**. O detalhamento do fluxo de verificação (confirmar código, reenviar código) está em [UC-1b](./UC1b-email-verification.md). A recuperação de senha está em [UC-3](./UC3-password-reset.md).
+
 ---
 
 ## 2. Objetivo
 
-Permitir que um novo usuário crie uma conta no sistema de Ouvidoria Institucional, informando seus dados básicos de cadastro, para posteriormente acessar funcionalidades protegidas do sistema conforme seu perfil de acesso.
+Permitir que um novo usuário crie uma conta no sistema de Ouvidoria Institucional, informando seus dados básicos de cadastro. A conta é criada com e-mail **pendente de verificação**: um código é enviado por e-mail e a conta só consegue autenticar após a confirmação (ver [UC-1b](./UC1b-email-verification.md)).
 
 ---
 
@@ -44,21 +46,23 @@ Esta feature deve permitir:
 - armazenar a senha de forma segura usando hash;
 - definir um perfil válido para o usuário;
 - impedir criação não autorizada de perfis privilegiados;
-- retornar os dados públicos do usuário criado;
+- gerar e enviar por e-mail um código de verificação (TTL de 15 minutos);
+- reenviar/renovar o código quando o cadastro for repetido para um e-mail ainda **não verificado**;
+- retornar os dados públicos do usuário criado mais o sinal `emailVerificationRequired`;
 - não retornar senha nem hash da senha na resposta.
 
 ### 4.2 Não incluído
 
 Esta feature não contempla:
 
-- autenticação/login;
-- recuperação de senha;
-- confirmação de e-mail;
+- autenticação/login (UC-02);
+- confirmação do código de verificação em si (UC-1b — esta feature apenas o emite);
+- recuperação de senha (UC-03);
 - edição de dados cadastrais;
 - exclusão de usuário;
 - criação administrativa de ouvidores;
 - criação administrativa de administradores;
-- envio de e-mail de boas-vindas.
+- envio de e-mail de boas-vindas (somente o e-mail com o código de verificação é enviado).
 
 ---
 
@@ -85,12 +89,16 @@ Para executar o cadastro:
 
 Após um cadastro bem-sucedido:
 
-- o usuário é registrado no sistema;
+- o usuário é registrado no sistema com `emailVerifiedAt = null` (pendente de verificação);
 - o e-mail fica associado a uma única conta;
 - a senha é armazenada apenas em formato de hash;
+- o hash do código de verificação e sua expiração (`+15 min`) ficam persistidos no usuário;
+- um e-mail com o código de verificação em texto plano é enviado pelo `EmailSender`;
 - o usuário recebe o perfil padrão do cadastro público;
-- os dados públicos do usuário criado são retornados;
-- a senha e o hash da senha não são retornados.
+- os dados públicos do usuário criado são retornados, junto com `emailVerificationRequired: true`;
+- a senha, o hash da senha e o hash do código de verificação não são retornados.
+
+Observação: o cadastro **não** retorna token de sessão. O token só é emitido após a confirmação do código (UC-1b) ou via login (UC-02) de uma conta já verificada.
 
 ---
 
@@ -274,13 +282,15 @@ Corpo da resposta:
     "name": "Fabricio Fontenele",
     "email": "fabricio@email.com",
     "role": "manifestant",
+    "emailVerifiedAt": null,
     "createdAt": "2026-05-07T21:30:00.000Z"
-  }
+  },
+  "emailVerificationRequired": true
 }
 ```
 
 Observação:
-No caso de uso, `createdAt` é um objeto `Date`. Na camada HTTP, ele tende a ser serializado como string ISO em JSON.
+No caso de uso, `createdAt` e `emailVerifiedAt` são objetos `Date | null`. Na camada HTTP, `createdAt` é serializado como string ISO e `emailVerifiedAt` permanece `null` até a verificação. `emailVerificationRequired` é sempre `true` no contrato atual.
 
 Observações:
 
@@ -326,6 +336,8 @@ Exemplo de resposta:
   "message": "User already exists"
 }
 ```
+
+Importante (regra atual): o `409` só ocorre quando o e-mail pertence a uma conta **já verificada** (`isEmailVerified === true`). Se o e-mail pertencer a uma conta ainda **pendente de verificação**, o cadastro **não** falha: o caso de uso renova o código de verificação (`refreshPendingEmailVerification`), reenvia o e-mail e responde `201` com `emailVerificationRequired: true`. Isso permite que o usuário recomece o cadastro sem ficar travado por uma conta pendente.
 
 ### 14.3 Perfil inválido ou não autorizado
 
@@ -661,8 +673,10 @@ interface RegisterUserUseCaseOutput {
     name: string
     email: string
     role: UserRole
+    emailVerifiedAt: Date | null
     createdAt: Date
   }
+  emailVerificationRequired: true
 }
 ```
 
@@ -675,11 +689,21 @@ interface UsersRepository {
 }
 ```
 
-Serviço de hash:
+Demais dependências do caso de uso:
 
 ```ts
 interface PasswordHasher {
   hash(password: string): Promise<string>
+}
+
+// gera o código de verificação enviado por e-mail
+interface VerificationCodeGenerator {
+  generate(): Promise<string>
+}
+
+// envia o e-mail com o código (TTL de 15 minutos)
+interface EmailSender {
+  send(message: { to: string; subject: string; text: string }): Promise<void>
 }
 ```
 
@@ -695,10 +719,12 @@ interface PasswordHasher {
 - O caso de uso deve depender de uma abstração como `UsersRepository`.
 - O retorno do caso de uso deve ser um objeto seguro, sem dados sensíveis.
 - Erros de domínio devem ser mapeados para status HTTP na camada de apresentação.
-- A camada de apresentação fornece `RegisterUserController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<RegisterUserBody>` agnóstico e mapeia `UserAlreadyExistsError` para `409 Conflict` e erros de value-object (`InvalidNameError`, `InvalidEmailError`, `InvalidPasswordError`) para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
-- A infraestrutura concreta está materializada: `PrismaUsersRepository` (`src/infra/database/prisma/repositories/`) implementa `UsersRepository`; `BcryptjsHasher` (`src/infra/cryptography/`) implementa `PasswordHasher`; `ZodValidator<RegisterUserBody>` (`src/infra/http/fastify/validators/`) materializa o `Validator<T>` da apresentação.
+- A camada de apresentação fornece `RegisterUserController` em `src/presentation/controllers/auth/`, que valida o body via `Validator<RegisterUserBody>` agnóstico, retorna `201 Created` e mapeia `UserAlreadyExistsError` para `409 Conflict` e erros de value-object (`InvalidNameError`, `InvalidEmailError`, `InvalidPasswordError`) para `400 Bad Request`. Falhas inesperadas caem no `500` padrão do `BaseController`.
+- O `RegisterUserUseCase` (`src/application/use-cases/register-user/register-user.use-case.ts`) depende de `UsersRepository`, `PasswordHasher`, `VerificationCodeGenerator` e `EmailSender`. Após `usersRepository.save(user)`, ele chama `emailSender.send(...)` com o código em texto plano. O TTL do código é `EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000`.
+- Quando o e-mail já existe mas a conta está pendente, o caso de uso chama `user.startEmailVerification(codeHash, expiresAt)` e reenvia o e-mail, em vez de lançar `UserAlreadyExistsError`. A confirmação do código é tratada pelo UC-1b.
+- A infraestrutura concreta está materializada: `PrismaUsersRepository` (`src/infra/database/prisma/repositories/`) implementa `UsersRepository`; `BcryptjsHasher` (`src/infra/cryptography/`) implementa `PasswordHasher` (também usado para fazer hash do código); o `VerificationCodeGenerator` e o `EmailSender` têm adapters concretos wired em `src/main/factories/infrastructure.ts`; `ZodValidator<RegisterUserBody>` (`src/infra/http/fastify/validators/`) materializa o `Validator<T>`.
 - O endpoint `POST /users` é registrado em `src/main/routes/auth.routes.ts` via `adaptRoute(makeRegisterUserController())` (composition root em `src/main/factories/controllers/auth.ts`); o bootstrap completo do Fastify vive em `src/main/server.ts`.
-- Cobertura e2e em `test/e2e/auth.e2e.spec.ts` exercita os fluxos de cadastro com sucesso, duplicidade de e-mail (409) e encadeamento com sign-in.
+- Cobertura e2e em `test/e2e/auth.e2e.spec.ts` exercita cadastro com sucesso (incluindo `emailVerificationRequired`), duplicidade de e-mail verificado (409), renovação de código para conta pendente e encadeamento com a verificação/sign-in.
 
 ---
 

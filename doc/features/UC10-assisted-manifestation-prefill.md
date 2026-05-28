@@ -2,14 +2,14 @@
 
 ## 1. Identificação
 
-| Campo          | Descrição                                                                                                                                   |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Caso de uso    | UC-10                                                                                                                                       |
-| Nome           | Pré-preencher manifestação com apoio da IA                                                                                                  |
-| Feature        | Abertura assistida de manifestação                                                                                                          |
-| Ator principal | Usuário                                                                                                                                     |
-| Prioridade     | Alta                                                                                                                                        |
-| Status         | Implementado de ponta a ponta via `POST /ai/messages` (UC-09) com `FakeAiGateway` — adapter real de RAG/LLM pendente, contrato HTTP estável |
+| Campo          | Descrição                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Caso de uso    | UC-10                                                                                                                                                                                |
+| Nome           | Pré-preencher manifestação com apoio da IA                                                                                                                                           |
+| Feature        | Abertura assistida de manifestação                                                                                                                                                   |
+| Ator principal | Usuário                                                                                                                                                                              |
+| Prioridade     | Alta                                                                                                                                                                                 |
+| Status         | Implementado de ponta a ponta via `POST /ai/messages` (UC-09). Funciona tanto com o `FakeAiGateway` quanto com o `HttpAiGateway` real (`AI_GATEWAY_PROVIDER`); contrato HTTP estável |
 
 ---
 
@@ -245,4 +245,4 @@ O sistema deve permitir continuidade por preenchimento manual no fluxo regular.
 - O draft assistido é consumido pelo chamador; a decisão de abrir formulário, exibir pendências e chamar o UC-04 fica fora deste repositório.
 - A consistência entre campus e unidade administrativa depende de os catálogos oficiais carregados para o fluxo preservarem relacionamento suficiente para essa validação na integração final.
 - O draft é entregue como parte do output de `SendAiMessageUseCase` (`draft`, `shouldOpenManifestationDraft`, `missingFields`). Quando o chamador identificar `shouldOpenManifestationDraft === true`, ele monta o body do `RegisterManifestationController` (UC-04) — que já tem rota e infraestrutura wireadas — e o usuário confirma o envio formal.
-- O UC-09 já está exposto via `POST /ai/messages` com `FakeAiGateway`, então esta feature é consumida automaticamente pelo mesmo endpoint — o frontend lê `draft`, `shouldOpenManifestationDraft` e `missingFields` da resposta para decidir quando abrir o formulário. Quando o adapter real de RAG/LLM substituir o fake, o draft assistido passa a vir da IA real sem mudanças no contrato HTTP.
+- O UC-09 já está exposto via `POST /ai/messages`, então esta feature é consumida automaticamente pelo mesmo endpoint — o frontend lê `draft`, `shouldOpenManifestationDraft` e `missingFields` da resposta para decidir quando abrir o formulário. O draft pode vir do `FakeAiGateway` ou do `HttpAiGateway` real (RAG/LLM no `ai-api`), conforme `AI_GATEWAY_PROVIDER`; o contrato HTTP é o mesmo nos dois casos. A consistência dos IDs canônicos (campus/unidade) continua validada pelo backend independentemente do adapter.
