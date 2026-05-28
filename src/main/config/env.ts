@@ -35,6 +35,14 @@ const envSchema = z
       .default(5 * 60_000),
   })
   .superRefine((data, ctx) => {
+    if (data.NODE_ENV === 'production' && data.CORS_ORIGIN === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CORS_ORIGIN'],
+        message: 'CORS_ORIGIN is required when NODE_ENV=production',
+      })
+    }
+
     if (data.EMAIL_PROVIDER === 'brevo') {
       if (data.BREVO_API_KEY === undefined) {
         ctx.addIssue({

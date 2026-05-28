@@ -66,6 +66,7 @@ services:
       HOST: '0.0.0.0'
       PORT: '4000'
       DATABASE_URL: 'postgresql://postgres:${AI_POSTGRES_PASSWORD}@ai-postgres:5432/rag'
+    command: ['pnpm', 'dev']
     ports:
       - '127.0.0.1:4000:4000'
     volumes:
@@ -92,6 +93,7 @@ services:
       DATABASE_URL: 'postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/ouvidoria?schema=public'
       AI_GATEWAY_PROVIDER: 'http'
       AI_SERVICE_BASE_URL: 'http://ai-api:4000'
+    command: ['pnpm', 'dev']
     ports:
       - '127.0.0.1:3333:3333'
     volumes:
@@ -110,7 +112,6 @@ services:
         condition: service_started
     environment:
       VITE_API_BASE_URL: '${VITE_API_BASE_URL:-http://localhost:3333}'
-      VITE_GUARA_CHAT_ENDPOINT: '${VITE_GUARA_CHAT_ENDPOINT:-http://localhost:3333/api/ai/chat}'
     ports:
       - '127.0.0.1:5173:5173'
     volumes:

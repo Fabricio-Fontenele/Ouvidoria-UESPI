@@ -1,4 +1,5 @@
 import fastifyCors from '@fastify/cors'
+import fastifyHelmet from '@fastify/helmet'
 import fastifyJwt from '@fastify/jwt'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyRateLimit from '@fastify/rate-limit'
@@ -17,11 +18,13 @@ import { registerManifestationRoutes } from './routes/manifestation.routes.js'
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({ logger: env.NODE_ENV !== 'test' })
+  const corsOrigin = env.NODE_ENV === 'production' ? (env.CORS_ORIGIN ?? false) : (env.CORS_ORIGIN ?? true)
 
+  await app.register(fastifyHelmet)
   await app.register(fastifyCors, {
     allowedHeaders: ['Authorization', 'Content-Type'],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    origin: env.CORS_ORIGIN ?? true,
+    origin: corsOrigin,
   })
   await app.register(fastifyJwt, { secret: env.JWT_SECRET })
   await app.register(fastifyMultipart)

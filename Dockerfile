@@ -13,6 +13,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+RUN pnpm build
+
 EXPOSE 3333
 
-CMD ["sh", "-c", "pnpm prisma generate && pnpm prisma migrate deploy && pnpm db:seed && pnpm dev"]
+CMD ["pnpm", "start"]
